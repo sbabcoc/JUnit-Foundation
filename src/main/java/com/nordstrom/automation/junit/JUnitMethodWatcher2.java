@@ -6,23 +6,23 @@ import java.lang.reflect.Method;
  * This interface defines the methods implemented by JUnit method watchers. These watcher are attached to test classes
  * via the {@link JUnitMethodWatchers} annotation. To activate this feature, run with the {@link HookInstallingRunner}.
  */
-public interface JUnitMethodWatcher {
+public interface JUnitMethodWatcher2 extends JUnitMethodWatcher {
 
     /**
-     * Invoked before each test or configuration method is invoked
+     * Invoked before each class-level configuration method is invoked
      * 
-     * @param obj "enhanced" object upon which the method was invoked
+     * @param clazz "enhanced" class upon which the method was invoked
      * @param method {@link Method} object for the invoked method
      * @param args method invocation arguments
      */
-    void beforeInvocation(Object obj, Method method, Object[] args);
+    void beforeInvocation(Method method, Object[] args);
 
     /**
-     * Invoked after each test or configuration method is invoked
+     * Invoked after each class-level configuration method is invoked
      * 
-     * @param obj "enhanced" object upon which the method was invoked
+     * @param clazz "enhanced" class upon which the method was invoked
      * @param method {@link Method} object for the invoked method
      * @param args method invocation arguments
      */
-    void afterInvocation(Object obj, Method method, Object[] args);
+    void afterInvocation(Method method, Object[] args);
 }

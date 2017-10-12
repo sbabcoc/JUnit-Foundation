@@ -17,7 +17,7 @@ public class HookInstallingPlugin implements Plugin {
 
     @Override
     public boolean matches(TypeDescription target) {
-        return target.isAssignableTo(TypeDescription.CLASS);
+        return true;
     }
 
     @Override

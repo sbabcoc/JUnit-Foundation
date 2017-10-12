@@ -40,11 +40,12 @@ public final class HookInstallingRunner extends BlockJUnit4ClassRunner {
      * @return enhanced test class object
      */
     private Object installHooks(Object testObj) {
+        Class<?> testClass = testObj.getClass();
+        JUnitMethodInterceptor.attachWatchers(testClass);
+        
         if (testObj instanceof Hooked) {
             return testObj;
         }
-        
-        Class<?> testClass = testObj.getClass();
         
         try {
             
@@ -57,7 +58,6 @@ public final class HookInstallingRunner extends BlockJUnit4ClassRunner {
                     .load(testClass.getClassLoader())
                     .getLoaded();
             
-            JUnitMethodInterceptor.attachWatchers(testClass);
             return proxyType.newInstance();
             
         } catch (SecurityException | IllegalAccessException | IllegalArgumentException | InstantiationException e) {

@@ -10,6 +10,7 @@
   
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <lifecycle-mapping.version>1.0.0</lifecycle-mapping.version>
     <nordstrom-common.version>1.2.2.0</nordstrom-common.version>
     <surefire-plugin.version>2.19.1</surefire-plugin.version>
     <compiler-plugin.version>3.6.0</compiler-plugin.version>
@@ -95,6 +96,33 @@
           </configuration>
         </plugin>
         <plugin>
+          <groupId>org.eclipse.m2e</groupId>
+          <artifactId>lifecycle-mapping</artifactId>
+          <version>${lifecycle-mapping.version}</version>
+          <configuration>
+            <lifecycleMappingMetadata>
+              <pluginExecutions>
+                <pluginExecution>
+                  <pluginExecutionFilter>
+                    <groupId>net.bytebuddy</groupId>
+                    <artifactId>byte-buddy-maven-plugin</artifactId>
+                    <versionRange>[1.0.0,)</versionRange>
+                    <goals>
+                      <goal>transform-test</goal>
+                    </goals>
+                  </pluginExecutionFilter>
+                  <action>
+                    <execute>
+                      <runOnConfiguration>true</runOnConfiguration>
+                      <runOnIncremental>true</runOnIncremental>
+                    </execute>
+                  </action>
+                </pluginExecution>
+              </pluginExecutions>
+            </lifecycleMappingMetadata>
+          </configuration>
+        </plugin>
+        <plugin>
           <groupId>net.bytebuddy</groupId>
           <artifactId>byte-buddy-maven-plugin</artifactId>
           <version>${bytebuddy.version}</version>
@@ -126,18 +154,20 @@
       <plugin>
         <groupId>net.bytebuddy</groupId>
         <artifactId>byte-buddy-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>transform-test</goal>
+            </goals>
+          </execution>
+        </executions>
         <configuration>
-          <executions>
-            <execution>
-              <id>install-hooks</id>
-              <goals>
-                <goal>transform-test</goal>
-              </goals>
-            </execution>
-          </executions>
+<!--           <initialization> -->
+<!--             <entryPoint>com.nordstrom.automation.junit.RedefineEntryPoint</entryPoint> -->
+<!--           </initialization> -->
           <transformations>
             <transformation>
-              <plugin>net.bytebuddy.test.SimplePlugin</plugin>
+              <plugin>com.nordstrom.automation.junit.HookInstallingPlugin</plugin>
             </transformation>
           </transformations>
         </configuration>
