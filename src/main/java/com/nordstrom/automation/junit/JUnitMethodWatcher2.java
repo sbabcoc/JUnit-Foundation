@@ -11,7 +11,6 @@ public interface JUnitMethodWatcher2 extends JUnitMethodWatcher {
     /**
      * Invoked before each class-level configuration method is invoked
      * 
-     * @param clazz "enhanced" class upon which the method was invoked
      * @param method {@link Method} object for the invoked method
      * @param args method invocation arguments
      */
@@ -20,7 +19,6 @@ public interface JUnitMethodWatcher2 extends JUnitMethodWatcher {
     /**
      * Invoked after each class-level configuration method is invoked
      * 
-     * @param clazz "enhanced" class upon which the method was invoked
      * @param method {@link Method} object for the invoked method
      * @param args method invocation arguments
      */
