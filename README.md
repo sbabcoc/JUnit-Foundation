@@ -53,6 +53,8 @@ public class LoggingWatcher implements MethodWatcher {
 
 ```
 
+Note that the implementations in this method watcher uses the annotations attached to the method objects to determine the type of method they're intercepting. Because each test method can have multiple configuration methods (both before and after), you may need to define additional conditions to control when your implementation runs. Examples of additional conditions include method name, method annotation, or an execution flag.
+
 ###### MethodWatchers annotation
 ```java
 package com.nordstrom.example;
@@ -71,7 +73,7 @@ public class ExampleTest {
 }
 ```
 
-As shown above, we use the **`@MethodWatchers`** annotation to attach <span style="color:blue">LoggingWatcher</span>.
+As shown above, we use the **`@MethodWatchers`** annotation to attach **LoggingWatcher**. Running with the **HookInstallingRunner** connects the method watchers declared in the **`@MethodWatchers`** annotation to the chain (in this case, **LoggingWatcher**). This activates the method watchers' `beforeInvocation(Object, Method, Object[])` and `afterInvocation(Object, Method, Object[])` methods, enabling them to perform their respective method-level pre-processing and post-processing tasks.
 
 ### Extended Interception Support
 
@@ -158,11 +160,13 @@ public class LoggingWatcher2 implements MethodWatcher2 {
     
     @Override
     public void beforeInvocation(Object obj, Method method, Object[] args) {
+        // perform method-level processing
         ...
     }
 
     @Override
     public void afterInvocation(Object obj, Method method, Object[] args) {
+        // perform method-level processing
         ...
     }
     
@@ -187,6 +191,8 @@ public class LoggingWatcher2 implements MethodWatcher2 {
 
 ```
 
+This method watcher implements the **MethodWatcher2** interface, which extends the **MethodWatcher** interface to add methods for intercepted class-level configuration methods. Note that the implementations in this method watcher uses the annotations attached to the method objects to determine the type of method they're intercepting. Because each class can have multiple configuration methods (both before and after), you may need to define additional conditions to control when your implementation runs. Examples of additional conditions include method name, method annotation, or an execution flag.
+
 ###### MethodWatchers annotation
 ```java
 package com.nordstrom.example;
@@ -205,7 +211,7 @@ public class ExampleTest {
 }
 ```
 
-As shown above, we use the **`@MethodWatchers`** annotation to attach <span style="color:blue">LoggingWatcher2</span>.
+As shown above, we use the **`@MethodWatchers`** annotation to attach **LoggingWatcher2**. Running with the **HookInstallingRunner** connects the method watchers declared in the **`@MethodWatchers`** annotation to the chain (in this case, **LoggingWatchers**). This activates the method watchers' `beforeInvocation(Method, Object[])` and `afterInvocation(Method, Object[])` methods, enabling them to perform their respective class-level pre-processing and post-processing tasks. Note that the method-level interfaces defined in the **MethodWatcher** interface are also connected in watchers that implement **MethodWatcher2**.
 
 ## Artifact Capture
 
