@@ -1,12 +1,8 @@
 package com.nordstrom.automation.junit;
 
-import org.junit.Rule;
 import org.junit.Test;
 
-public class ArtifactCollectorOnDemand {
-    
-    @Rule
-    public final UnitTestCapture watcher = new UnitTestCapture(this);
+public class ArtifactCollectorOnDemand extends TestBase {
     
     @Test// (groups = {"onDemandCapture"})
     public void testOnDemandCapture() {

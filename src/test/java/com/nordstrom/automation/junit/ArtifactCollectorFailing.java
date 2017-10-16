@@ -2,13 +2,9 @@ package com.nordstrom.automation.junit;
 
 import static org.junit.Assert.fail;
 
-import org.junit.Rule;
 import org.junit.Test;
 
-public class ArtifactCollectorFailing {
-    
-    @Rule
-    public final UnitTestCapture watcher = new UnitTestCapture(this);
+public class ArtifactCollectorFailing extends TestBase {
     
     @Test// (groups = {"testFailed"})
     public void testFailed() {

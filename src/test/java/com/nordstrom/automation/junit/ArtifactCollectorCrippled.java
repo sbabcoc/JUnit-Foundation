@@ -2,13 +2,9 @@ package com.nordstrom.automation.junit;
 
 import static org.junit.Assert.fail;
 
-import org.junit.Rule;
 import org.junit.Test;
 
-public class ArtifactCollectorCrippled {
-    
-    @Rule
-    public final UnitTestCapture watcher = new UnitTestCapture(this);
+public class ArtifactCollectorCrippled extends TestBase {
     
     @Test// (groups = {"willNotCapture"})
     public void testWillNotCapture() {
@@ -16,5 +12,5 @@ public class ArtifactCollectorCrippled {
         watcher.getArtifactProvider().crippleCapture();
         fail("willNotCapture");
     }
-    
+
 }
