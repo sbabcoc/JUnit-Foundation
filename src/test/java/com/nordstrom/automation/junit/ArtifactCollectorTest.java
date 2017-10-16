@@ -28,7 +28,7 @@ public class ArtifactCollectorTest {
         assertEquals("Incorrect ignored test count", 0, rla.getIgnoredTests().size());
         
         Description description = rla.getPassedTests().get(0);
-        UnitTestCapture watcher = JUnitArtifactCollector.getWatcher(description, UnitTestCapture.class).get();
+        UnitTestCapture watcher = ArtifactCollector.getWatcher(description, UnitTestCapture.class).get();
         assertNull("Artifact provider capture state should be 'null'", watcher.getArtifactProvider().getCaptureState());
         assertNull("Artifact capture should not have been requested", watcher.getArtifactPath());
     }
@@ -47,7 +47,7 @@ public class ArtifactCollectorTest {
         assertEquals("Incorrect ignored test count", 0, rla.getIgnoredTests().size());
         
         Description description = rla.getFailedTests().get(0);
-        UnitTestCapture watcher = JUnitArtifactCollector.getWatcher(description, UnitTestCapture.class).get();
+        UnitTestCapture watcher = ArtifactCollector.getWatcher(description, UnitTestCapture.class).get();
         assertEquals("Incorrect artifact provider capture state", CaptureState.CAPTURE_SUCCESS, watcher.getArtifactProvider().getCaptureState());
         assertTrue("Artifact capture output path is not present", watcher.getArtifactPath().isPresent());
     }
@@ -66,7 +66,7 @@ public class ArtifactCollectorTest {
         assertEquals("Incorrect ignored test count", 0, rla.getIgnoredTests().size());
         
         Description description = rla.getFailedTests().get(0);
-        UnitTestCapture watcher = JUnitArtifactCollector.getWatcher(description, UnitTestCapture.class).get();
+        UnitTestCapture watcher = ArtifactCollector.getWatcher(description, UnitTestCapture.class).get();
         assertEquals("Incorrect artifact provider capture state", CaptureState.CAN_NOT_CAPTURE, watcher.getArtifactProvider().getCaptureState());
         assertFalse("Artifact capture output path should not be present", watcher.getArtifactPath().isPresent());
     }
@@ -85,7 +85,7 @@ public class ArtifactCollectorTest {
         assertEquals("Incorrect ignored test count", 0, rla.getIgnoredTests().size());
         
         Description description = rla.getFailedTests().get(0);
-        UnitTestCapture watcher = JUnitArtifactCollector.getWatcher(description, UnitTestCapture.class).get();
+        UnitTestCapture watcher = ArtifactCollector.getWatcher(description, UnitTestCapture.class).get();
         assertEquals("Incorrect artifact provider capture state", CaptureState.CAPTURE_FAILED, watcher.getArtifactProvider().getCaptureState());
         assertFalse("Artifact capture output path should not be present", watcher.getArtifactPath().isPresent());
     }
@@ -104,7 +104,7 @@ public class ArtifactCollectorTest {
         assertEquals("Incorrect ignored test count", 0, rla.getIgnoredTests().size());
         
         Description description = rla.getPassedTests().get(0);
-        UnitTestCapture watcher = JUnitArtifactCollector.getWatcher(description, UnitTestCapture.class).get();
+        UnitTestCapture watcher = ArtifactCollector.getWatcher(description, UnitTestCapture.class).get();
         assertEquals("Incorrect artifact provider capture state", CaptureState.CAPTURE_SUCCESS, watcher.getArtifactProvider().getCaptureState());
         assertTrue("Artifact capture output path is not present", watcher.getArtifactPath().isPresent());
     }

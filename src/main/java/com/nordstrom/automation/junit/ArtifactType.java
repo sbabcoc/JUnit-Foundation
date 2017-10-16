@@ -5,7 +5,7 @@ import java.nio.file.Paths;
 
 import org.slf4j.Logger;
 
-public interface JUnitArtifactType {
+public interface ArtifactType {
 
     /**
      * Get the SLF4J {@link Logger} for this artifact type.

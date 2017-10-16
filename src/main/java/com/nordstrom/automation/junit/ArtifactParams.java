@@ -5,7 +5,7 @@ import org.junit.runner.Description;
 /**
  * This interface enables implementers to provide method-related parameters to the artifact capture framework.
  */
-public interface JUnitArtifactParams {
+public interface ArtifactParams {
     
     /**
      * Get get JUnit method description object for the current test class instance.

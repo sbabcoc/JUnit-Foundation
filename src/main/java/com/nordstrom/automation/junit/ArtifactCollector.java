@@ -16,9 +16,9 @@ import org.junit.runner.Description;
 
 import com.nordstrom.common.file.PathUtils;
 
-public class JUnitArtifactCollector<T extends JUnitArtifactType> extends TestWatcher {
+public class ArtifactCollector<T extends ArtifactType> extends TestWatcher {
     
-    private static final Map<Description, List<JUnitArtifactCollector<? extends JUnitArtifactType>>> watcherMap =
+    private static final Map<Description, List<ArtifactCollector<? extends ArtifactType>>> watcherMap =
                     new ConcurrentHashMap<>();
     
     private final T provider;
@@ -26,7 +26,7 @@ public class JUnitArtifactCollector<T extends JUnitArtifactType> extends TestWat
     private Description description;
     private final List<Path> artifactPaths = new ArrayList<>();
     
-    public JUnitArtifactCollector(Object instance, T provider) {
+    public ArtifactCollector(Object instance, T provider) {
         this.instance = instance;
         this.provider = provider;
     }
@@ -37,7 +37,7 @@ public class JUnitArtifactCollector<T extends JUnitArtifactType> extends TestWat
     @Override
     public void starting(Description description) {
         this.description = description;
-        List<JUnitArtifactCollector<? extends JUnitArtifactType>> watcherList = watcherMap.get(description);
+        List<ArtifactCollector<? extends ArtifactType>> watcherList = watcherMap.get(description);
         if (watcherList == null) {
             watcherList = new ArrayList<>();
             watcherMap.put(description, watcherList);
@@ -123,8 +123,8 @@ public class JUnitArtifactCollector<T extends JUnitArtifactType> extends TestWat
      */
     private String getArtifactBaseName() {
         Object[] parameters = new Object[0];
-        if (instance instanceof JUnitArtifactParams) {
-            parameters = ((JUnitArtifactParams) instance).getParameters();
+        if (instance instanceof ArtifactParams) {
+            parameters = ((ArtifactParams) instance).getParameters();
         }
         if (parameters.length == 0) {
             return description.getMethodName();
@@ -184,11 +184,11 @@ public class JUnitArtifactCollector<T extends JUnitArtifactType> extends TestWat
      * @return optional watcher instance
      */
     @SuppressWarnings("unchecked")
-    public static <S extends JUnitArtifactCollector<? extends JUnitArtifactType>> Optional<S>
+    public static <S extends ArtifactCollector<? extends ArtifactType>> Optional<S>
                     getWatcher(Description description, Class<S> watcherType) {
-        List<JUnitArtifactCollector<? extends JUnitArtifactType>> watcherList = watcherMap.get(description);
+        List<ArtifactCollector<? extends ArtifactType>> watcherList = watcherMap.get(description);
         if (watcherList != null) {
-            for (JUnitArtifactCollector<? extends JUnitArtifactType> watcher : watcherList) {
+            for (ArtifactCollector<? extends ArtifactType> watcher : watcherList) {
                 if (watcher.getClass() == watcherType) {
                     return Optional.of((S) watcher);
                 }

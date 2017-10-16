@@ -19,20 +19,20 @@ import net.bytebuddy.implementation.bind.annotation.This;
 
 /**
  * This class implements the method interceptor for <b>JUnitBase</b> test class objects. This interceptor enables
- * classes that implement the {@link JUnitMethodWatcher} interface to perform processing before and after methods
+ * classes that implement the {@link MethodWatcher} interface to perform processing before and after methods
  * with the following JUnit annotations: &#64;Test, &#64;Before, &#64;After, &#64;BeforeClass, and &#64;AfterClass.
  */
-public final class JUnitMethodInterceptor {
+public final class MethodInterceptor {
     
     private static final Set<Class<?>> markedClasses = Collections.synchronizedSet(new HashSet<>());
-    private static final Set<Class<? extends JUnitMethodWatcher>> watcherSet = 
+    private static final Set<Class<? extends MethodWatcher>> watcherSet = 
                     Collections.synchronizedSet(new HashSet<>());
     
-    private static final List<JUnitMethodWatcher> watchers = new ArrayList<>();
-    private static final List<JUnitMethodWatcher> methodWatchers = new ArrayList<>();
-    private static final List<JUnitMethodWatcher2> methodWatchers2 = new ArrayList<>();
+    private static final List<MethodWatcher> watchers = new ArrayList<>();
+    private static final List<MethodWatcher> methodWatchers = new ArrayList<>();
+    private static final List<MethodWatcher2> methodWatchers2 = new ArrayList<>();
     
-    private JUnitMethodInterceptor() {
+    private MethodInterceptor() {
         throw new AssertionError("JUnitMethodInterceptor is a static utility class that cannot be instantiated");
     }
     
@@ -55,7 +55,7 @@ public final class JUnitMethodInterceptor {
         attachWatchers(clazz);
         
         synchronized(methodWatchers2) {
-            for (JUnitMethodWatcher2 watcher : methodWatchers2) {
+            for (MethodWatcher2 watcher : methodWatchers2) {
                 watcher.beforeInvocation(method, args);
             }
         }
@@ -64,7 +64,7 @@ public final class JUnitMethodInterceptor {
             result = proxy.call();
         } finally {
             synchronized(methodWatchers2) {
-                for (JUnitMethodWatcher2 watcher : methodWatchers2) {
+                for (MethodWatcher2 watcher : methodWatchers2) {
                     watcher.afterInvocation(method, args);
                 }
             }
@@ -91,12 +91,12 @@ public final class JUnitMethodInterceptor {
         Object result;
         
         synchronized(methodWatchers) {
-            for (JUnitMethodWatcher watcher : methodWatchers) {
+            for (MethodWatcher watcher : methodWatchers) {
                 watcher.beforeInvocation(obj, method, args);
             }
         }
         synchronized(methodWatchers2) {
-            for (JUnitMethodWatcher2 watcher : methodWatchers2) {
+            for (MethodWatcher2 watcher : methodWatchers2) {
                 watcher.beforeInvocation(obj, method, args);
             }
         }
@@ -106,12 +106,12 @@ public final class JUnitMethodInterceptor {
         } finally {
             synchronized(watchers) {
                 synchronized(methodWatchers) {
-                    for (JUnitMethodWatcher watcher : methodWatchers) {
+                    for (MethodWatcher watcher : methodWatchers) {
                         watcher.afterInvocation(obj, method, args);
                     }
                 }
                 synchronized(methodWatchers2) {
-                    for (JUnitMethodWatcher2 watcher : methodWatchers2) {
+                    for (MethodWatcher2 watcher : methodWatchers2) {
                         watcher.afterInvocation(obj, method, args);
                     }
                 }
@@ -127,9 +127,9 @@ public final class JUnitMethodInterceptor {
      * @param watcherType watcher type
      * @return optional watcher instance
      */
-    public static Optional<JUnitMethodWatcher> getAttachedWatcher(Class<? extends JUnitMethodWatcher> watcherType) {
+    public static Optional<MethodWatcher> getAttachedWatcher(Class<? extends MethodWatcher> watcherType) {
         Objects.requireNonNull(watcherType, "[watcherType] must be non-null");
-        for (JUnitMethodWatcher watcher : watchers) {
+        for (MethodWatcher watcher : watchers) {
             if (watcher.getClass() == watcherType) {
                 return Optional.of(watcher);
             }
@@ -143,15 +143,15 @@ public final class JUnitMethodInterceptor {
      * @param testClass test class
      */
     static void attachWatchers(Class<?> testClass) {
-        JUnitMethodWatchers annotation = testClass.getAnnotation(JUnitMethodWatchers.class);
+        MethodWatchers annotation = testClass.getAnnotation(MethodWatchers.class);
         if (null != annotation) {
             Class<?> markedClass = testClass;
-            while (null == markedClass.getDeclaredAnnotation(JUnitMethodWatchers.class)) {
+            while (null == markedClass.getDeclaredAnnotation(MethodWatchers.class)) {
                 markedClass = markedClass.getSuperclass();
             }
             if ( ! markedClasses.contains(markedClass)) {
                 markedClasses.add(markedClass);
-                for (Class<? extends JUnitMethodWatcher> watcher : annotation.value()) {
+                for (Class<? extends MethodWatcher> watcher : annotation.value()) {
                     attachWatcher(watcher);
                 }
             }
@@ -168,21 +168,21 @@ public final class JUnitMethodInterceptor {
      * 
      * @param watcher watcher class to add to the chain
      */
-    private static void attachWatcher(Class<? extends JUnitMethodWatcher> watcher) {
+    private static void attachWatcher(Class<? extends MethodWatcher> watcher) {
         if ( ! watcherSet.contains(watcher)) {
             watcherSet.add(watcher);
             try {
-                JUnitMethodWatcher watcherObj = watcher.newInstance();
+                MethodWatcher watcherObj = watcher.newInstance();
                 
                 synchronized(watchers) {
                     watchers.add(watcherObj);
                 }
                 
-                if (watcherObj instanceof JUnitMethodWatcher2) {
+                if (watcherObj instanceof MethodWatcher2) {
                     synchronized(methodWatchers2) {
-                        methodWatchers2.add((JUnitMethodWatcher2) watcherObj);
+                        methodWatchers2.add((MethodWatcher2) watcherObj);
                     }
-                } else if (watcherObj instanceof JUnitMethodWatcher) {
+                } else if (watcherObj instanceof MethodWatcher) {
                     synchronized(methodWatchers) {
                         methodWatchers.add(watcherObj);
                     }

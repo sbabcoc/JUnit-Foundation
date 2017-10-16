@@ -3,7 +3,7 @@ package com.nordstrom.automation.junit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class UnitTestArtifact implements JUnitArtifactType {
+public class UnitTestArtifact implements ArtifactType {
     
     private boolean captureDisabled;
     private boolean captureCrippled;
@@ -37,7 +37,7 @@ public class UnitTestArtifact implements JUnitArtifactType {
     public byte[] getArtifact(Object instance) {
         if (willGet()) {
             setCaptureState(CaptureState.CAPTURE_SUCCESS);
-            JUnitArtifactParams params = (JUnitArtifactParams) instance;
+            ArtifactParams params = (ArtifactParams) instance;
             return String.format(ARTIFACT, params.getDescription().getMethodName()).getBytes().clone();
         } else {
             setCaptureState(CaptureState.CAPTURE_FAILED);

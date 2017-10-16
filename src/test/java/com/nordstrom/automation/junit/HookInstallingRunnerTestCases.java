@@ -10,7 +10,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(HookInstallingRunner.class)
-@JUnitMethodWatchers({UnitTestWatcher.class})
+@MethodWatchers({UnitTestWatcher.class})
 public class HookInstallingRunnerTestCases {
     
     @BeforeClass

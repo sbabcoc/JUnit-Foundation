@@ -3,7 +3,7 @@ package com.nordstrom.automation.junit;
 import java.nio.file.Path;
 import java.util.Optional;
 
-public class UnitTestCapture extends JUnitArtifactCollector<UnitTestArtifact> {
+public class UnitTestCapture extends ArtifactCollector<UnitTestArtifact> {
     
     private Optional<Path> artifactPath;
     

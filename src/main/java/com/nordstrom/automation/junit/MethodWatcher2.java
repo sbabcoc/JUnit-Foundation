@@ -4,9 +4,9 @@ import java.lang.reflect.Method;
 
 /**
  * This interface defines the methods implemented by JUnit method watchers. These watcher are attached to test classes
- * via the {@link JUnitMethodWatchers} annotation. To activate this feature, run with the {@link HookInstallingRunner}.
+ * via the {@link MethodWatchers} annotation. To activate this feature, run with the {@link HookInstallingPlugin}.
  */
-public interface JUnitMethodWatcher2 extends JUnitMethodWatcher {
+public interface MethodWatcher2 extends MethodWatcher {
 
     /**
      * Invoked before each class-level configuration method is invoked
