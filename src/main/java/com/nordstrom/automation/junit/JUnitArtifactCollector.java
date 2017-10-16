@@ -18,12 +18,12 @@ import com.nordstrom.common.file.PathUtils;
 
 public class JUnitArtifactCollector<T extends JUnitArtifactType> extends TestWatcher {
     
+    private static final ThreadLocal<Description> threadDescription = new InheritableThreadLocal<>();
     private static final Map<Description, List<JUnitArtifactCollector<? extends JUnitArtifactType>>> watcherMap =
                     new ConcurrentHashMap<>();
     
     private final T provider;
     private final Object instance;
-    private Description description;
     private final List<Path> artifactPaths = new ArrayList<>();
     
     public JUnitArtifactCollector(Object instance, T provider) {
@@ -36,7 +36,7 @@ public class JUnitArtifactCollector<T extends JUnitArtifactType> extends TestWat
      */
     @Override
     public void starting(Description description) {
-        this.description = description;
+        threadDescription.set(description);
         List<JUnitArtifactCollector<? extends JUnitArtifactType>> watcherList = watcherMap.get(description);
         if (watcherList == null) {
             watcherList = new ArrayList<>();
@@ -127,11 +127,11 @@ public class JUnitArtifactCollector<T extends JUnitArtifactType> extends TestWat
             parameters = ((JUnitArtifactParams) instance).getParameters();
         }
         if (parameters.length == 0) {
-            return description.getMethodName();
+            return threadDescription.get().getMethodName();
         } else {
             int hashcode = Arrays.deepHashCode(parameters);
             String hashStr = String.format("%08X", hashcode);
-            return description.getMethodName() + "-" + hashStr;
+            return threadDescription.get().getMethodName() + "-" + hashStr;
         }
     }
     
@@ -171,8 +171,8 @@ public class JUnitArtifactCollector<T extends JUnitArtifactType> extends TestWat
      * 
      * @return JUnit method description object
      */
-    public Description getDescription() {
-        return description;
+    public static Description getDescription() {
+        return threadDescription.get();
     }
     
     /**

@@ -37,7 +37,7 @@ public class UnitTestArtifact implements JUnitArtifactType {
     public byte[] getArtifact(Object instance) {
         if (willGet()) {
             setCaptureState(CaptureState.CAPTURE_SUCCESS);
-            return String.format(ARTIFACT, instance.getClass().getName()).getBytes().clone();
+            return String.format(ARTIFACT, JUnitArtifactCollector.getDescription().getMethodName()).getBytes().clone();
         } else {
             setCaptureState(CaptureState.CAPTURE_FAILED);
             return new byte[0];
