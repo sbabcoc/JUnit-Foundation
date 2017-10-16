@@ -178,6 +178,7 @@ public class JUnitArtifactCollector<T extends JUnitArtifactType> extends TestWat
     /**
      * Get reference to an instance of the specified watcher type associated with the described method.
      * 
+     * @param <S> type-specific artifact collector class
      * @param description JUnit method description object
      * @param watcherType watcher type
      * @return optional watcher instance
