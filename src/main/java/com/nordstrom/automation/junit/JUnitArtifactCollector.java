@@ -7,7 +7,9 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
@@ -16,13 +18,8 @@ import com.nordstrom.common.file.PathUtils;
 
 public class JUnitArtifactCollector<T extends JUnitArtifactType> extends TestWatcher {
     
-    private static final ThreadLocal<List<JUnitArtifactCollector<? extends JUnitArtifactType>>> watchers = 
-                    new InheritableThreadLocal<List<JUnitArtifactCollector<? extends JUnitArtifactType>>>() {
-        @Override
-        public List<JUnitArtifactCollector<? extends JUnitArtifactType>> initialValue() {
-            return new ArrayList<>();
-        }
-    };
+    private static final Map<Description, List<JUnitArtifactCollector<? extends JUnitArtifactType>>> watcherMap =
+                    new ConcurrentHashMap<>();
     
     private final T provider;
     private final Object instance;
@@ -32,14 +29,25 @@ public class JUnitArtifactCollector<T extends JUnitArtifactType> extends TestWat
     public JUnitArtifactCollector(Object instance, T provider) {
         this.instance = instance;
         this.provider = provider;
-        watchers.get().add(this);
     }
     
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void starting(Description description) {
         this.description = description;
+        List<JUnitArtifactCollector<? extends JUnitArtifactType>> watcherList = watcherMap.get(description);
+        if (watcherList == null) {
+            watcherList = new ArrayList<>();
+            watcherMap.put(description, watcherList);
+        }
+        watcherList.add(this);
     }
     
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void failed(Throwable e, Description description) {
         captureArtifact();
@@ -97,11 +105,10 @@ public class JUnitArtifactCollector<T extends JUnitArtifactType> extends TestWat
     /**
      * Get path of directory at which to store artifacts.
      * 
-     * @param description JUnit method description
      * @return path of artifact storage directory
      */
     private Path getCollectionPath() {
-        Path collectionPath = Paths.get("");
+        Path collectionPath = Paths.get(System.getProperty("user.dir"));
         return collectionPath.resolve(provider.getArtifactPath());
     }
     
@@ -169,16 +176,21 @@ public class JUnitArtifactCollector<T extends JUnitArtifactType> extends TestWat
     }
     
     /**
+     * Get reference to an instance of the specified watcher type associated with the described method.
      * 
-     * @param watcherClass
-     * @return
+     * @param description JUnit method description object
+     * @param watcherType watcher type
+     * @return optional watcher instance
      */
     @SuppressWarnings("unchecked")
     public static <S extends JUnitArtifactCollector<? extends JUnitArtifactType>> Optional<S>
-                    getWatcher(Class<S> watcherClass) {
-        for (JUnitArtifactCollector<? extends JUnitArtifactType> watcher : watchers.get()) {
-            if (watcher.getClass() == watcherClass) {
-                return Optional.of((S) watcher);
+                    getWatcher(Description description, Class<S> watcherType) {
+        List<JUnitArtifactCollector<? extends JUnitArtifactType>> watcherList = watcherMap.get(description);
+        if (watcherList != null) {
+            for (JUnitArtifactCollector<? extends JUnitArtifactType> watcher : watcherList) {
+                if (watcher.getClass() == watcherType) {
+                    return Optional.of((S) watcher);
+                }
             }
         }
         return Optional.empty();
