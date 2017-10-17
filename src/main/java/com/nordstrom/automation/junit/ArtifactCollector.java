@@ -64,7 +64,7 @@ public class ArtifactCollector<T extends ArtifactType> extends TestWatcher {
         }
         
         byte[] artifact = provider.getArtifact(instance);
-        if (artifact.length == 0) {
+        if ((artifact == null) || (artifact.length == 0)) {
             return Optional.empty();
         }
         
