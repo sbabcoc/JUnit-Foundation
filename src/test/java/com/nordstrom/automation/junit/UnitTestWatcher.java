@@ -11,7 +11,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class UnitTestWatcher implements JUnitMethodWatcher2 {
+public class UnitTestWatcher implements MethodWatcher2 {
 
     private List<String> m_enterBeforeClass = Collections.synchronizedList(new ArrayList<>());
     private List<String> m_enterBeforeMethod = Collections.synchronizedList(new ArrayList<>());

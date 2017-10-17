@@ -16,8 +16,8 @@ import net.bytebuddy.implementation.MethodDelegation;
 /**
  * This JUnit test runner uses bytecode enhancement to install hooks on test and configuration methods to enable
  * method pre-processing and post-processing. This closely resembles the {@code IInvokedMethodListener} feature
- * of TestNG. Classes that implement the {@link JUnitMethodWatcher} interface are attached to these hooks via the
- * {@link JUnitMethodWatchers} annotation, which is applied to applicable test classes.
+ * of TestNG. Classes that implement the {@link MethodWatcher} interface are attached to these hooks via the
+ * {@link MethodWatchers} annotation, which is applied to applicable test classes.
  */
 public final class HookInstallingRunner extends BlockJUnit4ClassRunner {
     
@@ -41,7 +41,7 @@ public final class HookInstallingRunner extends BlockJUnit4ClassRunner {
      */
     private Object installHooks(Object testObj) {
         Class<?> testClass = testObj.getClass();
-        JUnitMethodInterceptor.attachWatchers(testClass);
+        MethodInterceptor.attachWatchers(testClass);
         
         if (testObj instanceof Hooked) {
             return testObj;
@@ -52,7 +52,7 @@ public final class HookInstallingRunner extends BlockJUnit4ClassRunner {
             Class<?> proxyType = new ByteBuddy()
                     .subclass(testClass)
                     .method(isAnnotatedWith(anyOf(Test.class, Before.class, After.class)))
-                    .intercept(MethodDelegation.to(JUnitMethodInterceptor.class))
+                    .intercept(MethodDelegation.to(MethodInterceptor.class))
                     .implement(Hooked.class)
                     .make()
                     .load(testClass.getClassLoader())

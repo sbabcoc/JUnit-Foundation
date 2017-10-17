@@ -9,17 +9,17 @@ import java.lang.annotation.Target;
 
 /**
  * This annotation is assigned to test classes and enables you to attach one or more method watcher class,
- * which implement the {@link JUnitMethodWatcher} interface. To activate this feature, run with the {@link
+ * which implement the {@link MethodWatcher} interface. To activate this feature, run with the {@link
  * HookInstallingRunner}.
  */
 @Retention(RUNTIME)
 @Target({TYPE})
 @Inherited
-public @interface JUnitMethodWatchers {
+public @interface MethodWatchers {
     /**
      * Get specified method watcher(s).
      * 
      * @return array of method watcher classes
      */
-    Class<? extends JUnitMethodWatcher>[] value();
+    Class<? extends MethodWatcher>[] value() default {};
 }
