@@ -7,6 +7,7 @@ import java.util.Optional;
 import org.junit.rules.RuleChain;
 import org.junit.rules.TestRule;
 
+import com.nordstrom.automation.junit.JUnitConfig.JUnitSettings;
 import com.nordstrom.common.base.UncheckedThrow;
 
 /**
@@ -45,11 +46,12 @@ public class RuleChainWalker {
      */
     @SuppressWarnings("unchecked")
     private static List<TestRule> getRuleList(RuleChain ruleChain) {
-        Field field;
+        Field ruleChainList;
         try {
-            field = RuleChain.class.getDeclaredField("rulesStartingWithInnerMost");
-            field.setAccessible(true);
-            return (List<TestRule>) field.get(ruleChain);
+            String fieldName = JUnitConfig.getConfig().getString(JUnitSettings.RULE_CHAIN_LIST.key());
+            ruleChainList = RuleChain.class.getDeclaredField(fieldName);
+            ruleChainList.setAccessible(true);
+            return (List<TestRule>) ruleChainList.get(ruleChain);
         } catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
             throw UncheckedThrow.throwUnchecked(e);
         }
