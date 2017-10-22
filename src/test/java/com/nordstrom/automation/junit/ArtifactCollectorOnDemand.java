@@ -7,7 +7,7 @@ public class ArtifactCollectorOnDemand extends TestBase {
     @Test// (groups = {"onDemandCapture"})
     public void testOnDemandCapture() {
         System.out.println("onDemandCapture");
-        watcher.captureArtifact();
+        watcher.captureArtifact(null);
     }
     
 }

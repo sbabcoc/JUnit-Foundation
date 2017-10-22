@@ -34,7 +34,7 @@ public class UnitTestArtifact implements ArtifactType {
     }
 
     @Override
-    public byte[] getArtifact(Object instance) {
+    public byte[] getArtifact(Object instance, Throwable exception) {
         if (willGet()) {
             setCaptureState(CaptureState.CAPTURE_SUCCESS);
             ArtifactParams params = (ArtifactParams) instance;

@@ -50,20 +50,21 @@ public class ArtifactCollector<T extends ArtifactType> extends TestWatcher {
      */
     @Override
     public void failed(Throwable e, Description description) {
-        captureArtifact();
+        captureArtifact(e);
     }
     
     /**
      * Capture artifact from the current test result context.
      * 
+     * @param reason exception that prompted capture request; specify 'null' for on-demand capture
      * @return (optional) path at which the captured artifact was stored
      */
-    public Optional<Path> captureArtifact() {
+    public Optional<Path> captureArtifact(Throwable reason) {
         if (! provider.canGetArtifact(instance)) {
             return Optional.empty();
         }
         
-        byte[] artifact = provider.getArtifact(instance);
+        byte[] artifact = provider.getArtifact(instance, reason);
         if ((artifact == null) || (artifact.length == 0)) {
             return Optional.empty();
         }
