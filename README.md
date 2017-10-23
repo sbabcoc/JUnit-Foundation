@@ -250,7 +250,7 @@ public class MyArtifactType implements ArtifactType {
     }
 
     @Override
-    public byte[] getArtifact(Object instance) {
+    public byte[] getArtifact(Object instance, Throwable reason) {
         if (instance instanceof ArtifactParams) {
             ArtifactParams params = (ArtifactParams) instance;
             return String.format(ARTIFACT, params.getDescription().getMethodName()).getBytes().clone();
