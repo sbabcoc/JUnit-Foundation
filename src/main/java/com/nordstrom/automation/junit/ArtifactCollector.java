@@ -56,7 +56,7 @@ public class ArtifactCollector<T extends ArtifactType> extends TestWatcher {
     /**
      * Capture artifact from the current test result context.
      * 
-     * @param reason exception that prompted capture request; specify 'null' for on-demand capture
+     * @param reason impetus for capture request; may be 'null'
      * @return (optional) path at which the captured artifact was stored
      */
     public Optional<Path> captureArtifact(Throwable reason) {

@@ -26,7 +26,7 @@ public interface ArtifactType {
      * Capture an artifact from the specified context.
      * 
      * @param instance JUnit test class instance
-     * @param reason exception that prompted capture request; specify 'null' for on-demand capture
+     * @param reason impetus for capture request; may be 'null'
      * @return byte array containing the captured artifact; if capture fails, an empty array is returned
      */
     byte[] getArtifact(Object instance, Throwable reason);
