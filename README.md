@@ -276,7 +276,7 @@ public class MyArtifactType implements ArtifactType {
 }
 ```
 
-Pay special attention to the implementation of `getArtifact(Object)` above. This code will only capture artifacts for test classes that implement the **ArtifactParams** interface, and it uses this interface to get the description object for the current test.
+Pay special attention to the implementation of `getArtifact(Object, Throwable)` above. This code will only capture artifacts for test classes that implement the **ArtifactParams** interface, and it uses this interface to get the description object for the current test.
 
 ###### Creating a type-specific artifact collector
 ```java
