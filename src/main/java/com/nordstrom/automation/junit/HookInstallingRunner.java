@@ -91,9 +91,10 @@ public final class HookInstallingRunner extends BlockJUnit4ClassRunner {
     }
     
     /**
+     * Get fully-qualified name to use for hooked test class.
      * 
-     * @param testObj
-     * @return
+     * @param testObj test class object being hooked
+     * @return fully-qualified name for hooked subclass
      */
     private static String getSubclassName(Object testObj) {
         Class<?> testClass = testObj.getClass();
