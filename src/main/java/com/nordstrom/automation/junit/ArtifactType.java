@@ -1,9 +1,9 @@
 package com.nordstrom.automation.junit;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
-
 import org.slf4j.Logger;
+
+import com.nordstrom.common.file.PathUtils;
 
 public interface ArtifactType {
 
@@ -34,11 +34,13 @@ public interface ArtifactType {
     /**
      * Get the path at which to store artifacts.
      * 
+     * @param instance JUnit test class instance
      * @return artifact storage path
      */
-    default Path getArtifactPath() {
-        return Paths.get("");
+    default Path getArtifactPath(Object instance) {
+        return PathUtils.ReportsDirectory.getPathForObject(instance);
     }
+    
     
     /**
      * Get the extension for artifact files of this type.
