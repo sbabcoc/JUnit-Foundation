@@ -60,7 +60,7 @@ import com.nordstrom.common.file.PathUtils;
  * 
  * import com.nordstrom.automation.testng.ArtifactCollector;
  * 
- * public class MyArtifactCapture extends ArtifactCollector<MyArtifactType> {
+ * public class MyArtifactCapture extends ArtifactCollector&lt;MyArtifactType&gt; {
  *     
  *     public MyArtifactCapture() {
  *         super(new MyArtifactType());
