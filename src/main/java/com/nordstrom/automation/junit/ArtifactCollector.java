@@ -3,7 +3,6 @@ package com.nordstrom.automation.junit;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -109,8 +108,8 @@ public class ArtifactCollector<T extends ArtifactType> extends TestWatcher {
      * @return path of artifact storage directory
      */
     private Path getCollectionPath() {
-        Path collectionPath = Paths.get(System.getProperty("user.dir"));
-        return collectionPath.resolve(provider.getArtifactPath());
+        Path collectionPath = PathUtils.ReportsDirectory.getPathForObject(instance);
+        return collectionPath.resolve(provider.getArtifactPath(instance));
     }
     
     /**

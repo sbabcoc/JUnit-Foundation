@@ -2,6 +2,9 @@ package com.nordstrom.automation.junit;
 
 import static net.bytebuddy.matcher.ElementMatchers.*;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -9,6 +12,7 @@ import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.model.InitializationError;
 
 import com.nordstrom.common.base.UncheckedThrow;
+import com.nordstrom.common.file.PathUtils.ReportsDirectory;
 
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.implementation.MethodDelegation;
@@ -20,6 +24,8 @@ import net.bytebuddy.implementation.MethodDelegation;
  * {@link MethodWatchers} annotation, which is applied to applicable test classes.
  */
 public final class HookInstallingRunner extends BlockJUnit4ClassRunner {
+    
+    private static Map<Class<?>, Class<?>> proxyMap = new HashMap<>();
     
     public HookInstallingRunner(Class<?> klass) throws InitializationError {
         super(klass);
@@ -39,7 +45,7 @@ public final class HookInstallingRunner extends BlockJUnit4ClassRunner {
      * @param testObj test class object to be enhanced
      * @return enhanced test class object
      */
-    private Object installHooks(Object testObj) {
+    private synchronized Object installHooks(Object testObj) {
         Class<?> testClass = testObj.getClass();
         MethodInterceptor.attachWatchers(testClass);
         
@@ -47,20 +53,28 @@ public final class HookInstallingRunner extends BlockJUnit4ClassRunner {
             return testObj;
         }
         
+        Class<?> proxyType = proxyMap.get(testClass);
+        
+        if (proxyType == null) {
+            try {
+                proxyType = new ByteBuddy()
+                        .subclass(testClass)
+                        .name(getSubclassName(testObj))
+                        .method(isAnnotatedWith(anyOf(Test.class, Before.class, After.class)))
+                        .intercept(MethodDelegation.to(MethodInterceptor.class))
+                        .implement(Hooked.class)
+                        .make()
+                        .load(testClass.getClassLoader())
+                        .getLoaded();
+                proxyMap.put(testClass, proxyType);
+            } catch (SecurityException | IllegalArgumentException e) {
+                throw UncheckedThrow.throwUnchecked(e);
+            }
+        }
+            
         try {
-            
-            Class<?> proxyType = new ByteBuddy()
-                    .subclass(testClass)
-                    .method(isAnnotatedWith(anyOf(Test.class, Before.class, After.class)))
-                    .intercept(MethodDelegation.to(MethodInterceptor.class))
-                    .implement(Hooked.class)
-                    .make()
-                    .load(testClass.getClassLoader())
-                    .getLoaded();
-            
             return proxyType.newInstance();
-            
-        } catch (SecurityException | IllegalAccessException | IllegalArgumentException | InstantiationException e) {
+        } catch (InstantiationException | IllegalAccessException e) {
             throw UncheckedThrow.throwUnchecked(e);
         }
     }
@@ -74,5 +88,31 @@ public final class HookInstallingRunner extends BlockJUnit4ClassRunner {
     public static Class<?> getInstanceClass(Object instance) {
         Class<?> clazz = instance.getClass();      
         return (instance instanceof Hooked) ? clazz.getSuperclass() : clazz;
+    }
+    
+    /**
+     * Get fully-qualified name to use for hooked test class.
+     * 
+     * @param testObj test class object being hooked
+     * @return fully-qualified name for hooked subclass
+     */
+    private static String getSubclassName(Object testObj) {
+        Class<?> testClass = testObj.getClass();
+        String testClassName = testClass.getSimpleName();
+        String testPackageName = testClass.getPackage().getName();
+        ReportsDirectory constant = ReportsDirectory.fromObject(testObj);
+        
+        switch (constant) {
+            case FAILSAFE_2:
+            case FAILSAFE_3:
+            case SUREFIRE_2:
+            case SUREFIRE_3:
+            case SUREFIRE_4:
+                return testPackageName + ".Hooked" + testClassName;
+                
+            default:
+                return testClass.getCanonicalName() + "Hooked";
+        }
+        
     }
 }
