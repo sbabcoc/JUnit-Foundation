@@ -219,12 +219,12 @@ For a complete reference implementation of the **MethodWatcher2** interface, che
 
 ## Artifact Capture
 
-* [ArtifactCollector](https://git.nordstrom.net/projects/MFATT/repos/junit-foundation/browse/src/main/java/com/nordstrom/automation/junit/ArtifactCollector.java):  
+* [ArtifactCollector](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/ArtifactCollector.java):  
 **ArtifactCollector** is a JUnit [test watcher](http://junit.org/junit4/javadoc/latest/org/junit/rules/TestWatcher.html) that serves as the foundation for artifact-capturing test watchers. This is a generic class, with the artifact-specific implementation provided by instances of the **ArtifactType** interface. For artifact capture scenarios where you need access to the current method description or the values provided to parameterized tests, the test class can implement the **ArtifactParams** interface.
 
-* [ArtifactParams](https://git.nordstrom.net/projects/MFATT/repos/junit-foundation/browse/src/main/java/com/nordstrom/automation/junit/ArtifactParams.java):  
+* [ArtifactParams](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/ArtifactParams.java):  
 By implementing the **ArtifactParams** interface in your test classes, you enable the artifact capture framework to access test method description objects and parameterized test values. These can be used for composing, naming, and storing artifacts. 
-* [ArtifactType](https://git.nordstrom.net/projects/MFATT/repos/junit-foundation/browse/src/main/java/com/nordstrom/automation/junit/ArtifactType.java):  
+* [ArtifactType](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/ArtifactType.java):  
 Classes that implement the **ArtifactType** interface provide the artifact-specific methods used by the **ArtifactCollector** watcher to capture and store test-related artifacts. The unit tests for this project include a reference implementation (**UnitTestArtifact**) that provides a basic outline for a scenario-specific artifact provider. This artifact provider is specified as the superclass type parameter in the **UnitTestCapture** watcher, which is a lightweight extension of **ArtifactCollector**. The most basic example is shown below:
 
 ###### Implementing ArtifactType
