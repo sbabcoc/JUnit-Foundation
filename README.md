@@ -84,38 +84,6 @@ Extended support for the method interception feature of **JUnit Foundation** is 
 ###### pom.xml
 ```xml
   <build>
-    <pluginManagement>
-      <plugins>
-        ...
-        <plugin>
-          <groupId>org.eclipse.m2e</groupId>
-          <artifactId>lifecycle-mapping</artifactId>
-          <version>1.0.0</version>
-          <configuration>
-            <lifecycleMappingMetadata>
-              <pluginExecutions>
-                <pluginExecution>
-                  <pluginExecutionFilter>
-                    <groupId>net.bytebuddy</groupId>
-                    <artifactId>byte-buddy-maven-plugin</artifactId>
-                    <versionRange>[1.0.0,)</versionRange>
-                    <goals>
-                      <goal>transform</goal>
-                      <goal>transform-test</goal>
-                    </goals>
-                  </pluginExecutionFilter>
-                  <action>
-                    <execute />
-                  </action>
-                </pluginExecution>
-              </pluginExecutions>
-            </lifecycleMappingMetadata>
-          </configuration>
-        </plugin>
-        ...
-      </plugins>
-    </pluginManagement>
-    
     <plugins>
       ...
       <plugin>
@@ -143,7 +111,7 @@ Extended support for the method interception feature of **JUnit Foundation** is 
 
 ```
 
-The `byte-buddy-maven-plugin` element informs Maven to execute the `transform-test` goal using the transformation specified by **HookInstallingPlugin**. The `lifecycle-mapping` element informs **M2Eclipse** that it should execute the `transform-test` goal as well. This avoids the dreaded `Plugin execution not covered by lifecycle configuration` error. With these POM changes in place, method invocation hooks will be installed during the `process-test-classes` phase of the build:
+The `byte-buddy-maven-plugin` element informs Maven to execute the `transform-test` goal using the transformation specified by **HookInstallingPlugin**. With this POM change in place, method invocation hooks will be installed during the `process-test-classes` phase of the build:
 
 ###### Implementing MethodWatcher
 ```java
