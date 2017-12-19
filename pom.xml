@@ -34,7 +34,7 @@
     <javadoc-plugin.version>2.10.4</javadoc-plugin.version>
     <settings.version>2.0.7</settings.version>
     <junit.version>4.12</junit.version>
-    <bytebuddy.version>1.7.8</bytebuddy.version>
+    <bytebuddy.version>1.7.9</bytebuddy.version>
     <logback.version>1.2.2</logback.version>
     <gpg-plugin.version>1.6</gpg-plugin.version>
     <staging-plugin.version>1.6.7</staging-plugin.version>
