@@ -7,7 +7,7 @@ import com.nordstrom.common.file.PathUtils;
 
 /**
  * This interface defines the contract fulfilled by artifact capture providers. Instances of this interface supply the
- * scenario-specify implementation for artifact capture through the {@link ArtifactCollector} listener.
+ * scenario-specific implementation for artifact capture through the {@link ArtifactCollector} listener.
  * <br><br>
  * <b>IMPLEMENTING ARTIFACTTYPE</b>
  * <pre><code>
