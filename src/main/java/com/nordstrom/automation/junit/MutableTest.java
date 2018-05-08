@@ -80,7 +80,7 @@ public class MutableTest implements Test {
      * using the {@link org.junit.rules.Timeout} rule instead</b>, which ensures a test method is run on the same
      * thread as the fixture's {@code @Before} and {@code @After} methods.
      *
-     * @param timeout
+     * @param timeout timeout interval in milliseconds
      * @return this mutable annotation object
      */
     public MutableTest setTimeout(long timeout) {
