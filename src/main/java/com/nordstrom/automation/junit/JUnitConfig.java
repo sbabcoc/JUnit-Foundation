@@ -25,7 +25,9 @@ public class JUnitConfig extends SettingsCore<JUnitConfig.JUnitSettings> {
      */
     public enum JUnitSettings implements SettingsCore.SettingsAPI {
         /** name: <b>junit.rule.chain.list</b> <br> default: {@code rulesStartingWithInnerMost} */
-        RULE_CHAIN_LIST("junit.rule.chain.list", "rulesStartingWithInnerMost");
+        RULE_CHAIN_LIST("junit.rule.chain.list", "rulesStartingWithInnerMost"),
+        /** name: <b>junit.timeout.test</b> <br> default: {@code null} */
+        TEST_TIMEOUT("junit.timeout.test", null);
 
         private String propertyName;
         private String defaultValue;

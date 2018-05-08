@@ -2,6 +2,7 @@ package com.nordstrom.automation.junit;
 
 import static net.bytebuddy.matcher.ElementMatchers.*;
 
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -11,6 +12,7 @@ import org.junit.Test;
 import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.model.InitializationError;
 
+import com.nordstrom.automation.junit.JUnitConfig.JUnitSettings;
 import com.nordstrom.common.base.UncheckedThrow;
 import com.nordstrom.common.file.PathUtils.ReportsDirectory;
 
@@ -36,7 +38,38 @@ public final class HookInstallingRunner extends BlockJUnit4ClassRunner {
      */
     @Override
     public Object createTest() throws Exception {
-        return installHooks(super.createTest());
+        Object testObj = installHooks(super.createTest());
+        applyTimeout(testObj);
+        return testObj;
+    }
+    
+    /**
+     * If configured for default test timeout, apply this value to every test that doesn't already specify a longer
+     * timeout interval.
+     * 
+     * @param testObj test class object
+     */
+    private void applyTimeout(Object testObj) {
+        // iterate over test object methods
+        for (Method method : testObj.getClass().getDeclaredMethods()) {
+            // get @Test annotation
+            Test annotation = method.getDeclaredAnnotation(Test.class);
+            // if annotation declared
+            if (annotation != null) {
+                // get JUnit Foundation configuration
+                JUnitConfig config = JUnitConfig.getConfig();
+                // if default test timeout is defined
+                if (config.containsKey(JUnitSettings.TEST_TIMEOUT.key())) {
+                    // get default test timeout
+                    long defaultTimeout = config.getLong(JUnitSettings.TEST_TIMEOUT.key());
+                    // if current timeout is less than default
+                    if (defaultTimeout > annotation.timeout()) {
+                        // set test timeout interval
+                        MutableTest.proxyFor(method).setTimeout(defaultTimeout);
+                    }
+                }
+            }
+        }
     }
     
     /**
