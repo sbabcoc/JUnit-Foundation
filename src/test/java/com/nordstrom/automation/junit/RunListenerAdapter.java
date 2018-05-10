@@ -11,7 +11,9 @@ import org.junit.runner.notification.RunListener;
 public class RunListenerAdapter extends RunListener {
     
     private List<Description> m_allTestMethods = Collections.synchronizedList(new ArrayList<>());
+    private List<Failure> m_testFailures = Collections.synchronizedList(new ArrayList<>());
     private List<Description> m_failedTests = Collections.synchronizedList(new ArrayList<>());
+    private List<Failure> m_assumptionFailures = Collections.synchronizedList(new ArrayList<>());
     private List<Description> m_failedAssumptions = Collections.synchronizedList(new ArrayList<>());
     private List<Description> m_ignoredTests = Collections.synchronizedList(new ArrayList<>());
     private List<Description> m_passedTests = Collections.synchronizedList(new ArrayList<>());
@@ -34,6 +36,7 @@ public class RunListenerAdapter extends RunListener {
      */
     @Override
     public void testFailure(Failure failure) throws Exception {
+        m_testFailures.add(failure);
         m_failedTests.add(failure.getDescription());
     }
 
@@ -47,6 +50,7 @@ public class RunListenerAdapter extends RunListener {
      */
     @Override
     public void testAssumptionFailure(Failure failure) {
+        m_assumptionFailures.add(failure);
         m_failedAssumptions.add(failure.getDescription());
     }
 
@@ -84,6 +88,10 @@ public class RunListenerAdapter extends RunListener {
         return m_passedTests;
     }
     
+    public List<Failure> getTestFailures() {
+        return m_testFailures;
+    }
+
     /**
      * Get list of failed tests.
      * 
@@ -91,6 +99,10 @@ public class RunListenerAdapter extends RunListener {
      */
     public List<Description> getFailedTests() {
         return m_failedTests;
+    }
+    
+    public List<Failure> getAssumptionFailures() {
+        return m_assumptionFailures;
     }
     
     /**
@@ -110,5 +122,5 @@ public class RunListenerAdapter extends RunListener {
     public List<Description> getIgnoredTests() {
         return m_ignoredTests;
     }
-    
+
 }

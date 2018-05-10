@@ -113,7 +113,7 @@ Extended support for the method interception feature of **JUnit Foundation** is 
 
 The `byte-buddy-maven-plugin` element informs Maven to execute the `transform-test` goal using the transformation specified by **HookInstallingPlugin**. With this POM change in place, method invocation hooks will be installed during the `process-test-classes` phase of the build:
 
-###### Implementing MethodWatcher
+###### Implementing MethodWatcher2
 ```java
 package com.nordstrom.example;
 
@@ -184,6 +184,27 @@ public class ExampleTest {
 As shown above, we use the **`@MethodWatchers`** annotation to attach **LoggingWatcher2**. Running with the **HookInstallingRunner** connects the method watchers declared in the **`@MethodWatchers`** annotation to the chain (in this case, **LoggingWatchers2**). This activates the method watchers' `beforeInvocation(Method, Object[])` and `afterInvocation(Method, Object[])` methods, enabling them to perform their respective class-level pre-processing and post-processing tasks. Note that the method-level interfaces defined in the **MethodWatcher** interface are also connected in watchers that implement **MethodWatcher2**.
 
 For a complete reference implementation of the **MethodWatcher2** interface, check out **UnitTestWatcher** in the unit tests collection of this project.
+
+## Test Method Timeout Management
+
+**JUnit** provides test method timeout functionality via the `timeout` parameter of the **`@Test`** annotation. With this parameter, you can set an explicit timeout interval in milliseconds on an individual test method. If the takes fails to complete within the specified interval, the test is terminated with **TestTimedOutException**.
+
+**JUnit Foundation** extends this functionality, providing configurable test timeout management. Timeout management is activated by setting the `TEST_TIMEOUT` configuration option to the desired default test timeout interval in milliseconds. This timeout specification is applied to every test method that doesn't explicitly specify a longer interval.
+
+## Automatic retry of failed tests
+
+Some types of tests are inherently non-deterministic, which can cause them to fail sporadically in the absence of an actual defect. Most of the time, these tests will pass if you run them again. For these sorts of "noise" failures, **JUnit Foundation** provides an automatic retry feature.
+
+Automatic retry is activated by setting the `MAX_RETRY` configuration option to the maximum retry attempts that will be made if a test method fails. The automatic retry feature can be disabled on a per-method or per-class basis via the **`@NoRetry`** annotation.
+
+**_META-INF/services/com.nordstrom.automation.junit.JUnitRetryAnalyzer_** is the service loader retry analyzer configuration file. By default, this file is absent. To add managed analyzers, create this file and add the fully-qualified names of their classes, one line per item.
+
+## Dynamic run listener attachment
+
+**JUnit** run notifiers send notifications at specific points in the test execution lifecycle. Run listeners that are attached to notifiers receive these events, enabling them to perform setup, cleanup and monitoring actions that correspond to them. In standard **JUnit** projects, run listeners must be attached programmatically to the core test runner (e.g. - **JUnitCore**). For Maven projects, listeners can be specified in the configuration of the **Surefire** plug-in. Each of these methods imposes specific structural requirements on the client project that may be either undesirable or infeasible.
+
+**JUnit Foundation** enables you to declare run listeners in a service loader configuration file.  
+**_META-INF/services/org.junit.runner.notification.RunListener_** is the service loader run listener configuration file. By default, this file is absent. To add managed listeners, create this file and add the fully-qualified names of their classes, one line per item.
 
 ## Artifact Capture
 
