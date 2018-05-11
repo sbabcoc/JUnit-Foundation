@@ -1,6 +1,7 @@
 package com.nordstrom.automation.junit;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.AfterClass;
@@ -44,6 +45,34 @@ public class AutomaticRetryTest {
         assertEquals("Incorrect passed test count", 1, rla.getPassedTests().size());
         assertEquals("Incorrect failed test count", 0, rla.getFailedTests().size());
         assertEquals("Incorrect ignored test count", 1, rla.getIgnoredTests().size());
+    }
+    
+    @Test
+    public void testFailOnRetry() {
+        RunListenerAdapter rla = new RunListenerAdapter();
+        
+        JUnitCore runner = new JUnitCore();
+        runner.addListener(rla);
+        Result result = runner.run(AutomaticRetryFailing.class);
+        assertFalse(result.wasSuccessful());
+        
+        assertEquals("Incorrect passed test count", 0, rla.getPassedTests().size());
+        assertEquals("Incorrect failed test count", 1, rla.getFailedTests().size());
+        assertEquals("Incorrect ignored test count", 3, rla.getIgnoredTests().size());
+    }
+    
+    @Test
+    public void testNoRetry() {
+        RunListenerAdapter rla = new RunListenerAdapter();
+        
+        JUnitCore runner = new JUnitCore();
+        runner.addListener(rla);
+        Result result = runner.run(AutomaticRetryNoRetry.class);
+        assertFalse(result.wasSuccessful());
+        
+        assertEquals("Incorrect passed test count", 0, rla.getPassedTests().size());
+        assertEquals("Incorrect failed test count", 1, rla.getFailedTests().size());
+        assertEquals("Incorrect ignored test count", 0, rla.getIgnoredTests().size());
     }
     
     @AfterClass

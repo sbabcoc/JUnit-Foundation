@@ -206,7 +206,7 @@ public final class HookInstallingRunner extends BlockJUnit4ClassRunner {
      */
     private boolean doRetry(FrameworkMethod method, Throwable thrown, AtomicInteger retryCounter) {
         boolean doRetry = false;
-        if ((retryCounter.decrementAndGet() > 0) && isRetriable(method, thrown)) {
+        if ((retryCounter.decrementAndGet() > -1) && isRetriable(method, thrown)) {
             logger.warn("### RETRY ### {}", method);
             doRetry = true;
         }
