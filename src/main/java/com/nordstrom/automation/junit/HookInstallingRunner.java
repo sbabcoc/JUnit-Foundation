@@ -6,16 +6,20 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.notification.Failure;
+import org.junit.internal.AssumptionViolatedException;
+import org.junit.internal.runners.model.EachTestNotifier;
+import org.junit.runner.Description;
 import org.junit.runner.notification.RunListener;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
+import org.junit.runners.model.Statement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -106,45 +110,6 @@ public final class HookInstallingRunner extends BlockJUnit4ClassRunner {
     }
     
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void run(final RunNotifier notifier) {
-        runListenerLoader.forEach(notifier::addListener);
-        super.run(notifier);
-        runListenerLoader.forEach(notifier::removeListener);
-    }
-    
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected void runChild(final FrameworkMethod method, RunNotifier notifier) {
-        int count = getMaxRetry(method);
-        
-        if (count > 0) {
-            ChildListener listener = new ChildListener();
-            notifier.addListener(listener);
-            
-            while (true) {
-                super.runChild(method, notifier);
-                Failure failure = listener.getFailure();
-                
-                if ((failure != null) && (count-- > 0) && isRetriable(method, failure)) {
-                    logger.warn("### RETRY ### {}", method);
-                    listener.reset();
-                } else {
-                    break;
-                }
-            }
-            
-            notifier.removeListener(listener);
-        } else {
-            super.runChild(method, notifier);
-        }
-    }
-    
-    /**
      * If configured for default test timeout, apply this value to every test that doesn't already specify a longer
      * timeout interval.
      * 
@@ -169,6 +134,86 @@ public final class HookInstallingRunner extends BlockJUnit4ClassRunner {
     }
     
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void run(final RunNotifier notifier) {
+        runListenerLoader.forEach(notifier::addListener);
+        super.run(notifier);
+        runListenerLoader.forEach(notifier::removeListener);
+    }
+    
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected void runChild(final FrameworkMethod method, RunNotifier notifier) {
+        int count = getMaxRetry(method);
+        
+        if (count > 0) {
+            runChildWithRetry(method, notifier, count);
+        } else {
+            super.runChild(method, notifier);
+        }
+    }
+    
+    /**
+     * Run the specified method, retrying on failure.
+     * 
+     * @param method test method to be run
+     * @param notifier run notifier through which events are published
+     * @param maxRetry maximum number of retry attempts
+     */
+    protected void runChildWithRetry(final FrameworkMethod method, RunNotifier notifier, int maxRetry) {
+        boolean doRetry = false;
+        Statement statement = methodBlock(method);
+        Description description = describeChild(method);
+        AtomicInteger count = new AtomicInteger(maxRetry);
+        EachTestNotifier eachNotifier = new EachTestNotifier(notifier, description);
+        
+        do {
+            eachNotifier.fireTestStarted();
+            try {
+                statement.evaluate();
+                doRetry = false;
+            } catch (AssumptionViolatedException e) {
+                doRetry = doRetry(method, e, count);
+                if (doRetry) {
+                    eachNotifier.fireTestIgnored();
+                } else {
+                    eachNotifier.addFailedAssumption(e);
+                }
+            } catch (Throwable e) {
+                doRetry = doRetry(method, e, count);
+                if (doRetry) {
+                    eachNotifier.fireTestIgnored();
+                } else {
+                    eachNotifier.addFailure(e);
+                }
+            } finally {
+                eachNotifier.fireTestFinished();
+            }
+        } while (doRetry);
+    }
+    
+    /**
+     * Determine if the indicated failure should be retried.
+     * 
+     * @param method failed test method
+     * @param thrown exception for this failed test
+     * @param retryCounter retry counter (remaining attempts)
+     * @return {@code true} if failed test should be retried; otherwise {@code false}
+     */
+    private boolean doRetry(FrameworkMethod method, Throwable thrown, AtomicInteger retryCounter) {
+        boolean doRetry = false;
+        if ((retryCounter.decrementAndGet() > 0) && isRetriable(method, thrown)) {
+            logger.warn("### RETRY ### {}", method);
+            doRetry = true;
+        }
+        return doRetry;
+    }
+
+    /**
      * Get the configured maximum retry count for failed tests ({@link JUnitSetting#MAX_RETRY MAX_RETRY}).
      * <p>
      * <b>NOTE</b>: If the specified method or the class that declares it are marked with the {@code @NoRetry}
@@ -178,18 +223,15 @@ public final class HookInstallingRunner extends BlockJUnit4ClassRunner {
      * @return maximum retry attempts that will be made if the specified method fails
      */
     private int getMaxRetry(final FrameworkMethod method) {
-        int maxRetry = config.getInteger(JUnitSettings.MAX_RETRY.key(), Integer.valueOf(0));
+        int maxRetry = 0;
         
-        if (maxRetry > 0) {
-            // determine if retry is disabled for this method
-            NoRetry noRetryOnMethod = method.getAnnotation(NoRetry.class);
-            // determine if retry is disabled for the class that declares this method
-            NoRetry noRetryOnClass = method.getDeclaringClass().getAnnotation(NoRetry.class);
-            
-            // if retry is disabled for method or class
-            if ((noRetryOnMethod != null) && (noRetryOnClass != null)) {
-                maxRetry = 0;
-            }
+        // determine if retry is disabled for this method
+        NoRetry noRetryOnMethod = method.getAnnotation(NoRetry.class);
+        // determine if retry is disabled for the class that declares this method
+        NoRetry noRetryOnClass = method.getDeclaringClass().getAnnotation(NoRetry.class);
+        
+        if (!isIgnored(method) && (noRetryOnMethod == null) && (noRetryOnClass == null)) {
+            maxRetry = config.getInteger(JUnitSettings.MAX_RETRY.key(), Integer.valueOf(0));
         }
         
         return maxRetry;
@@ -199,12 +241,12 @@ public final class HookInstallingRunner extends BlockJUnit4ClassRunner {
      * Determine if the specified failed test should be retried.
      * 
      * @param method failed test method
-     * @param failure failure details object
+     * @param thrown exception for this failed test
      * @return {@code true} if test should be retried; otherwise {@code false}
      */
-    protected boolean isRetriable(final FrameworkMethod method, final Failure failure) {
+    protected boolean isRetriable(final FrameworkMethod method, final Throwable thrown) {
         for (JUnitRetryAnalyzer analyzer : retryAnalyzerLoader) {
-            if (analyzer.retry(method, failure)) {
+            if (analyzer.retry(method, thrown)) {
                 return true;
             }
         }
