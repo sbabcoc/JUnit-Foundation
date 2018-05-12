@@ -199,12 +199,12 @@ Automatic retry is activated by setting the `MAX_RETRY` configuration option to 
 
 **_META-INF/services/com.nordstrom.automation.junit.JUnitRetryAnalyzer_** is the service loader retry analyzer configuration file. By default, this file is absent. To add managed analyzers, create this file and add the fully-qualified names of their classes, one line per item.
 
-## Dynamic run listener attachment
+## Shutdown hook installation
 
-**JUnit** run notifiers send notifications at specific points in the test execution lifecycle. Run listeners that are attached to notifiers receive these events, enabling them to perform setup, cleanup and monitoring actions that correspond to them. In standard **JUnit** projects, run listeners must be attached programmatically to the core test runner (e.g. - **JUnitCore**). For Maven projects, listeners can be specified in the configuration of the **Surefire** plug-in. Each of these methods imposes specific structural requirements on the client project that may be either undesirable or infeasible.
+**JUnit** provides a run listener feature, but this operates most readily on a per-class basis. The method for attaching these run listeners also imposes structural and operational constraints on JUnit projects, and the configuration required to register for end-of-suite notifications necessitates hard-coding the composition of the suite. All of these factors make run listeners unattractive or ineffectual for final cleanup operations.
 
-**JUnit Foundation** enables you to declare run listeners in a service loader configuration file.  
-**_META-INF/services/org.junit.runner.notification.RunListener_** is the service loader run listener configuration file. By default, this file is absent. To add managed listeners, create this file and add the fully-qualified names of their classes, one line per item.
+**JUnit Foundation** enables you to declare shutdown listeners in a service loader configuration file.  
+**_META-INF/services/com.nordstrom.automation.junit.ShutdownListener_** is the service loader shutdown listener configuration file. By default, this file is absent. To add managed listeners, create this file and add the fully-qualified names of their classes, one line per item.
 
 ## Artifact Capture
 

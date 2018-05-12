@@ -14,7 +14,6 @@ import org.junit.Test;
 import org.junit.internal.AssumptionViolatedException;
 import org.junit.internal.runners.model.EachTestNotifier;
 import org.junit.runner.Description;
-import org.junit.runner.notification.RunListener;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.model.FrameworkMethod;
@@ -62,28 +61,47 @@ import net.bytebuddy.implementation.MethodDelegation;
  * analyzer configuration file. By default, this file is absent. To add managed analyzers, create this file and add
  * the fully-qualified names of their classes, one line per item.
  * <p>
- * <b>Dynamic run listener attachment</b>
+ * <b>Shutdown hook installation</b>
  * <p>
- * JUnit run notifiers send notifications at specific points in the test execution lifecycle. Run listeners that
- * are attached to notifiers receive these events, enabling them to perform setup, cleanup and monitoring actions
- * that correspond to them. In standard JUnit projects, run listeners must be attached programmatically to the
- * core test runner (e.g. - <b>JUnitCore</b>). For Maven projects, listeners can be specified in the configuration
- * of the <b>Surefire</b> plug-in. Each of these methods imposes specific structural requirements on the client
- * project that may be either undesirable or infeasible.
+ * <b>JUnit</b> provides a run listener feature, but this operates most readily on a per-class basis. The method
+ * for attaching these run listeners also imposes structural and operational constraints on JUnit projects, and
+ * the configuration required to register for end-of-suite notifications necessitates hard-coding the composition
+ * of the suite. All of these factors make run listeners unattractive or ineffectual for final cleanup operations.
  * <p>
- * <b>JUnit Foundation</b> enables you to declare run listeners in a service loader configuration file.<br>
- * <b><i>META-INF/services/org.junit.runner.notification.RunListener</i></b> is the service loader run listener
- * configuration file. By default, this file is absent. To add managed listeners, create this file and add the
- * fully-qualified names of their classes, one line per item.
+ * <b>JUnit Foundation</b> enables you to declare shutdown listeners in a service loader configuration file.<br>
+ * <b><i>META-INF/services/com.nordstrom.automation.junit.ShutdownListener</i></b> is the service loader shutdown
+ * listener configuration file. By default, this file is absent. To add managed listeners, create this file and
+ * add the fully-qualified names of their classes, one line per item.
  */
 public final class HookInstallingRunner extends BlockJUnit4ClassRunner {
     
     private static Map<Class<?>, Class<?>> proxyMap = new HashMap<>();
     
     private final JUnitConfig config;
-    private final ServiceLoader<RunListener> runListenerLoader;
     private final ServiceLoader<JUnitRetryAnalyzer> retryAnalyzerLoader;
     private final Logger logger = LoggerFactory.getLogger(getClass());
+    
+    /** Install a shutdown hook for each specified listener */
+    static {
+        for (ShutdownListener listener : ServiceLoader.load(ShutdownListener.class)) {
+            Runtime.getRuntime().addShutdownHook(getShutdownHook(listener));
+        }
+    }
+    
+    /**
+     * Create a {@link Thread} object that encapsulated the specified shutdown listener.
+     * 
+     * @param listener shutdown listener object
+     * @return shutdown listener thread object
+     */
+    private static Thread getShutdownHook(final ShutdownListener listener) {
+        return new Thread() {
+            @Override
+            public void run() {
+                listener.onShutdown();
+            }
+        };
+    }
     
     /**
      * Constructor: Instantiate and initialize a runner for the specified test class. This includes instantiation of
@@ -95,7 +113,6 @@ public final class HookInstallingRunner extends BlockJUnit4ClassRunner {
     public HookInstallingRunner(Class<?> klass) throws InitializationError {
         super(klass);
         config = JUnitConfig.getConfig();
-        runListenerLoader = ServiceLoader.load(RunListener.class);
         retryAnalyzerLoader = ServiceLoader.load(JUnitRetryAnalyzer.class);
     }
     
@@ -131,16 +148,6 @@ public final class HookInstallingRunner extends BlockJUnit4ClassRunner {
                 }
             }
         }
-    }
-    
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void run(final RunNotifier notifier) {
-        runListenerLoader.forEach(notifier::addListener);
-        super.run(notifier);
-        runListenerLoader.forEach(notifier::removeListener);
     }
     
     /**
