@@ -1,5 +1,6 @@
 package com.nordstrom.automation.junit;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runners.model.TestTimedOutException;
@@ -15,6 +16,7 @@ import java.util.Map;
  * {@link #proxyFor(Method)} method that replaces the immutable annotation attached to a JUnit test method with an
  * instance of this class.
  */
+@Ignore
 @SuppressWarnings("all")
 public class MutableTest implements Test {
     
