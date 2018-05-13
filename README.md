@@ -199,6 +199,8 @@ Automatic retry is activated by setting the `MAX_RETRY` configuration option to 
 
 **_META-INF/services/com.nordstrom.automation.junit.JUnitRetryAnalyzer_** is the service loader retry analyzer configuration file. By default, this file is absent. To add managed analyzers, create this file and add the fully-qualified names of their classes, one line per item.
 
+Failed attempts of tests that are selected for retry are tallied as skipped tests. These tests are differentiated from actual skips by the presence of a **`@RetriedTest`** annotation in place of the original **`@Test`** annotation.
+
 ## Shutdown hook installation
 
 **JUnit** provides a run listener feature, but this operates most readily on a per-class basis. The method for attaching these run listeners also imposes structural and operational constraints on JUnit projects, and the configuration required to register for end-of-suite notifications necessitates hard-coding the composition of the suite. All of these factors make run listeners unattractive or ineffectual for final cleanup operations.

@@ -61,6 +61,10 @@ import net.bytebuddy.implementation.MethodDelegation;
  * analyzer configuration file. By default, this file is absent. To add managed analyzers, create this file and add
  * the fully-qualified names of their classes, one line per item.
  * <p>
+ * Failed attempts of tests that are selected for retry are tallied as skipped tests. These tests are differentiated
+ * from actual skips by the presence of a {@link RetriedTest} annotation in place of the original {@code @Test}
+ * annotation.
+ * <p>
  * <b>Shutdown hook installation</b>
  * <p>
  * <b>JUnit</b> provides a run listener feature, but this operates most readily on a per-class basis. The method
