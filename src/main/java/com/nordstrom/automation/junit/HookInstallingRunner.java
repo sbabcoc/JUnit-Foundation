@@ -176,26 +176,29 @@ public final class HookInstallingRunner extends BlockJUnit4ClassRunner {
         Statement statement = methodBlock(method);
         Description description = describeChild(method);
         AtomicInteger count = new AtomicInteger(maxRetry);
-        EachTestNotifier eachNotifier = new EachTestNotifier(notifier, description);
         
         do {
+            EachTestNotifier eachNotifier = new EachTestNotifier(notifier, description);
+            
             eachNotifier.fireTestStarted();
             try {
                 statement.evaluate();
                 doRetry = false;
-            } catch (AssumptionViolatedException e) {
-                doRetry = doRetry(method, e, count);
+            } catch (AssumptionViolatedException thrown) {
+                doRetry = doRetry(method, thrown, count);
                 if (doRetry) {
+                    description = RetriedTest.proxyFor(description, thrown);
                     eachNotifier.fireTestIgnored();
                 } else {
-                    eachNotifier.addFailedAssumption(e);
+                    eachNotifier.addFailedAssumption(thrown);
                 }
-            } catch (Throwable e) {
-                doRetry = doRetry(method, e, count);
+            } catch (Throwable thrown) {
+                doRetry = doRetry(method, thrown, count);
                 if (doRetry) {
+                    description = RetriedTest.proxyFor(description, thrown);
                     eachNotifier.fireTestIgnored();
                 } else {
-                    eachNotifier.addFailure(e);
+                    eachNotifier.addFailure(thrown);
                 }
             } finally {
                 eachNotifier.fireTestFinished();

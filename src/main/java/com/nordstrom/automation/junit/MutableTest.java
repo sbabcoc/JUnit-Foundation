@@ -14,7 +14,7 @@ import java.util.Map;
 /**
  * This class is a mutable implementation of the {@link Test &#64;Test} annotation interface. It includes a static
  * {@link #proxyFor(Method)} method that replaces the immutable annotation attached to a JUnit test method with an
- * instance of this class.
+ * instance of this class to apply the global test timeout.
  */
 @Ignore
 @SuppressWarnings("all")
@@ -31,7 +31,7 @@ public class MutableTest implements Test {
      * 
      * @param annotation {@link Test &#64;Test} annotation specifying desired parameters
      */
-    private MutableTest(Test annotation) {
+    protected MutableTest(Test annotation) {
         this.expected = annotation.expected();
         this.timeout = annotation.timeout();
     }
