@@ -244,7 +244,9 @@ public final class HookInstallingRunner extends BlockJUnit4ClassRunner {
         // determine if retry is disabled for the class that declares this method
         NoRetry noRetryOnClass = method.getDeclaringClass().getAnnotation(NoRetry.class);
         
+        // if method isn't ignored or excluded from being retried
         if (!isIgnored(method) && (noRetryOnMethod == null) && (noRetryOnClass == null)) {
+            // get configured maximum retry count
             maxRetry = config.getInteger(JUnitSettings.MAX_RETRY.key(), Integer.valueOf(0));
         }
         
