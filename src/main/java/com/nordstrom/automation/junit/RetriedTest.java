@@ -12,7 +12,7 @@ import org.junit.runner.Description;
  * description with an instance of this class for retried tests.
  */
 @Ignore
-@SuppressWarnings("squid:S2187")
+@SuppressWarnings("all")
 public class RetriedTest extends MutableTest {
 
     private static final String ANNOTATIONS = "fAnnotations";
@@ -32,6 +32,14 @@ public class RetriedTest extends MutableTest {
     }
     
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Class<? extends Annotation> annotationType() {
+        return RetriedTest.class;
+    }
+    
+    /**
      * Get the exception for this failed test.
      * 
      * @return exception for this failed test
@@ -40,15 +48,6 @@ public class RetriedTest extends MutableTest {
         return thrown;
     }
     
-    /**
-     * Set the exception for this failed test.
-     * 
-     * @param thrown exception for this failed test
-     */
-    public void setThrown(Throwable thrown) {
-        this.thrown = thrown;
-    }
-
     /**
      * Create a {@link Test &#64;Test} annotation proxy for the specified test description.
      * 
