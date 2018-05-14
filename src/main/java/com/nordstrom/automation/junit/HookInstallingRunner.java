@@ -63,7 +63,7 @@ import net.bytebuddy.implementation.MethodDelegation;
  * <p>
  * Failed attempts of tests that are selected for retry are tallied as ignored tests. These tests are differentiated
  * from actual ignored tests by the presence of a {@link RetriedTest} annotation in place of the original {@code @Test}
- * annotation.
+ * annotation. See {@link RunListenerAdapter#testIgnored(Description)} for more details.
  * <p>
  * <b>Shutdown hook installation</b>
  * <p>
