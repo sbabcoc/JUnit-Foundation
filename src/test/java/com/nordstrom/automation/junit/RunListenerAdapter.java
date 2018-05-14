@@ -16,6 +16,7 @@ public class RunListenerAdapter extends RunListener {
     private List<Failure> m_assumptionFailures = Collections.synchronizedList(new ArrayList<>());
     private List<Description> m_failedAssumptions = Collections.synchronizedList(new ArrayList<>());
     private List<Description> m_ignoredTests = Collections.synchronizedList(new ArrayList<>());
+    private List<Description> m_retriedTests = Collections.synchronizedList(new ArrayList<>());
     private List<Description> m_passedTests = Collections.synchronizedList(new ArrayList<>());
                 
     /**
@@ -62,7 +63,11 @@ public class RunListenerAdapter extends RunListener {
      */
     @Override
     public void testIgnored(Description description) throws Exception {
-        m_ignoredTests.add(description);
+        if (null != description.getAnnotation(RetriedTest.class)) {
+            m_retriedTests.add(description);
+        } else {
+            m_ignoredTests.add(description);
+        }
     }
     
     /**
@@ -85,6 +90,7 @@ public class RunListenerAdapter extends RunListener {
         m_failedTests.forEach(m_passedTests::remove);
         m_failedAssumptions.forEach(m_passedTests::remove);
         m_ignoredTests.forEach(m_passedTests::remove);
+        m_retriedTests.forEach(m_passedTests::remove);
         return m_passedTests;
     }
     
@@ -101,6 +107,11 @@ public class RunListenerAdapter extends RunListener {
         return m_failedTests;
     }
     
+    /**
+     * Get list of assumption failures.
+     * 
+     * @return list of assumption failures
+     */
     public List<Failure> getAssumptionFailures() {
         return m_assumptionFailures;
     }
@@ -121,6 +132,15 @@ public class RunListenerAdapter extends RunListener {
      */
     public List<Description> getIgnoredTests() {
         return m_ignoredTests;
+    }
+    
+    /**
+     * Get list of retried tests.
+     * 
+     * @return list of retried tests
+     */
+    public List<Description> getRetriedTests() {
+        return m_retriedTests;
     }
 
 }

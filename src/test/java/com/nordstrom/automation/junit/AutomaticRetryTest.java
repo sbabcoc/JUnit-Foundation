@@ -31,6 +31,7 @@ public class AutomaticRetryTest {
         assertEquals("Incorrect passed test count", 1, rla.getPassedTests().size());
         assertEquals("Incorrect failed test count", 0, rla.getFailedTests().size());
         assertEquals("Incorrect ignored test count", 0, rla.getIgnoredTests().size());
+        assertEquals("Incorrect retried test count", 0, rla.getRetriedTests().size());
     }
     
     @Test
@@ -44,7 +45,8 @@ public class AutomaticRetryTest {
         
         assertEquals("Incorrect passed test count", 1, rla.getPassedTests().size());
         assertEquals("Incorrect failed test count", 0, rla.getFailedTests().size());
-        assertEquals("Incorrect ignored test count", 1, rla.getIgnoredTests().size());
+        assertEquals("Incorrect ignored test count", 0, rla.getIgnoredTests().size());
+        assertEquals("Incorrect retried test count", 1, rla.getRetriedTests().size());
     }
     
     @Test
@@ -58,7 +60,8 @@ public class AutomaticRetryTest {
         
         assertEquals("Incorrect passed test count", 0, rla.getPassedTests().size());
         assertEquals("Incorrect failed test count", 1, rla.getFailedTests().size());
-        assertEquals("Incorrect ignored test count", 3, rla.getIgnoredTests().size());
+        assertEquals("Incorrect ignored test count", 0, rla.getIgnoredTests().size());
+        assertEquals("Incorrect retried test count", 3, rla.getRetriedTests().size());
     }
     
     @Test
@@ -73,6 +76,7 @@ public class AutomaticRetryTest {
         assertEquals("Incorrect passed test count", 0, rla.getPassedTests().size());
         assertEquals("Incorrect failed test count", 1, rla.getFailedTests().size());
         assertEquals("Incorrect ignored test count", 0, rla.getIgnoredTests().size());
+        assertEquals("Incorrect retried test count", 0, rla.getRetriedTests().size());
     }
     
     @AfterClass
