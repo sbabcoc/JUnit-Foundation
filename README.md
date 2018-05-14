@@ -113,7 +113,7 @@ Extended support for the method interception feature of **JUnit Foundation** is 
 
 The `byte-buddy-maven-plugin` element informs Maven to execute the `transform-test` goal using the transformation specified by **HookInstallingPlugin**. With this POM change in place, method invocation hooks will be installed during the `process-test-classes` phase of the build:
 
-###### Implementing MethodWatcher
+###### Implementing MethodWatcher2
 ```java
 package com.nordstrom.example;
 
@@ -184,6 +184,29 @@ public class ExampleTest {
 As shown above, we use the **`@MethodWatchers`** annotation to attach **LoggingWatcher2**. Running with the **HookInstallingRunner** connects the method watchers declared in the **`@MethodWatchers`** annotation to the chain (in this case, **LoggingWatchers2**). This activates the method watchers' `beforeInvocation(Method, Object[])` and `afterInvocation(Method, Object[])` methods, enabling them to perform their respective class-level pre-processing and post-processing tasks. Note that the method-level interfaces defined in the **MethodWatcher** interface are also connected in watchers that implement **MethodWatcher2**.
 
 For a complete reference implementation of the **MethodWatcher2** interface, check out **UnitTestWatcher** in the unit tests collection of this project.
+
+## Test Method Timeout Management
+
+**JUnit** provides test method timeout functionality via the `timeout` parameter of the **`@Test`** annotation. With this parameter, you can set an explicit timeout interval in milliseconds on an individual test method. If the takes fails to complete within the specified interval, the test is terminated with **TestTimedOutException**.
+
+**JUnit Foundation** extends this functionality, providing configurable test timeout management. Timeout management is activated by setting the `TEST_TIMEOUT` configuration option to the desired default test timeout interval in milliseconds. This timeout specification is applied to every test method that doesn't explicitly specify a longer interval.
+
+## Automatic retry of failed tests
+
+Some types of tests are inherently non-deterministic, which can cause them to fail sporadically in the absence of an actual defect. Most of the time, these tests will pass if you run them again. For these sorts of "noise" failures, **JUnit Foundation** provides an automatic retry feature.
+
+Automatic retry is activated by setting the `MAX_RETRY` configuration option to the maximum retry attempts that will be made if a test method fails. The automatic retry feature can be disabled on a per-method or per-class basis via the **`@NoRetry`** annotation.
+
+**_META-INF/services/com.nordstrom.automation.junit.JUnitRetryAnalyzer_** is the service loader retry analyzer configuration file. By default, this file is absent. To add managed analyzers, create this file and add the fully-qualified names of their classes, one line per item.
+
+Failed attempts of tests that are selected for retry are tallied as ignored tests. These tests are differentiated from actual ignored tests by the presence of a **`@RetriedTest`** annotation in place of the original **`@Test`** annotation. See `RunListenerAdapter.testIgnored(Description)` for more details.
+
+## Shutdown hook installation
+
+**JUnit** provides a run listener feature, but this operates most readily on a per-class basis. The method for attaching these run listeners also imposes structural and operational constraints on JUnit projects, and the configuration required to register for end-of-suite notifications necessitates hard-coding the composition of the suite. All of these factors make run listeners unattractive or ineffectual for final cleanup operations.
+
+**JUnit Foundation** enables you to declare shutdown listeners in a service loader configuration file.  
+**_META-INF/services/com.nordstrom.automation.junit.ShutdownListener_** is the service loader shutdown listener configuration file. By default, this file is absent. To add managed listeners, create this file and add the fully-qualified names of their classes, one line per item.
 
 ## Artifact Capture
 

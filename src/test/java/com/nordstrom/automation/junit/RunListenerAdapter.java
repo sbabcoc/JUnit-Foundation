@@ -11,9 +11,12 @@ import org.junit.runner.notification.RunListener;
 public class RunListenerAdapter extends RunListener {
     
     private List<Description> m_allTestMethods = Collections.synchronizedList(new ArrayList<>());
+    private List<Failure> m_testFailures = Collections.synchronizedList(new ArrayList<>());
     private List<Description> m_failedTests = Collections.synchronizedList(new ArrayList<>());
+    private List<Failure> m_assumptionFailures = Collections.synchronizedList(new ArrayList<>());
     private List<Description> m_failedAssumptions = Collections.synchronizedList(new ArrayList<>());
     private List<Description> m_ignoredTests = Collections.synchronizedList(new ArrayList<>());
+    private List<Description> m_retriedTests = Collections.synchronizedList(new ArrayList<>());
     private List<Description> m_passedTests = Collections.synchronizedList(new ArrayList<>());
                 
     /**
@@ -34,6 +37,7 @@ public class RunListenerAdapter extends RunListener {
      */
     @Override
     public void testFailure(Failure failure) throws Exception {
+        m_testFailures.add(failure);
         m_failedTests.add(failure.getDescription());
     }
 
@@ -47,6 +51,7 @@ public class RunListenerAdapter extends RunListener {
      */
     @Override
     public void testAssumptionFailure(Failure failure) {
+        m_assumptionFailures.add(failure);
         m_failedAssumptions.add(failure.getDescription());
     }
 
@@ -58,7 +63,11 @@ public class RunListenerAdapter extends RunListener {
      */
     @Override
     public void testIgnored(Description description) throws Exception {
-        m_ignoredTests.add(description);
+        if (null != description.getAnnotation(RetriedTest.class)) {
+            m_retriedTests.add(description);
+        } else {
+            m_ignoredTests.add(description);
+        }
     }
     
     /**
@@ -78,12 +87,17 @@ public class RunListenerAdapter extends RunListener {
     public List<Description> getPassedTests() {
         m_passedTests.clear();
         m_passedTests.addAll(m_allTestMethods);
-        m_passedTests.removeAll(m_failedTests);
-        m_passedTests.removeAll(m_failedAssumptions);
-        m_passedTests.removeAll(m_ignoredTests);
+        m_failedTests.forEach(m_passedTests::remove);
+        m_failedAssumptions.forEach(m_passedTests::remove);
+        m_ignoredTests.forEach(m_passedTests::remove);
+        m_retriedTests.forEach(m_passedTests::remove);
         return m_passedTests;
     }
     
+    public List<Failure> getTestFailures() {
+        return m_testFailures;
+    }
+
     /**
      * Get list of failed tests.
      * 
@@ -91,6 +105,15 @@ public class RunListenerAdapter extends RunListener {
      */
     public List<Description> getFailedTests() {
         return m_failedTests;
+    }
+    
+    /**
+     * Get list of assumption failures.
+     * 
+     * @return list of assumption failures
+     */
+    public List<Failure> getAssumptionFailures() {
+        return m_assumptionFailures;
     }
     
     /**
@@ -111,4 +134,13 @@ public class RunListenerAdapter extends RunListener {
         return m_ignoredTests;
     }
     
+    /**
+     * Get list of retried tests.
+     * 
+     * @return list of retried tests
+     */
+    public List<Description> getRetriedTests() {
+        return m_retriedTests;
+    }
+
 }

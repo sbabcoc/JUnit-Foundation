@@ -21,13 +21,15 @@ public class JUnitConfig extends SettingsCore<JUnitConfig.JUnitSettings> {
      * <p>
      * Each setting is defined by a constant name and System property key. Many settings
      * also define default values. Note that all of these settings can be overridden via
-     * the {@code testng.properties} file and System property declarations.
+     * the {@code junit.properties} file and System property declarations.
      */
     public enum JUnitSettings implements SettingsCore.SettingsAPI {
         /** name: <b>junit.rule.chain.list</b> <br> default: {@code rulesStartingWithInnerMost} */
         RULE_CHAIN_LIST("junit.rule.chain.list", "rulesStartingWithInnerMost"),
         /** name: <b>junit.timeout.test</b> <br> default: {@code null} */
-        TEST_TIMEOUT("junit.timeout.test", null);
+        TEST_TIMEOUT("junit.timeout.test", null),
+        /** name: <b>junit.max.retry</b> <br> default: <b>0</b> */
+        MAX_RETRY("junit.max.retry", "0");
 
         private String propertyName;
         private String defaultValue;
