@@ -161,7 +161,7 @@ public class LoggingWatcher2 implements MethodWatcher2 {
 
 ```
 
-This method watcher implements the **MethodWatcher2** interface, which extends the **MethodWatcher** interface to add methods for intercepted class-level configuration methods. Note that the implementations in this method watcher uses the annotations attached to the method objects to determine the type of method they're intercepting. Because each class can have multiple configuration methods (both before class and after class), you may need to define additional conditions to control when your implementation runs. Examples of additional conditions include method name, method annotation, or an execution flag.
+This method watcher implements the **MethodWatcher2** interface, which extends the **MethodWatcher** interface to add methods for intercepted class-level configuration methods. Note that the implementation in this method watcher uses the annotations attached to the method objects to determine the type of method they're intercepting. Because each class can have multiple configuration methods (both before class and after class), you may need to define additional conditions to control when your implementation runs. Examples of additional conditions include method name, method annotation, or an execution flag.
 
 ###### MethodWatchers annotation
 ```java
