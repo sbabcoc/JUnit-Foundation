@@ -2,7 +2,7 @@
 
 # INTRODUCTION
 
-**JUnit Foundation** is a lightweight collection of JUnit watchers, interfaces, and static utility classes that supplement and augment the functionality provided by the JUnit API. The facilities provided by **JUnit Foundation** include method invocation hooks, test method timeout management, automatic rety of failed tests, shutdown hook installation, and test artifact capture.
+**JUnit Foundation** is a lightweight collection of JUnit watchers, interfaces, and static utility classes that supplement and augment the functionality provided by the JUnit API. The facilities provided by **JUnit Foundation** include method invocation hooks, test method timeout management, automatic retry of failed tests, shutdown hook installation, and test artifact capture.
 
 ## Method Invocation Hooks
 
