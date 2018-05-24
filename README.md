@@ -203,7 +203,7 @@ Failed attempts of tests that are selected for retry are tallied as ignored test
 
 ## Shutdown hook installation
 
-**JUnit** provides a run listener feature, but this operates most readily on a per-class basis. The method for attaching these run listeners also imposes structural and operational constraints on JUnit projects, and the configuration required to register for end-of-suite notifications necessitates hard-coding the composition of the suite. All of these factors make run listeners unattractive or ineffectual for final cleanup operations.
+**JUnit** provides a run listener feature, but this operates most readily on a per-class basis. The method for attaching these run listeners also imposes structural and operational constraints on **JUnit** projects, and the configuration required to register for end-of-suite notifications necessitates hard-coding the composition of the suite. All of these factors make run listeners unattractive or ineffectual for final cleanup operations.
 
 **JUnit Foundation** enables you to declare shutdown listeners in a service loader configuration file.  
 **_META-INF/services/com.nordstrom.automation.junit.ShutdownListener_** is the service loader shutdown listener configuration file. By default, this file is absent. To add managed listeners, create this file and add the fully-qualified names of their classes, one line per item.
