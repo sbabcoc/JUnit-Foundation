@@ -211,7 +211,7 @@ Failed attempts of tests that are selected for retry are tallied as ignored test
 ## Artifact Capture
 
 * [ArtifactCollector](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/ArtifactCollector.java):  
-**ArtifactCollector** is a JUnit [test watcher](http://junit.org/junit4/javadoc/latest/org/junit/rules/TestWatcher.html) that serves as the foundation for artifact-capturing test watchers. This is a generic class, with the artifact-specific implementation provided by instances of the **ArtifactType** interface. For artifact capture scenarios where you need access to the current method description or the values provided to parameterized tests, the test class can implement the **ArtifactParams** interface.
+**ArtifactCollector** is a **JUnit** [test watcher](http://junit.org/junit4/javadoc/latest/org/junit/rules/TestWatcher.html) that serves as the foundation for artifact-capturing test watchers. This is a generic class, with the artifact-specific implementation provided by instances of the **ArtifactType** interface. For artifact capture scenarios where you need access to the current method description or the values provided to parameterized tests, the test class can implement the **ArtifactParams** interface.
 
 * [ArtifactParams](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/ArtifactParams.java):  
 By implementing the **ArtifactParams** interface in your test classes, you enable the artifact capture framework to access test method description objects and parameterized test values. These can be used for composing, naming, and storing artifacts. 
