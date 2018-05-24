@@ -187,7 +187,7 @@ For a complete reference implementation of the **MethodWatcher2** interface, che
 
 ## Test Method Timeout Management
 
-**JUnit** provides test method timeout functionality via the `timeout` parameter of the **`@Test`** annotation. With this parameter, you can set an explicit timeout interval in milliseconds on an individual test method. If the takes fails to complete within the specified interval, the test is terminated with **TestTimedOutException**.
+**JUnit** provides test method timeout functionality via the `timeout` parameter of the **`@Test`** annotation. With this parameter, you can set an explicit timeout interval in milliseconds on an individual test method. If the test fails to complete within the specified interval, **JUnit** terminates the test and throws **TestTimedOutException**.
 
 **JUnit Foundation** extends this functionality, providing configurable test timeout management. Timeout management is activated by setting the `TEST_TIMEOUT` configuration option to the desired default test timeout interval in milliseconds. This timeout specification is applied to every test method that doesn't explicitly specify a longer interval.
 
