@@ -35,7 +35,7 @@ import net.bytebuddy.implementation.MethodDelegation;
  *     <li>Invocation hooks for test and configuration methods</li>
  *     <li>Test method timeout management</li>
  *     <li>Automatic retry of failed tests</li>
- *     <li>Dynamic run listener attachment</li>
+ *     <li>Shutdown hook installation</li>
  * </ol>
  * 
  * <b>Invocation hooks for test and configuration methods</b>
