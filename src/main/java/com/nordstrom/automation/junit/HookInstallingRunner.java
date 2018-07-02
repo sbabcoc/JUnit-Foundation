@@ -77,7 +77,7 @@ import net.bytebuddy.implementation.MethodDelegation;
  * listener configuration file. By default, this file is absent. To add managed listeners, create this file and
  * add the fully-qualified names of their classes, one line per item.
  */
-public final class HookInstallingRunner extends BlockJUnit4ClassRunner {
+public class HookInstallingRunner extends BlockJUnit4ClassRunner {
     
     private static Map<Class<?>, Class<?>> proxyMap = new HashMap<>();
     
