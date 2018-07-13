@@ -36,6 +36,43 @@ import net.bytebuddy.implementation.bind.annotation.SuperCall;
 import net.bytebuddy.implementation.bind.annotation.This;
 import net.bytebuddy.pool.TypePool;
 
+/**
+ * This class implements the hooks and utility methods that activate the core functionality of <b>JUnit Foundation</b>.
+ * <p>
+ * To activate core features, add the {@link HookInstallingListener} to your project configuration:
+ * 
+ * <pre><code> &lt;dependencies&gt;
+ * [...]
+ *   &lt;dependency&gt;
+ *     &lt;groupId&gt;com.nordstrom.tools&lt;/groupId&gt;
+ *     &lt;artifactId&gt;junit-foundation&lt;/artifactId&gt;
+ *     &lt;version&gt;3.2.2&lt;/version&gt;
+ *     &lt;scope&gt;test&lt;/scope&gt;
+ *   &lt;/dependency&gt;
+ * [...]
+ * &lt;/dependencies&gt;
+ * [...]
+ * &lt;plugins&gt;
+ * [...]
+ *   &lt;plugin&gt;
+ *     &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+ *     &lt;artifactId&gt;maven-surefire-plugin&lt;/artifactId&gt;
+ *     &lt;version&gt;2.22.0&lt;/version&gt;
+ *     &lt;configuration&gt;
+ *       &lt;properties&gt;
+ *         &lt;property&gt;
+ *           &lt;name&gt;listener&lt;/name&gt;
+ *           &lt;value&gt;com.nordstrom.automation.junit.HookInstallingListener&lt;/value&gt;
+ *         &lt;/property&gt;
+ *       &lt;/properties&gt;
+ *     &lt;/configuration&gt;
+ *   &lt;/plugin&gt;
+ * [...]
+ * &lt;/plugins&gt;</code></pre>
+ * 
+ * {@link HookInstallingListener} loads this class, whose static initializer performs the operations needed to activate
+ * the core functionality of <b>JUnit Foundation</b>.
+ */
 public class LifecycleHooks {
 
     private static Map<Class<?>, Class<?>> proxyMap = new HashMap<>();
@@ -44,10 +81,15 @@ public class LifecycleHooks {
     private static final ServiceLoader<JUnitRetryAnalyzer> retryAnalyzerLoader;
     private static final Logger LOGGER = LoggerFactory.getLogger(LifecycleHooks.class);
     
-    /** Install a shutdown hook for each specified listener */
+    private LifecycleHooks() {
+        throw new AssertionError("LifecycleHooks is a static utility class that cannot be instantiated");
+    }
+    
+    /**
+     * This static initializer installs a shutdown hook for each specified listener. It also rebases the ParentRunner
+     * and BlockJUnit4ClassRunner classes to enable the core functionality of JUnit Foundation.
+     */
     static {
-        System.out.println("<init> LifecycleHooks");
-        
         config = JUnitConfig.getConfig();
         retryAnalyzerLoader = ServiceLoader.load(JUnitRetryAnalyzer.class);
         for (ShutdownListener listener : ServiceLoader.load(ShutdownListener.class)) {
@@ -63,6 +105,7 @@ public class LifecycleHooks {
                 .rebase(typeDescription, locator)
                 .method(named("createTest")).intercept(MethodDelegation.to(CreateTest.class))
                 .method(named("runChild")).intercept(MethodDelegation.to(RunChild.class))
+                .implement(Hooked.class)
                 .make()
                 .load(ClassLoader.getSystemClassLoader(), ClassLoadingStrategy.Default.INJECTION);
     }
@@ -74,7 +117,6 @@ public class LifecycleHooks {
      * @return shutdown listener thread object
      */
     static Thread getShutdownHook(final ShutdownListener listener) {
-        System.out.println("getShutdownHook");
         return new Thread() {
             @Override
             public void run() {
@@ -83,20 +125,44 @@ public class LifecycleHooks {
         };
     }
     
+    /**
+     * This class declares the interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#createTest createTest}
+     * method.
+     */
+    @SuppressWarnings("squid:S1118")
     public static class CreateTest {
     
-        public static Object intercept(@This Object runner, @SuperCall Callable<?> proxy) throws Exception {
-            System.out.println("createTest");
+        /**
+         * Interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#createTest createTest} method.
+         * 
+         * @param proxy callable proxy for the intercepted method
+         * @return {@code anything}
+         * @throws Exception if something goes wrong
+         */
+        public static Object intercept(@SuperCall Callable<?> proxy) throws Exception {
             Object testObj = installHooks(proxy.call());
             applyTimeout(testObj);
             return testObj;
         }
     }
     
+    /**
+     * This class declares the interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#runChild runChild}
+     * method.
+     */
+    @SuppressWarnings("squid:S1118")
     public static class RunChild {
     
+        /**
+         * Interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#runChild runChild} method.
+         * 
+         * @param runner underlying test runner
+         * @param proxy callable proxy for the intercepted method
+         * @param method test method to be run
+         * @param notifier run notifier through which events are published
+         * @throws Exception if something goes wrong
+         */
         public static void intercept(@This Object runner, @SuperCall Callable<?> proxy, @Argument(0) final FrameworkMethod method, @Argument(1) RunNotifier notifier) throws Exception {
-            System.out.println("runChild: " + method.getName());
             int count = getMaxRetry(runner, method);
             
             if (count > 0) {
@@ -114,7 +180,6 @@ public class LifecycleHooks {
      * @param testObj test class object
      */
     static void applyTimeout(Object testObj) {
-        System.out.println("applyTimeout");
         // if default test timeout is defined
         if (config.containsKey(JUnitSettings.TEST_TIMEOUT.key())) {
             // get default test timeout
@@ -135,12 +200,12 @@ public class LifecycleHooks {
     /**
      * Run the specified method, retrying on failure.
      * 
+     * @param runner underlying test runner
      * @param method test method to be run
      * @param notifier run notifier through which events are published
      * @param maxRetry maximum number of retry attempts
      */
     static void runChildWithRetry(Object runner, final FrameworkMethod method, RunNotifier notifier, int maxRetry) {
-        System.out.println("runChildWithRetry");
         boolean doRetry = false;
         Statement statement = invoke(runner, "methodBlock", method);
         Description description = invoke(runner, "describeChild", method);
@@ -184,7 +249,6 @@ public class LifecycleHooks {
      * @return {@code true} if failed test should be retried; otherwise {@code false}
      */
     static boolean doRetry(Object runner, FrameworkMethod method, Throwable thrown, AtomicInteger retryCounter) {
-        System.out.println("doRetry");
         boolean doRetry = false;
         if ((retryCounter.decrementAndGet() > -1) && isRetriable(method, thrown)) {
             LOGGER.warn("### RETRY ### {}", method);
@@ -203,7 +267,6 @@ public class LifecycleHooks {
      * @return maximum retry attempts that will be made if the specified method fails
      */
     static int getMaxRetry(Object runner, final FrameworkMethod method) {
-        System.out.println("getMaxRetry");
         int maxRetry = 0;
         
         // determine if retry is disabled for this method
@@ -212,7 +275,7 @@ public class LifecycleHooks {
         NoRetry noRetryOnClass = method.getDeclaringClass().getAnnotation(NoRetry.class);
         
         // if method isn't ignored or excluded from retry attempts
-        if (((boolean) invoke(runner, "isIgnored", method)) && (noRetryOnMethod == null) && (noRetryOnClass == null)) {
+        if (Boolean.FALSE.equals(invoke(runner, "isIgnored", method)) && (noRetryOnMethod == null) && (noRetryOnClass == null)) {
             // get configured maximum retry count
             maxRetry = config.getInteger(JUnitSettings.MAX_RETRY.key(), Integer.valueOf(0));
         }
@@ -228,7 +291,6 @@ public class LifecycleHooks {
      * @return {@code true} if test should be retried; otherwise {@code false}
      */
     static boolean isRetriable(final FrameworkMethod method, final Throwable thrown) {
-        System.out.println("isRetriable");
         for (JUnitRetryAnalyzer analyzer : retryAnalyzerLoader) {
             if (analyzer.retry(method, thrown)) {
                 return true;
@@ -244,7 +306,6 @@ public class LifecycleHooks {
      * @return enhanced test class object
      */
     static synchronized Object installHooks(Object testObj) {
-        System.out.println("installHooks");
         Class<?> testClass = testObj.getClass();
         MethodInterceptor.attachWatchers(testClass);
         
@@ -285,7 +346,6 @@ public class LifecycleHooks {
      * @return class of test class instance
      */
     public static Class<?> getInstanceClass(Object instance) {
-        System.out.println("getInstanceClass");
         Class<?> clazz = instance.getClass();      
         return (instance instanceof Hooked) ? clazz.getSuperclass() : clazz;
     }
@@ -297,7 +357,6 @@ public class LifecycleHooks {
      * @return fully-qualified name for hooked subclass
      */
     static String getSubclassName(Object testObj) {
-        System.out.println("getSubclassName");
         Class<?> testClass = testObj.getClass();
         String testClassName = testClass.getSimpleName();
         String testPackageName = testClass.getPackage().getName();
@@ -317,20 +376,27 @@ public class LifecycleHooks {
         
     }
     
+    /**
+     * Invoke the named method with the specified parameters on the specified target object.
+     * 
+     * @param target target object
+     * @param methodName name of the desired method
+     * @param parameters parameters for the method invocation
+     * @return result of method invocation
+     */
     @SuppressWarnings("unchecked")
-    static <T> T invoke(Object runner, String methodName, Object... parameters) {
-        System.out.println("invoke: " + methodName);
+    static <T> T invoke(Object target, String methodName, Object... parameters) {
         Class<?>[] parameterTypes = new Class<?>[parameters.length];
         for (int i = 0; i < parameters.length; i++) {
             parameterTypes[i] = parameters[i].getClass();
         }
         
         Throwable thrown = null;
-        for (Class<?> current = runner.getClass(); current != null; current = current.getSuperclass()) {
+        for (Class<?> current = target.getClass(); current != null; current = current.getSuperclass()) {
             try {
                 Method method = current.getDeclaredMethod(methodName, parameterTypes);
                 method.setAccessible(true);
-                return (T) method.invoke(runner, parameters);
+                return (T) method.invoke(target, parameters);
             } catch (NoSuchMethodException e) {
                 thrown = e;
             } catch (SecurityException | IllegalAccessException | IllegalArgumentException

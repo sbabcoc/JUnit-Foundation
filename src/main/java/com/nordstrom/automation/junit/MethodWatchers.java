@@ -9,8 +9,8 @@ import java.lang.annotation.Target;
 
 /**
  * This annotation is assigned to test classes and enables you to attach one or more method watcher class,
- * which implement the {@link MethodWatcher} interface. To activate this feature, run with the {@link
- * HookInstallingRunner}.
+ * which implement the {@link MethodWatcher} interface. To activate this feature, run with the
+ * {@code HookInstallingRunner}.
  */
 @Retention(RUNTIME)
 @Target({TYPE})

@@ -8,6 +8,9 @@ import org.junit.runner.Description;
 import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
 
+/**
+ * This run listener tracks the results of executed tests.
+ */
 public class RunListenerAdapter extends RunListener {
     
     private List<Description> m_allTestMethods = Collections.synchronizedList(new ArrayList<>());
@@ -94,6 +97,11 @@ public class RunListenerAdapter extends RunListener {
         return m_passedTests;
     }
     
+    /**
+     * Get list of test failure objects.
+     * 
+     * @return list of failure objects
+     */
     public List<Failure> getTestFailures() {
         return m_testFailures;
     }

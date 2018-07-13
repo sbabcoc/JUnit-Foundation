@@ -23,7 +23,7 @@ public class MethodTimeoutTest {
         MESSAGE_MAP.put("testTimeoutWithLongerInterval", "test timed out after 600 milliseconds");
     }
 
-    @Test
+    @Test(timeout=2000)
     public void verifyHappyPath() {
         RunListenerAdapter rla = new RunListenerAdapter();
         
@@ -37,7 +37,7 @@ public class MethodTimeoutTest {
         assertEquals("Incorrect ignored test count", 0, rla.getIgnoredTests().size());
     }
 
-    @Test
+    @Test(timeout=3000)
     public void verifyExpectedTimeout() {
         RunListenerAdapter rla = new RunListenerAdapter();
         

@@ -15,6 +15,11 @@ import org.junit.runner.Description;
 
 import com.nordstrom.common.file.PathUtils;
 
+/**
+ * This is the base class for implementations of scenario-specific artifact collectors.
+ * 
+ * @param <T> scenario-specific artifact type
+ */
 public class ArtifactCollector<T extends ArtifactType> extends TestWatcher {
     
     private static final Map<Description, List<ArtifactCollector<? extends ArtifactType>>> watcherMap =
