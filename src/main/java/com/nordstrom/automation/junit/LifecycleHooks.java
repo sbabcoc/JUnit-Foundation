@@ -6,8 +6,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.After;
@@ -19,6 +21,7 @@ import org.junit.runner.Description;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
+import org.junit.runners.model.TestClass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -96,13 +99,20 @@ public class LifecycleHooks {
             Runtime.getRuntime().addShutdownHook(getShutdownHook(listener));
         }
             
-        String className = "org.junit.runners.BlockJUnit4ClassRunner";
-        TypePool typePool = TypePool.Default.ofClassPath();
-        TypeDescription typeDescription = typePool.describe(className).resolve();
-        ClassFileLocator locator = ClassFileLocator.ForClassLoader.ofClassPath();
+        TypeDescription type = 
+                        TypePool.Default.ofClassPath().describe("org.junit.runners.ParentRunner").resolve();
         
         new ByteBuddy()
-                .rebase(typeDescription, locator)
+                .rebase(type, ClassFileLocator.ForClassLoader.ofClassPath())
+                .method(named("createTestClass")).intercept(MethodDelegation.to(CreateTestClass.class))
+                .implement(Hooked.class)
+                .make()
+                .load(ClassLoader.getSystemClassLoader(), ClassLoadingStrategy.Default.INJECTION);
+        
+        type = TypePool.Default.ofClassPath().describe("org.junit.runners.BlockJUnit4ClassRunner").resolve();
+                
+        new ByteBuddy()
+                .rebase(type, ClassFileLocator.ForClassLoader.ofClassPath())
                 .method(named("createTest")).intercept(MethodDelegation.to(CreateTest.class))
                 .method(named("runChild")).intercept(MethodDelegation.to(RunChild.class))
                 .implement(Hooked.class)
@@ -125,13 +135,26 @@ public class LifecycleHooks {
         };
     }
     
+    @SuppressWarnings("squid:S1118")
+    public static class CreateTestClass {
+        private static final Map<TestClass, Object> CLASS_TO_RUNNER = new ConcurrentHashMap<>();
+        
+        public static TestClass intercept(@This Object runner, @SuperCall Callable<?> proxy) throws Exception {
+            TestClass testClass = (TestClass) proxy.call();
+            CLASS_TO_RUNNER.put(testClass, runner);
+            return testClass;
+        }
+    }
+    
     /**
      * This class declares the interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#createTest createTest}
      * method.
      */
     @SuppressWarnings("squid:S1118")
     public static class CreateTest {
-    
+        
+        private static final Map<Object, TestClass> INSTANCE_TO_CLASS = new ConcurrentHashMap<>();
+        
         /**
          * Interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#createTest createTest} method.
          * 
@@ -139,8 +162,9 @@ public class LifecycleHooks {
          * @return {@code anything}
          * @throws Exception if something goes wrong
          */
-        public static Object intercept(@SuperCall Callable<?> proxy) throws Exception {
+        public static Object intercept(@This Object runner, @SuperCall Callable<?> proxy) throws Exception {
             Object testObj = installHooks(proxy.call());
+            INSTANCE_TO_CLASS.put(testObj, invoke(runner, "getTestClass"));
             applyTimeout(testObj);
             return testObj;
         }
@@ -171,6 +195,34 @@ public class LifecycleHooks {
                 proxy.call();
             }
         }
+    }
+    
+    /**
+     * Get the test class object that wraps the specified instance.
+     * 
+     * @param instance instance object (either test class or Suite)
+     * @return {@link TestClass} associated with specified instance object
+     */
+    public static TestClass getTestClassFor(Object instance) {
+        TestClass testClass = CreateTest.INSTANCE_TO_CLASS.get(instance);
+        if (testClass != null) {
+            return testClass;
+        }
+        throw new IllegalStateException("No associated test class was found for specified instance");
+    }
+    
+    /**
+     * Get the runner that owns the specified test class object;
+     * 
+     * @param testClass {@link TestClass} object
+     * @return {@link Runner} that owns the specified test class object
+     */
+    public static Object getRunnerFor(TestClass testClass) {
+        Object runner = CreateTestClass.CLASS_TO_RUNNER.get(testClass);
+        if (runner != null) {
+            return runner;
+        }
+        throw new IllegalStateException("No associated runner was for for specified test class");
     }
     
     /**
