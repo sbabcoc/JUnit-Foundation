@@ -6,7 +6,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -82,6 +81,8 @@ public class LifecycleHooks {
     
     private static final JUnitConfig config;
     private static final ServiceLoader<JUnitRetryAnalyzer> retryAnalyzerLoader;
+    private static final ServiceLoader<TestClassWatcher> classWatcherLoader;
+    private static final ServiceLoader<TestObjectWatcher> objectWatcherLoader;
     private static final Logger LOGGER = LoggerFactory.getLogger(LifecycleHooks.class);
     
     private LifecycleHooks() {
@@ -118,6 +119,9 @@ public class LifecycleHooks {
                 .implement(Hooked.class)
                 .make()
                 .load(ClassLoader.getSystemClassLoader(), ClassLoadingStrategy.Default.INJECTION);
+        
+        classWatcherLoader = ServiceLoader.load(TestClassWatcher.class);
+        objectWatcherLoader = ServiceLoader.load(TestObjectWatcher.class);
     }
     
     /**
@@ -142,6 +146,11 @@ public class LifecycleHooks {
         public static TestClass intercept(@This Object runner, @SuperCall Callable<?> proxy) throws Exception {
             TestClass testClass = (TestClass) proxy.call();
             CLASS_TO_RUNNER.put(testClass, runner);
+            
+            for (TestClassWatcher watcher : classWatcherLoader) {
+                watcher.testClassCreated(testClass, runner);
+            }
+            
             return testClass;
         }
     }
@@ -166,6 +175,11 @@ public class LifecycleHooks {
             Object testObj = installHooks(proxy.call());
             INSTANCE_TO_CLASS.put(testObj, invoke(runner, "getTestClass"));
             applyTimeout(testObj);
+            
+            for (TestObjectWatcher watcher : objectWatcherLoader) {
+                watcher.testObjectCreated(testObj, INSTANCE_TO_CLASS.get(testObj));
+            }
+            
             return testObj;
         }
     }

@@ -3,9 +3,8 @@ package com.nordstrom.automation.junit;
 import java.lang.reflect.Method;
 
 /**
- * This interface defines the methods implemented by JUnit method watchers. These watcher are attached to test classes
- * via the {@link MethodWatchers} annotation. To activate this feature, run with the {@code HookInstallingRunner}
- * or {@link HookInstallingPlugin}.
+ * This interface defines the methods implemented by JUnit method watchers. These watchers are attached to test classes
+ * via the {@link MethodWatchers} annotation. To activate this feature, run with the {@link HookInstallingPlugin}.
  */
 public interface MethodWatcher {
 
