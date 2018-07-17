@@ -167,6 +167,7 @@ public class LifecycleHooks {
         /**
          * Interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#createTest createTest} method.
          * 
+         * @param runner target {@link org.junit.runners.BlockJUnit4ClassRunner BlockJUnit4ClassRunner} object
          * @param proxy callable proxy for the intercepted method
          * @return {@code anything}
          * @throws Exception if something goes wrong
@@ -226,10 +227,10 @@ public class LifecycleHooks {
     }
     
     /**
-     * Get the runner that owns the specified test class object;
+     * Get the parent runner that owns the specified test class object;
      * 
      * @param testClass {@link TestClass} object
-     * @return {@link Runner} that owns the specified test class object
+     * @return {@link org.junit.runners.ParentRunner ParentRunner} that owns the specified test class object
      */
     public static Object getRunnerFor(TestClass testClass) {
         Object runner = CreateTestClass.CLASS_TO_RUNNER.get(testClass);

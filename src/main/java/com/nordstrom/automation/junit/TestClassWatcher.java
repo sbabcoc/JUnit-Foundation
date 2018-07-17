@@ -12,7 +12,7 @@ public interface TestClassWatcher {
      * Invoked when a test class object gets created. These are wrappers around runners and test classes.
      * 
      * @param testClass {@link TestClass} object that was just created
-     * @param runner {@link ParentRunner} object that owns this test class object
+     * @param runner {@link org.junit.runners.ParentRunner ParentRunner} object that owns this test class object
      */
     void testClassCreated(TestClass testClass, Object runner);
 
