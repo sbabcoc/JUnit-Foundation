@@ -40,40 +40,6 @@ import net.bytebuddy.pool.TypePool;
 
 /**
  * This class implements the hooks and utility methods that activate the core functionality of <b>JUnit Foundation</b>.
- * <p>
- * To activate core features, add the {@link HookInstallingListener} to your project configuration:
- * 
- * <pre><code> &lt;dependencies&gt;
- * [...]
- *   &lt;dependency&gt;
- *     &lt;groupId&gt;com.nordstrom.tools&lt;/groupId&gt;
- *     &lt;artifactId&gt;junit-foundation&lt;/artifactId&gt;
- *     &lt;version&gt;3.2.2&lt;/version&gt;
- *     &lt;scope&gt;test&lt;/scope&gt;
- *   &lt;/dependency&gt;
- * [...]
- * &lt;/dependencies&gt;
- * [...]
- * &lt;plugins&gt;
- * [...]
- *   &lt;plugin&gt;
- *     &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
- *     &lt;artifactId&gt;maven-surefire-plugin&lt;/artifactId&gt;
- *     &lt;version&gt;2.22.0&lt;/version&gt;
- *     &lt;configuration&gt;
- *       &lt;properties&gt;
- *         &lt;property&gt;
- *           &lt;name&gt;listener&lt;/name&gt;
- *           &lt;value&gt;com.nordstrom.automation.junit.HookInstallingListener&lt;/value&gt;
- *         &lt;/property&gt;
- *       &lt;/properties&gt;
- *     &lt;/configuration&gt;
- *   &lt;/plugin&gt;
- * [...]
- * &lt;/plugins&gt;</code></pre>
- * 
- * {@link HookInstallingListener} loads this class, whose static initializer performs the operations needed to activate
- * the core functionality of <b>JUnit Foundation</b>.
  */
 public class LifecycleHooks {
 
