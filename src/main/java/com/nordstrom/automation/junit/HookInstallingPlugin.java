@@ -22,10 +22,14 @@ public class HookInstallingPlugin implements Plugin {
 
     @Override
     public Builder<?> apply(Builder<?> builder, TypeDescription typeDescription) {
+        return installHook(builder, typeDescription);
+    }
+    
+    public static Builder<?> installHook(Builder<?> builder, TypeDescription typeDescription) {
         return builder.method(isAnnotatedWith(anyOf(Test.class, Before.class, After.class))
-                .or(isStatic().and(isAnnotatedWith(anyOf(BeforeClass.class, AfterClass.class)))))
-                .intercept(MethodDelegation.to(MethodInterceptor.class))
-                .implement(Hooked.class);
+                        .or(isStatic().and(isAnnotatedWith(anyOf(BeforeClass.class, AfterClass.class)))))
+                        .intercept(MethodDelegation.to(MethodInterceptor.class))
+                        .implement(Hooked.class);
     }
 
 }

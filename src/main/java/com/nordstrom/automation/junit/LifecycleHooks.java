@@ -2,6 +2,8 @@ package com.nordstrom.automation.junit;
 
 import static net.bytebuddy.matcher.ElementMatchers.*;
 
+import java.lang.instrument.ClassFileTransformer;
+import java.lang.instrument.Instrumentation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
@@ -29,9 +31,8 @@ import com.nordstrom.common.base.UncheckedThrow;
 import com.nordstrom.common.file.PathUtils.ReportsDirectory;
 
 import net.bytebuddy.ByteBuddy;
+import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.description.type.TypeDescription;
-import net.bytebuddy.dynamic.ClassFileLocator;
-import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
 import net.bytebuddy.implementation.MethodDelegation;
 import net.bytebuddy.implementation.bind.annotation.Argument;
 import net.bytebuddy.implementation.bind.annotation.SuperCall;
@@ -62,32 +63,35 @@ public class LifecycleHooks {
     static {
         config = JUnitConfig.getConfig();
         retryAnalyzerLoader = ServiceLoader.load(JUnitRetryAnalyzer.class);
+        classWatcherLoader = ServiceLoader.load(TestClassWatcher.class);
+        objectWatcherLoader = ServiceLoader.load(TestObjectWatcher.class);
+        
         for (ShutdownListener listener : ServiceLoader.load(ShutdownListener.class)) {
             Runtime.getRuntime().addShutdownHook(getShutdownHook(listener));
         }
-            
-        TypeDescription type = 
-                        TypePool.Default.ofClassPath().describe("org.junit.runners.ParentRunner").resolve();
+    }
+    
+    public static void premain(String args, Instrumentation instrumentation) {
+        installTransformer(instrumentation);
+    }
+    
+    public static ClassFileTransformer installTransformer(Instrumentation instrumentation) {
+        TypeDescription type1 = TypePool.Default.ofClassPath().describe("org.junit.runners.ParentRunner").resolve();
+        TypeDescription type2 = TypePool.Default.ofClassPath().describe("org.junit.runners.BlockJUnit4ClassRunner").resolve();
         
-        new ByteBuddy()
-                .rebase(type, ClassFileLocator.ForClassLoader.ofClassPath())
-                .method(named("createTestClass")).intercept(MethodDelegation.to(CreateTestClass.class))
-                .implement(Hooked.class)
-                .make()
-                .load(ClassLoader.getSystemClassLoader(), ClassLoadingStrategy.Default.INJECTION);
-        
-        type = TypePool.Default.ofClassPath().describe("org.junit.runners.BlockJUnit4ClassRunner").resolve();
-                
-        new ByteBuddy()
-                .rebase(type, ClassFileLocator.ForClassLoader.ofClassPath())
-                .method(named("createTest")).intercept(MethodDelegation.to(CreateTest.class))
-                .method(named("runChild")).intercept(MethodDelegation.to(RunChild.class))
-                .implement(Hooked.class)
-                .make()
-                .load(ClassLoader.getSystemClassLoader(), ClassLoadingStrategy.Default.INJECTION);
-        
-        classWatcherLoader = ServiceLoader.load(TestClassWatcher.class);
-        objectWatcherLoader = ServiceLoader.load(TestObjectWatcher.class);
+        return new AgentBuilder.Default()
+                .type(is(type1))
+                .transform((builder, type, classLoader, module) -> 
+                        builder.method(named("createTestClass")).intercept(MethodDelegation.to(CreateTestClass.class))
+                               .implement(Hooked.class))
+                .type(is(type2))
+                .transform((builder, type, classLoader, module) -> 
+                        builder.method(named("createTest")).intercept(MethodDelegation.to(CreateTest.class))
+                               .method(named("runChild")).intercept(MethodDelegation.to(RunChild.class))
+                               .implement(Hooked.class))
+//                .type(any())
+//                .transform((builder, type, classLoader, module) -> HookInstallingPlugin.installHook(builder, type))
+                .installOn(instrumentation);
     }
     
     /**
