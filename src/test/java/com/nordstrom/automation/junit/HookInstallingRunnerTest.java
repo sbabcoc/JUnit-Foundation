@@ -10,7 +10,7 @@ import org.testng.annotations.Test;
 
 public class HookInstallingRunnerTest {
     
-    @Test(enabled = false)
+    @Test
     public void verifyMethodInterception() {
         JUnitCore runner = new JUnitCore();
         Result result = runner.run(HookInstallingRunnerTestCases.class);

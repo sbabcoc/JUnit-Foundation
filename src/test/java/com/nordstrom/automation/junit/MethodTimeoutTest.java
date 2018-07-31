@@ -37,7 +37,7 @@ public class MethodTimeoutTest {
         assertEquals(0, rla.getIgnoredTests().size(), "Incorrect ignored test count");
     }
 
-    @Test(enabled = false)
+    @Test
     public void verifyExpectedTimeout() {
         RunListenerAdapter rla = new RunListenerAdapter();
         
