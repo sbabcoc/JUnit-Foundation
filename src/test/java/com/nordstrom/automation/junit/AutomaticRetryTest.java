@@ -34,7 +34,7 @@ public class AutomaticRetryTest {
         assertEquals(0, rla.getRetriedTests().size(), "Incorrect retried test count");
     }
     
-    @Test(enabled = false)
+    @Test
     public void testPassOnRetry() {
         RunListenerAdapter rla = new RunListenerAdapter();
         
@@ -49,7 +49,7 @@ public class AutomaticRetryTest {
         assertEquals(1, rla.getRetriedTests().size(), "Incorrect retried test count");
     }
     
-    @Test(enabled = false)
+    @Test
     public void testFailOnRetry() {
         RunListenerAdapter rla = new RunListenerAdapter();
         

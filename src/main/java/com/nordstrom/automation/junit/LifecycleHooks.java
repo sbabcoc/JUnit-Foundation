@@ -89,8 +89,8 @@ public class LifecycleHooks {
                         builder.method(named("createTest")).intercept(MethodDelegation.to(CreateTest.class))
                                .method(named("runChild")).intercept(MethodDelegation.to(RunChild.class))
                                .implement(Hooked.class))
-//                .type(any())
-//                .transform((builder, type, classLoader, module) -> HookInstallingPlugin.installHook(builder, type))
+                .type(declaresMethod(HookInstallingPlugin.isTestOrConfiguration()))
+                .transform((builder, type, classLoader, module) -> HookInstallingPlugin.installHook(builder, type))
                 .installOn(instrumentation);
     }
     
