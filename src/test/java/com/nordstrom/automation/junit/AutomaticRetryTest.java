@@ -20,7 +20,7 @@ public class AutomaticRetryTest {
     }
     
     @Test
-    public void testHappyPath() throws ClassNotFoundException {
+    public void testHappyPath() {
         RunListenerAdapter rla = new RunListenerAdapter();
         
         JUnitCore runner = new JUnitCore();
