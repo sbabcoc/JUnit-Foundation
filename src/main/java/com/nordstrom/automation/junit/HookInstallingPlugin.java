@@ -27,5 +27,5 @@ public class HookInstallingPlugin implements Plugin {
                 .intercept(MethodDelegation.to(MethodInterceptor.class))
                 .implement(Hooked.class);
     }
-    
+
 }
