@@ -1,16 +1,16 @@
 package com.nordstrom.automation.junit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.Test;
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Result;
 import org.junit.runner.notification.Failure;
 import org.junit.runners.model.TestTimedOutException;
+import org.testng.annotations.Test;
 
 public class MethodTimeoutTest {
     
@@ -32,9 +32,9 @@ public class MethodTimeoutTest {
         Result result = runner.run(MethodTimeoutPassing.class);
         assertTrue(result.wasSuccessful());
         
-        assertEquals("Incorrect passed test count", 2, rla.getPassedTests().size());
-        assertEquals("Incorrect failed test count", 0, rla.getFailedTests().size());
-        assertEquals("Incorrect ignored test count", 0, rla.getIgnoredTests().size());
+        assertEquals(rla.getPassedTests().size(), 2, "Incorrect passed test count");
+        assertEquals(rla.getFailedTests().size(), 0, "Incorrect failed test count");
+        assertEquals(rla.getIgnoredTests().size(), 0, "Incorrect ignored test count");
     }
 
     @Test
@@ -45,9 +45,9 @@ public class MethodTimeoutTest {
         runner.addListener(rla);
         Result result = runner.run(MethodExpectedTimeout.class);
         
-        assertEquals("Incorrect passed test count", 0, rla.getPassedTests().size());
-        assertEquals("Incorrect failed test count", 3, rla.getFailedTests().size());
-        assertEquals("Incorrect ignored test count", 0, rla.getIgnoredTests().size());
+        assertEquals(rla.getPassedTests().size(), 0, "Incorrect passed test count");
+        assertEquals(rla.getFailedTests().size(), 3, "Incorrect failed test count");
+        assertEquals(rla.getIgnoredTests().size(), 0, "Incorrect ignored test count");
         
         verifyFailureMessages(result);
     }
@@ -57,9 +57,8 @@ public class MethodTimeoutTest {
             String methodName = failure.getDescription().getMethodName();
             String expect = MESSAGE_MAP.get(methodName);
             Throwable thrown = failure.getException();
-            assertEquals("Exception class for: " + methodName, TestTimedOutException.class, thrown.getClass());
-            String actual = thrown.getMessage();
-            assertEquals("Failure message for: " + methodName, expect, actual);
+            assertEquals(thrown.getClass(), TestTimedOutException.class, "Exception class for: " + methodName);
+            assertEquals(thrown.getMessage(), expect, "Failure message for: " + methodName);
         }
     }
 

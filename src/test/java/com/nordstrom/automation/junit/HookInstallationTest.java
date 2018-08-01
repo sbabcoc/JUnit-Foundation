@@ -4,16 +4,16 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.Optional;
 
-import org.junit.Test;
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Result;
+import org.testng.annotations.Test;
 
-public class HookInstallingRunnerTest {
+public class HookInstallationTest {
     
     @Test
     public void verifyMethodInterception() {
         JUnitCore runner = new JUnitCore();
-        Result result = runner.run(HookInstallingRunnerTestCases.class);
+        Result result = runner.run(HookInstallationTestCases.class);
         assertTrue(result.wasSuccessful());
         Optional<MethodWatcher> optWatcher = MethodInterceptor.getAttachedWatcher(UnitTestWatcher.class);
         assertTrue(optWatcher.isPresent());

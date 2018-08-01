@@ -5,11 +5,9 @@ import static org.junit.Assert.assertTrue;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import com.nordstrom.automation.junit.JUnitConfig.JUnitSettings;
 
-@RunWith(HookInstallingRunner.class)
 public class MethodTimeoutPassing {
     
     static {
