@@ -32,9 +32,9 @@ public class MethodTimeoutTest {
         Result result = runner.run(MethodTimeoutPassing.class);
         assertTrue(result.wasSuccessful());
         
-        assertEquals(2, rla.getPassedTests().size(), "Incorrect passed test count");
-        assertEquals(0, rla.getFailedTests().size(), "Incorrect failed test count");
-        assertEquals(0, rla.getIgnoredTests().size(), "Incorrect ignored test count");
+        assertEquals(rla.getPassedTests().size(), 2, "Incorrect passed test count");
+        assertEquals(rla.getFailedTests().size(), 0, "Incorrect failed test count");
+        assertEquals(rla.getIgnoredTests().size(), 0, "Incorrect ignored test count");
     }
 
     @Test
@@ -45,9 +45,9 @@ public class MethodTimeoutTest {
         runner.addListener(rla);
         Result result = runner.run(MethodExpectedTimeout.class);
         
-        assertEquals(0, rla.getPassedTests().size(), "Incorrect passed test count");
-        assertEquals(3, rla.getFailedTests().size(), "Incorrect failed test count");
-        assertEquals(0, rla.getIgnoredTests().size(), "Incorrect ignored test count");
+        assertEquals(rla.getPassedTests().size(), 0, "Incorrect passed test count");
+        assertEquals(rla.getFailedTests().size(), 3, "Incorrect failed test count");
+        assertEquals(rla.getIgnoredTests().size(), 0, "Incorrect ignored test count");
         
         verifyFailureMessages(result);
     }
@@ -57,9 +57,8 @@ public class MethodTimeoutTest {
             String methodName = failure.getDescription().getMethodName();
             String expect = MESSAGE_MAP.get(methodName);
             Throwable thrown = failure.getException();
-            assertEquals(TestTimedOutException.class, thrown.getClass(), "Exception class for: " + methodName);
-            String actual = thrown.getMessage();
-            assertEquals("Failure message for: " + methodName, expect, actual);
+            assertEquals(thrown.getClass(), TestTimedOutException.class, "Exception class for: " + methodName);
+            assertEquals(thrown.getMessage(), expect, "Failure message for: " + methodName);
         }
     }
 

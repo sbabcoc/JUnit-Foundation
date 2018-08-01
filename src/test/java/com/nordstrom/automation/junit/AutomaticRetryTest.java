@@ -28,10 +28,10 @@ public class AutomaticRetryTest {
         Result result = runner.run(AutomaticRetryPassing.class);
         assertTrue(result.wasSuccessful());
         
-        assertEquals(1, rla.getPassedTests().size(), "Incorrect passed test count");
-        assertEquals(0, rla.getFailedTests().size(), "Incorrect failed test count");
-        assertEquals(0, rla.getIgnoredTests().size(), "Incorrect ignored test count");
-        assertEquals(0, rla.getRetriedTests().size(), "Incorrect retried test count");
+        assertEquals(rla.getPassedTests().size(), 1, "Incorrect passed test count");
+        assertEquals(rla.getFailedTests().size(), 0, "Incorrect failed test count");
+        assertEquals(rla.getIgnoredTests().size(), 0, "Incorrect ignored test count");
+        assertEquals(rla.getRetriedTests().size(), 0, "Incorrect retried test count");
     }
     
     @Test
@@ -43,10 +43,10 @@ public class AutomaticRetryTest {
         Result result = runner.run(AutomaticRetryPassOnRetry.class);
         assertTrue(result.wasSuccessful());
         
-        assertEquals(1, rla.getPassedTests().size(), "Incorrect passed test count");
-        assertEquals(0, rla.getFailedTests().size(), "Incorrect failed test count");
-        assertEquals(0, rla.getIgnoredTests().size(), "Incorrect ignored test count");
-        assertEquals(1, rla.getRetriedTests().size(), "Incorrect retried test count");
+        assertEquals(rla.getPassedTests().size(), 1, "Incorrect passed test count");
+        assertEquals(rla.getFailedTests().size(), 0, "Incorrect failed test count");
+        assertEquals(rla.getIgnoredTests().size(), 0, "Incorrect ignored test count");
+        assertEquals(rla.getRetriedTests().size(), 1, "Incorrect retried test count");
     }
     
     @Test
@@ -58,10 +58,10 @@ public class AutomaticRetryTest {
         Result result = runner.run(AutomaticRetryFailing.class);
         assertFalse(result.wasSuccessful());
         
-        assertEquals(0, rla.getPassedTests().size(), "Incorrect passed test count");
-        assertEquals(1, rla.getFailedTests().size(), "Incorrect failed test count");
-        assertEquals(0, rla.getIgnoredTests().size(), "Incorrect ignored test count");
-        assertEquals(3, rla.getRetriedTests().size(), "Incorrect retried test count");
+        assertEquals(rla.getPassedTests().size(), 0, "Incorrect passed test count");
+        assertEquals(rla.getFailedTests().size(), 1, "Incorrect failed test count");
+        assertEquals(rla.getIgnoredTests().size(), 0, "Incorrect ignored test count");
+        assertEquals(rla.getRetriedTests().size(), 3, "Incorrect retried test count");
     }
     
     @Test
@@ -73,10 +73,10 @@ public class AutomaticRetryTest {
         Result result = runner.run(AutomaticRetryNoRetry.class);
         assertFalse(result.wasSuccessful());
         
-        assertEquals(0, rla.getPassedTests().size(), "Incorrect passed test count");
-        assertEquals(1, rla.getFailedTests().size(), "Incorrect failed test count");
-        assertEquals(0, rla.getIgnoredTests().size(), "Incorrect ignored test count");
-        assertEquals(0, rla.getRetriedTests().size(), "Incorrect retried test count");
+        assertEquals(rla.getPassedTests().size(), 0, "Incorrect passed test count");
+        assertEquals(rla.getFailedTests().size(), 1, "Incorrect failed test count");
+        assertEquals(rla.getIgnoredTests().size(), 0, "Incorrect ignored test count");
+        assertEquals(rla.getRetriedTests().size(), 0, "Incorrect retried test count");
     }
     
     @AfterClass
