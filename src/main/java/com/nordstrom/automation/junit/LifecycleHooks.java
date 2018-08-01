@@ -106,6 +106,11 @@ public class LifecycleHooks {
         };
     }
     
+    /**
+     * Get the configuration object for JUnit Foundation.
+     * 
+     * @return JUnit Foundation configuration object
+     */
     private static synchronized JUnitConfig getConfig() {
         if (config == null) {
             config = JUnitConfig.getConfig();
