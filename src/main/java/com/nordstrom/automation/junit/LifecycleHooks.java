@@ -45,8 +45,8 @@ import net.bytebuddy.pool.TypePool;
 public class LifecycleHooks {
 
     private static Map<Class<?>, Class<?>> proxyMap = new HashMap<>();
+    private static JUnitConfig config;
     
-    private static final JUnitConfig config;
     private static final ServiceLoader<JUnitRetryAnalyzer> retryAnalyzerLoader;
     private static final ServiceLoader<TestClassWatcher> classWatcherLoader;
     private static final ServiceLoader<TestObjectWatcher> objectWatcherLoader;
@@ -61,7 +61,6 @@ public class LifecycleHooks {
      * and BlockJUnit4ClassRunner classes to enable the core functionality of JUnit Foundation.
      */
     static {
-        config = JUnitConfig.getConfig();
         retryAnalyzerLoader = ServiceLoader.load(JUnitRetryAnalyzer.class);
         classWatcherLoader = ServiceLoader.load(TestClassWatcher.class);
         objectWatcherLoader = ServiceLoader.load(TestObjectWatcher.class);
@@ -89,8 +88,6 @@ public class LifecycleHooks {
                         builder.method(named("createTest")).intercept(MethodDelegation.to(CreateTest.class))
                                .method(named("runChild")).intercept(MethodDelegation.to(RunChild.class))
                                .implement(Hooked.class))
-//                .type(declaresMethod(HookInstallingPlugin.isTestOrConfiguration()))
-//                .transform((builder, type, classLoader, module) -> HookInstallingPlugin.installHook(builder, type))
                 .installOn(instrumentation);
     }
     
@@ -107,6 +104,17 @@ public class LifecycleHooks {
                 listener.onShutdown();
             }
         };
+    }
+    
+    private static JUnitConfig getConfig() {
+        if (config == null) {
+            synchronized (LifecycleHooks.class) {
+                if (config == null) {
+                    config = JUnitConfig.getConfig();
+                }
+            }
+        }
+        return config;
     }
     
     @SuppressWarnings("squid:S1118")
@@ -218,9 +226,9 @@ public class LifecycleHooks {
      */
     static void applyTimeout(Object testObj) {
         // if default test timeout is defined
-        if (config.containsKey(JUnitSettings.TEST_TIMEOUT.key())) {
+        if (getConfig().containsKey(JUnitSettings.TEST_TIMEOUT.key())) {
             // get default test timeout
-            long defaultTimeout = config.getLong(JUnitSettings.TEST_TIMEOUT.key());
+            long defaultTimeout = getConfig().getLong(JUnitSettings.TEST_TIMEOUT.key());
             // iterate over test object methods
             for (Method method : testObj.getClass().getDeclaredMethods()) {
                 // get @Test annotation
@@ -314,7 +322,7 @@ public class LifecycleHooks {
         // if method isn't ignored or excluded from retry attempts
         if (Boolean.FALSE.equals(invoke(runner, "isIgnored", method)) && (noRetryOnMethod == null) && (noRetryOnClass == null)) {
             // get configured maximum retry count
-            maxRetry = config.getInteger(JUnitSettings.MAX_RETRY.key(), Integer.valueOf(0));
+            maxRetry = getConfig().getInteger(JUnitSettings.MAX_RETRY.key(), Integer.valueOf(0));
         }
         
         return maxRetry;
