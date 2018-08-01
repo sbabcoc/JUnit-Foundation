@@ -9,7 +9,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 @MethodWatchers({UnitTestWatcher.class})
-public class HookInstallingRunnerTestCases {
+public class HookInstallationTestCases {
     
     @BeforeClass
     public static void unitTestBeforeClass() {
