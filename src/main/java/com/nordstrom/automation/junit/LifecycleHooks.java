@@ -106,13 +106,9 @@ public class LifecycleHooks {
         };
     }
     
-    private static JUnitConfig getConfig() {
+    private static synchronized JUnitConfig getConfig() {
         if (config == null) {
-            synchronized (LifecycleHooks.class) {
-                if (config == null) {
-                    config = JUnitConfig.getConfig();
-                }
-            }
+            config = JUnitConfig.getConfig();
         }
         return config;
     }
