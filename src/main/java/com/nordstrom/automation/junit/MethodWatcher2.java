@@ -1,6 +1,6 @@
 package com.nordstrom.automation.junit;
 
-import java.lang.reflect.Method;
+import org.junit.runners.model.FrameworkMethod;
 
 /**
  * This interface defines the methods implemented by JUnit method watchers. These watcher are attached to test classes
@@ -11,16 +11,14 @@ public interface MethodWatcher2 extends MethodWatcher {
     /**
      * Invoked before each class-level configuration method is invoked
      * 
-     * @param method {@link Method} object for the invoked method
-     * @param args method invocation arguments
+     * @param method {@link FrameworkMethod} object for the invoked method
      */
-    void beforeInvocation(Method method, Object[] args);
+    void beforeInvocation(FrameworkMethod method);
 
     /**
      * Invoked after each class-level configuration method is invoked
      * 
-     * @param method {@link Method} object for the invoked method
-     * @param args method invocation arguments
+     * @param method {@link FrameworkMethod} object for the invoked method
      */
-    void afterInvocation(Method method, Object[] args);
+    void afterInvocation(FrameworkMethod method);
 }

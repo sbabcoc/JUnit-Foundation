@@ -10,7 +10,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
-import net.bytebuddy.implementation.bind.annotation.AllArguments;
+import org.junit.runners.model.FrameworkMethod;
+
 import net.bytebuddy.implementation.bind.annotation.BindingPriority;
 import net.bytebuddy.implementation.bind.annotation.Origin;
 import net.bytebuddy.implementation.bind.annotation.RuntimeType;
@@ -41,22 +42,20 @@ public final class MethodInterceptor {
      * 
      * @param clazz "enhanced" class upon which the method was invoked
      * @param method {@link Method} object for the invoked method
-     * @param args method invocation arguments
      * @param proxy call-able proxy for the intercepted method
      * @return {@code anything} (the result of invoking the intercepted method)
      * @throws Exception {@code anything} (exception thrown by the intercepted method)
      */
     @RuntimeType
     @BindingPriority(1)
-    public static Object intercept(@Origin Class<?> clazz, @Origin Method method, @AllArguments Object[] args,
-                    @SuperCall Callable<?> proxy) throws Exception
-    {
+    public static Object intercept(@Origin Class<?> clazz, @Origin Method method, @SuperCall Callable<?> proxy) throws Exception {
         Object result;
         attachWatchers(clazz);
         
+        FrameworkMethod member = new FrameworkMethod(method);
         synchronized(methodWatchers2) {
             for (MethodWatcher2 watcher : methodWatchers2) {
-                watcher.beforeInvocation(method, args);
+                watcher.beforeInvocation(member);
             }
         }
         
@@ -65,7 +64,7 @@ public final class MethodInterceptor {
         } finally {
             synchronized(methodWatchers2) {
                 for (MethodWatcher2 watcher : methodWatchers2) {
-                    watcher.afterInvocation(method, args);
+                    watcher.afterInvocation(member);
                 }
             }
         }
@@ -78,26 +77,25 @@ public final class MethodInterceptor {
      * 
      * @param obj "enhanced" object upon which the method was invoked
      * @param method {@link Method} object for the invoked method
-     * @param args method invocation arguments
      * @param proxy call-able proxy for the intercepted method
      * @return {@code anything} (the result of invoking the intercepted method)
      * @throws Exception {@code anything} (exception thrown by the intercepted method)
      */
     @RuntimeType
     @BindingPriority(2)
-    public static Object intercept(@This Object obj, @Origin Method method, @AllArguments Object[] args,
-                    @SuperCall Callable<?> proxy) throws Exception
+    public static Object intercept(@This Object obj, @Origin Method method, @SuperCall Callable<?> proxy) throws Exception
     {
         Object result;
         
+        FrameworkMethod member = new FrameworkMethod(method);
         synchronized(methodWatchers) {
             for (MethodWatcher watcher : methodWatchers) {
-                watcher.beforeInvocation(obj, method, args);
+                watcher.beforeInvocation(obj, member);
             }
         }
         synchronized(methodWatchers2) {
             for (MethodWatcher2 watcher : methodWatchers2) {
-                watcher.beforeInvocation(obj, method, args);
+                watcher.beforeInvocation(obj, member);
             }
         }
         
@@ -107,12 +105,12 @@ public final class MethodInterceptor {
             synchronized(watchers) {
                 synchronized(methodWatchers) {
                     for (MethodWatcher watcher : methodWatchers) {
-                        watcher.afterInvocation(obj, method, args);
+                        watcher.afterInvocation(obj, member);
                     }
                 }
                 synchronized(methodWatchers2) {
                     for (MethodWatcher2 watcher : methodWatchers2) {
-                        watcher.afterInvocation(obj, method, args);
+                        watcher.afterInvocation(obj, member);
                     }
                 }
             }
