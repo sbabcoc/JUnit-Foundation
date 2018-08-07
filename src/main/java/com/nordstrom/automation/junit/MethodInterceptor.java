@@ -49,7 +49,8 @@ public final class MethodInterceptor {
      */
     @RuntimeType
     @BindingPriority(1)
-    public static void intercept(@Origin Class<?> clazz, @Origin Method method, @SuperCall Callable<?> proxy) throws Exception {
+    public static void intercept(@Origin Class<?> clazz, @Origin Method method, @SuperCall Callable<?> proxy)
+                    throws Exception {
         attachWatchers(clazz);
         
         Throwable thrown = null;
@@ -87,8 +88,8 @@ public final class MethodInterceptor {
      */
     @RuntimeType
     @BindingPriority(2)
-    public static void intercept(@This Object obj, @Origin Method method, @SuperCall Callable<?> proxy) throws Exception
-    {
+    public static void intercept(@This Object obj, @Origin Method method, @SuperCall Callable<?> proxy)
+                    throws Exception {
         Throwable thrown = null;
         FrameworkMethod member = new FrameworkMethod(method);
         synchronized(methodWatchers) {

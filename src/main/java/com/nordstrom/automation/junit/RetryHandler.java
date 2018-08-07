@@ -16,6 +16,9 @@ import org.slf4j.LoggerFactory;
 
 import com.nordstrom.automation.junit.JUnitConfig.JUnitSettings;
 
+/**
+ * This class provided the utility methods used by the <b>JUnit Foundation</b> automatic retry feature.
+ */
 public class RetryHandler {
 
     private static final ServiceLoader<JUnitRetryAnalyzer> retryAnalyzerLoader;
@@ -23,6 +26,10 @@ public class RetryHandler {
     
     static {
         retryAnalyzerLoader = ServiceLoader.load(JUnitRetryAnalyzer.class);
+    }
+    
+    private RetryHandler() {
+        throw new AssertionError("RetryHandler is a static utility class that cannot be instantiated");
     }
     
     /**

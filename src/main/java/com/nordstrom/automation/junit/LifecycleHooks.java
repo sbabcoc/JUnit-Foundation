@@ -56,10 +56,23 @@ public class LifecycleHooks {
         }
     }
     
-    public static void premain(String args, Instrumentation instrumentation) {
+    /**
+     * This is the main entry point for the Java agent used to transform {@code ParentRunner} and
+     * {@code BlockJUnit4ClassRunner}.
+     *  
+     * @param agentArgs agent options
+     * @param instrumentation {@link Instrumentation} object used to transform JUnit core classes
+     */
+    public static void premain(String agentArgs, Instrumentation instrumentation) {
         installTransformer(instrumentation);
     }
     
+    /**
+     * Install the {@code Byte Buddy} byte code transformations that provide test fine-grained test lifecycle hooks.
+     * 
+     * @param instrumentation {@link Instrumentation} object used to transform JUnit core classes
+     * @return The installed class file transformer
+     */
     public static ClassFileTransformer installTransformer(Instrumentation instrumentation) {
         TypeDescription type1 = TypePool.Default.ofClassPath().describe("org.junit.runners.ParentRunner").resolve();
         TypeDescription type2 = TypePool.Default.ofClassPath().describe("org.junit.runners.BlockJUnit4ClassRunner").resolve();
@@ -105,6 +118,10 @@ public class LifecycleHooks {
         return config;
     }
     
+    /**
+     * This class declares the interceptor for the {@link org.junit.runners.ParentRunner#createTestClass
+     * createTestClass} method.
+     */
     @SuppressWarnings("squid:S1118")
     public static class CreateTestClass {
         static final ServiceLoader<TestClassWatcher> classWatcherLoader;
@@ -114,6 +131,14 @@ public class LifecycleHooks {
             classWatcherLoader = ServiceLoader.load(TestClassWatcher.class);
         }
         
+        /**
+         * Interceptor for the {@link org.junit.runners.ParentRunner#createTestClass createTestClass} method.
+         * 
+         * @param runner underlying test runner
+         * @param proxy callable proxy for the intercepted method
+         * @return new {@link TestClass} object
+         * @throws Exception if something goes wrong
+         */
         public static TestClass intercept(@This Object runner, @SuperCall Callable<?> proxy) throws Exception {
             TestClass testClass = (TestClass) proxy.call();
             CLASS_TO_RUNNER.put(testClass, runner);
@@ -126,6 +151,9 @@ public class LifecycleHooks {
         }
     }
     
+    /**
+     * This class declares the interceptor for the {@link org.junit.runners.ParentRunner#run run} method.
+     */
     @SuppressWarnings("squid:S1118")
     public static class Run {
         static final ServiceLoader<RunListener> runListenerLoader;
@@ -135,6 +163,14 @@ public class LifecycleHooks {
             runListenerLoader = ServiceLoader.load(RunListener.class);
         }
         
+        /**
+         * Interceptor for the {@link org.junit.runners.ParentRunner#run run} method.
+         * 
+         * @param runner underlying test runner
+         * @param proxy callable proxy for the intercepted method
+         * @param notifier run notifier through which events are published
+         * @throws Exception if something goes wrong
+         */
         public static void intercept(@This Object runner, @SuperCall Callable<?> proxy, @Argument(0) RunNotifier notifier) throws Exception {
             if (NOTIFIERS.add(notifier)) {
                 Description description = invoke(runner, "getDescription");
@@ -210,6 +246,13 @@ public class LifecycleHooks {
         throw new IllegalStateException("No associated runner was for for specified test class");
     }
     
+    /**
+     * Get the description of the indicated child object from the runner for the specified test class instance.
+     * 
+     * @param instance test class instance
+     * @param child child object
+     * @return {@link Description} object for the indicated child
+     */
     public static Description describeChild(Object instance, Object child) {
         TestClass testClass = getTestClassFor(instance);
         Object runner = getRunnerFor(testClass);
