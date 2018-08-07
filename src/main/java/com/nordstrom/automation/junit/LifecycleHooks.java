@@ -206,9 +206,9 @@ public class LifecycleHooks {
          * @throws Exception if something goes wrong
          */
         public static Object intercept(@This Object runner, @SuperCall Callable<?> proxy) throws Exception {
-            Object testObj = LifecycleHooks.installHooks(proxy.call());
-            INSTANCE_TO_CLASS.put(testObj, LifecycleHooks.invoke(runner, "getTestClass"));
-            LifecycleHooks.applyTimeout(testObj);
+            Object testObj = installHooks(proxy.call());
+            INSTANCE_TO_CLASS.put(testObj, invoke(runner, "getTestClass"));
+            applyTimeout(testObj);
             
             for (TestObjectWatcher watcher : objectWatcherLoader) {
                 watcher.testObjectCreated(testObj, INSTANCE_TO_CLASS.get(testObj));
