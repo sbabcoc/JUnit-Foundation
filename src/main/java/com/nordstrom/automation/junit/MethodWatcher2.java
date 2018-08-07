@@ -19,6 +19,7 @@ public interface MethodWatcher2 extends MethodWatcher {
      * Invoked after each class-level configuration method is invoked
      * 
      * @param method {@link FrameworkMethod} object for the invoked method
+     * @param thrown exception thrown by method; {@code null} on normal completion
      */
-    void afterInvocation(FrameworkMethod method);
+    void afterInvocation(FrameworkMethod method, Throwable thrown);
 }

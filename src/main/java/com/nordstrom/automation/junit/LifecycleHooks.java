@@ -210,12 +210,10 @@ public class LifecycleHooks {
         throw new IllegalStateException("No associated runner was for for specified test class");
     }
     
-    public static Description getDescription(Object instance, Object target) {
+    public static Description describeChild(Object instance, Object child) {
         TestClass testClass = getTestClassFor(instance);
         Object runner = getRunnerFor(testClass);
-        
-        
-        return invoke(runner, "getDescription", target);
+        return invoke(runner, "describeChild", child);
     }
     
     /**

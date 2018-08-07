@@ -21,6 +21,7 @@ public interface MethodWatcher {
      * 
      * @param obj "enhanced" object upon which the method was invoked
      * @param method {@link FrameworkMethod} object for the invoked method
+     * @param thrown exception thrown by method; {@code null} on normal completion
      */
-    void afterInvocation(Object obj, FrameworkMethod method);
+    void afterInvocation(Object obj, FrameworkMethod method, Throwable thrown);
 }

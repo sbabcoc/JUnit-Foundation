@@ -37,7 +37,7 @@ public class UnitTestWatcher implements MethodWatcher2 {
     }
 
     @Override
-    public void afterInvocation(Object obj, FrameworkMethod method) {
+    public void afterInvocation(Object obj, FrameworkMethod method, Throwable thrown) {
         if (null != method.getAnnotation(Before.class)) {
             m_leaveBeforeMethod.add(method.getName());
         } else if (null != method.getAnnotation(Test.class)) {
@@ -57,7 +57,7 @@ public class UnitTestWatcher implements MethodWatcher2 {
     }
 
     @Override
-    public void afterInvocation(FrameworkMethod method) {
+    public void afterInvocation(FrameworkMethod method, Throwable thrown) {
         if (null != method.getAnnotation(BeforeClass.class)) {
             m_leaveBeforeClass.add(method.getName());
         } else if (null != method.getAnnotation(AfterClass.class)) {

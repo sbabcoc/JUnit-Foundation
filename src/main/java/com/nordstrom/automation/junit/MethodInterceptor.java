@@ -12,6 +12,8 @@ import java.util.concurrent.Callable;
 
 import org.junit.runners.model.FrameworkMethod;
 
+import com.nordstrom.common.base.UncheckedThrow;
+
 import net.bytebuddy.implementation.bind.annotation.BindingPriority;
 import net.bytebuddy.implementation.bind.annotation.Origin;
 import net.bytebuddy.implementation.bind.annotation.RuntimeType;
@@ -43,15 +45,14 @@ public final class MethodInterceptor {
      * @param clazz "enhanced" class upon which the method was invoked
      * @param method {@link Method} object for the invoked method
      * @param proxy call-able proxy for the intercepted method
-     * @return {@code anything} (the result of invoking the intercepted method)
      * @throws Exception {@code anything} (exception thrown by the intercepted method)
      */
     @RuntimeType
     @BindingPriority(1)
-    public static Object intercept(@Origin Class<?> clazz, @Origin Method method, @SuperCall Callable<?> proxy) throws Exception {
-        Object result;
+    public static void intercept(@Origin Class<?> clazz, @Origin Method method, @SuperCall Callable<?> proxy) throws Exception {
         attachWatchers(clazz);
         
+        Throwable thrown = null;
         FrameworkMethod member = new FrameworkMethod(method);
         synchronized(methodWatchers2) {
             for (MethodWatcher2 watcher : methodWatchers2) {
@@ -60,16 +61,20 @@ public final class MethodInterceptor {
         }
         
         try {
-            result = proxy.call();
+            proxy.call();
+        } catch (Throwable t) {
+            thrown = t;
         } finally {
             synchronized(methodWatchers2) {
                 for (MethodWatcher2 watcher : methodWatchers2) {
-                    watcher.afterInvocation(member);
+                    watcher.afterInvocation(member, thrown);
                 }
             }
         }
         
-        return result;
+        if (thrown != null) {
+            throw UncheckedThrow.throwUnchecked(thrown);
+        }
     }
     
     /**
@@ -78,15 +83,13 @@ public final class MethodInterceptor {
      * @param obj "enhanced" object upon which the method was invoked
      * @param method {@link Method} object for the invoked method
      * @param proxy call-able proxy for the intercepted method
-     * @return {@code anything} (the result of invoking the intercepted method)
      * @throws Exception {@code anything} (exception thrown by the intercepted method)
      */
     @RuntimeType
     @BindingPriority(2)
-    public static Object intercept(@This Object obj, @Origin Method method, @SuperCall Callable<?> proxy) throws Exception
+    public static void intercept(@This Object obj, @Origin Method method, @SuperCall Callable<?> proxy) throws Exception
     {
-        Object result;
-        
+        Throwable thrown = null;
         FrameworkMethod member = new FrameworkMethod(method);
         synchronized(methodWatchers) {
             for (MethodWatcher watcher : methodWatchers) {
@@ -100,23 +103,27 @@ public final class MethodInterceptor {
         }
         
         try {
-            result = proxy.call();
+            proxy.call();
+        } catch (Throwable t) {
+            thrown = t;
         } finally {
             synchronized(watchers) {
                 synchronized(methodWatchers) {
                     for (MethodWatcher watcher : methodWatchers) {
-                        watcher.afterInvocation(obj, member);
+                        watcher.afterInvocation(obj, member, thrown);
                     }
                 }
                 synchronized(methodWatchers2) {
                     for (MethodWatcher2 watcher : methodWatchers2) {
-                        watcher.afterInvocation(obj, member);
+                        watcher.afterInvocation(obj, member, thrown);
                     }
                 }
             }
         }
         
-        return result;
+        if (thrown != null) {
+            throw UncheckedThrow.throwUnchecked(thrown);
+        }
     }
     
     /**
