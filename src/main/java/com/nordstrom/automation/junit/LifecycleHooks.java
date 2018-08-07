@@ -7,25 +7,19 @@ import java.lang.instrument.Instrumentation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.internal.AssumptionViolatedException;
-import org.junit.internal.runners.model.EachTestNotifier;
 import org.junit.runner.Description;
+import org.junit.runner.notification.RunListener;
 import org.junit.runner.notification.RunNotifier;
-import org.junit.runners.model.FrameworkMethod;
-import org.junit.runners.model.Statement;
 import org.junit.runners.model.TestClass;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.nordstrom.automation.junit.JUnitConfig.JUnitSettings;
 import com.nordstrom.common.base.UncheckedThrow;
 import com.nordstrom.common.file.PathUtils.ReportsDirectory;
@@ -34,6 +28,7 @@ import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.implementation.MethodDelegation;
+import net.bytebuddy.implementation.attribute.AnnotationRetention;
 import net.bytebuddy.implementation.bind.annotation.Argument;
 import net.bytebuddy.implementation.bind.annotation.SuperCall;
 import net.bytebuddy.implementation.bind.annotation.This;
@@ -47,11 +42,6 @@ public class LifecycleHooks {
     private static Map<Class<?>, Class<?>> proxyMap = new HashMap<>();
     private static JUnitConfig config;
     
-    private static final ServiceLoader<JUnitRetryAnalyzer> retryAnalyzerLoader;
-    private static final ServiceLoader<TestClassWatcher> classWatcherLoader;
-    private static final ServiceLoader<TestObjectWatcher> objectWatcherLoader;
-    private static final Logger LOGGER = LoggerFactory.getLogger(LifecycleHooks.class);
-    
     private LifecycleHooks() {
         throw new AssertionError("LifecycleHooks is a static utility class that cannot be instantiated");
     }
@@ -61,29 +51,39 @@ public class LifecycleHooks {
      * and BlockJUnit4ClassRunner classes to enable the core functionality of JUnit Foundation.
      */
     static {
-        retryAnalyzerLoader = ServiceLoader.load(JUnitRetryAnalyzer.class);
-        classWatcherLoader = ServiceLoader.load(TestClassWatcher.class);
-        objectWatcherLoader = ServiceLoader.load(TestObjectWatcher.class);
-        
         for (ShutdownListener listener : ServiceLoader.load(ShutdownListener.class)) {
             Runtime.getRuntime().addShutdownHook(getShutdownHook(listener));
         }
     }
     
-    public static void premain(String args, Instrumentation instrumentation) {
+    /**
+     * This is the main entry point for the Java agent used to transform {@code ParentRunner} and
+     * {@code BlockJUnit4ClassRunner}.
+     *  
+     * @param agentArgs agent options
+     * @param instrumentation {@link Instrumentation} object used to transform JUnit core classes
+     */
+    public static void premain(String agentArgs, Instrumentation instrumentation) {
         installTransformer(instrumentation);
     }
     
+    /**
+     * Install the {@code Byte Buddy} byte code transformations that provide test fine-grained test lifecycle hooks.
+     * 
+     * @param instrumentation {@link Instrumentation} object used to transform JUnit core classes
+     * @return The installed class file transformer
+     */
     public static ClassFileTransformer installTransformer(Instrumentation instrumentation) {
         TypeDescription type1 = TypePool.Default.ofClassPath().describe("org.junit.runners.ParentRunner").resolve();
         TypeDescription type2 = TypePool.Default.ofClassPath().describe("org.junit.runners.BlockJUnit4ClassRunner").resolve();
         
         return new AgentBuilder.Default()
-                .type(is(type1))
+                .type(isSubTypeOf(type1))
                 .transform((builder, type, classLoader, module) -> 
                         builder.method(named("createTestClass")).intercept(MethodDelegation.to(CreateTestClass.class))
+                               .method(named("run")).intercept(MethodDelegation.to(Run.class))
                                .implement(Hooked.class))
-                .type(is(type2))
+                .type(isSubTypeOf(type2))
                 .transform((builder, type, classLoader, module) -> 
                         builder.method(named("createTest")).intercept(MethodDelegation.to(CreateTest.class))
                                .method(named("runChild")).intercept(MethodDelegation.to(RunChild.class))
@@ -111,17 +111,34 @@ public class LifecycleHooks {
      * 
      * @return JUnit Foundation configuration object
      */
-    private static synchronized JUnitConfig getConfig() {
+    static synchronized JUnitConfig getConfig() {
         if (config == null) {
             config = JUnitConfig.getConfig();
         }
         return config;
     }
     
+    /**
+     * This class declares the interceptor for the {@link org.junit.runners.ParentRunner#createTestClass
+     * createTestClass} method.
+     */
     @SuppressWarnings("squid:S1118")
     public static class CreateTestClass {
-        private static final Map<TestClass, Object> CLASS_TO_RUNNER = new ConcurrentHashMap<>();
+        static final ServiceLoader<TestClassWatcher> classWatcherLoader;
+        static final Map<TestClass, Object> CLASS_TO_RUNNER = new ConcurrentHashMap<>();
         
+        static {
+            classWatcherLoader = ServiceLoader.load(TestClassWatcher.class);
+        }
+        
+        /**
+         * Interceptor for the {@link org.junit.runners.ParentRunner#createTestClass createTestClass} method.
+         * 
+         * @param runner underlying test runner
+         * @param proxy callable proxy for the intercepted method
+         * @return new {@link TestClass} object
+         * @throws Exception if something goes wrong
+         */
         public static TestClass intercept(@This Object runner, @SuperCall Callable<?> proxy) throws Exception {
             TestClass testClass = (TestClass) proxy.call();
             CLASS_TO_RUNNER.put(testClass, runner);
@@ -135,13 +152,50 @@ public class LifecycleHooks {
     }
     
     /**
+     * This class declares the interceptor for the {@link org.junit.runners.ParentRunner#run run} method.
+     */
+    @SuppressWarnings("squid:S1118")
+    public static class Run {
+        static final ServiceLoader<RunListener> runListenerLoader;
+        private static final Set<RunNotifier> NOTIFIERS = new HashSet<>();
+        
+        static {
+            runListenerLoader = ServiceLoader.load(RunListener.class);
+        }
+        
+        /**
+         * Interceptor for the {@link org.junit.runners.ParentRunner#run run} method.
+         * 
+         * @param runner underlying test runner
+         * @param proxy callable proxy for the intercepted method
+         * @param notifier run notifier through which events are published
+         * @throws Exception if something goes wrong
+         */
+        public static void intercept(@This Object runner, @SuperCall Callable<?> proxy, @Argument(0) RunNotifier notifier) throws Exception {
+            if (NOTIFIERS.add(notifier)) {
+                Description description = invoke(runner, "getDescription");
+                for (RunListener listener : runListenerLoader) {
+                    notifier.addListener(listener);
+                    listener.testRunStarted(description);
+                }
+            }
+            proxy.call();
+        }        
+    }
+    
+    /**
      * This class declares the interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#createTest createTest}
      * method.
      */
     @SuppressWarnings("squid:S1118")
     public static class CreateTest {
         
-        private static final Map<Object, TestClass> INSTANCE_TO_CLASS = new ConcurrentHashMap<>();
+        static final ServiceLoader<TestObjectWatcher> objectWatcherLoader;
+        static final Map<Object, TestClass> INSTANCE_TO_CLASS = new ConcurrentHashMap<>();
+        
+        static {
+            objectWatcherLoader = ServiceLoader.load(TestObjectWatcher.class);
+        }
         
         /**
          * Interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#createTest createTest} method.
@@ -161,33 +215,6 @@ public class LifecycleHooks {
             }
             
             return testObj;
-        }
-    }
-    
-    /**
-     * This class declares the interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#runChild runChild}
-     * method.
-     */
-    @SuppressWarnings("squid:S1118")
-    public static class RunChild {
-    
-        /**
-         * Interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#runChild runChild} method.
-         * 
-         * @param runner underlying test runner
-         * @param proxy callable proxy for the intercepted method
-         * @param method test method to be run
-         * @param notifier run notifier through which events are published
-         * @throws Exception if something goes wrong
-         */
-        public static void intercept(@This Object runner, @SuperCall Callable<?> proxy, @Argument(0) final FrameworkMethod method, @Argument(1) RunNotifier notifier) throws Exception {
-            int count = getMaxRetry(runner, method);
-            
-            if (count > 0) {
-                runChildWithRetry(runner, method, notifier, count);
-            } else {
-                proxy.call();
-            }
         }
     }
     
@@ -220,6 +247,19 @@ public class LifecycleHooks {
     }
     
     /**
+     * Get the description of the indicated child object from the runner for the specified test class instance.
+     * 
+     * @param instance test class instance
+     * @param child child object
+     * @return {@link Description} object for the indicated child
+     */
+    public static Description describeChild(Object instance, Object child) {
+        TestClass testClass = getTestClassFor(instance);
+        Object runner = getRunnerFor(testClass);
+        return invoke(runner, "describeChild", child);
+    }
+    
+    /**
      * If configured for default test timeout, apply this value to every test that doesn't already specify a longer
      * timeout interval.
      * 
@@ -244,108 +284,6 @@ public class LifecycleHooks {
     }
     
     /**
-     * Run the specified method, retrying on failure.
-     * 
-     * @param runner underlying test runner
-     * @param method test method to be run
-     * @param notifier run notifier through which events are published
-     * @param maxRetry maximum number of retry attempts
-     */
-    static void runChildWithRetry(Object runner, final FrameworkMethod method, RunNotifier notifier, int maxRetry) {
-        boolean doRetry = false;
-        Statement statement = invoke(runner, "methodBlock", method);
-        Description description = invoke(runner, "describeChild", method);
-        AtomicInteger count = new AtomicInteger(maxRetry);
-        
-        do {
-            EachTestNotifier eachNotifier = new EachTestNotifier(notifier, description);
-            
-            eachNotifier.fireTestStarted();
-            try {
-                statement.evaluate();
-                doRetry = false;
-            } catch (AssumptionViolatedException thrown) {
-                doRetry = doRetry(runner, method, thrown, count);
-                if (doRetry) {
-                    description = RetriedTest.proxyFor(description, thrown);
-                    eachNotifier.fireTestIgnored();
-                } else {
-                    eachNotifier.addFailedAssumption(thrown);
-                }
-            } catch (Throwable thrown) {
-                doRetry = doRetry(runner, method, thrown, count);
-                if (doRetry) {
-                    description = RetriedTest.proxyFor(description, thrown);
-                    eachNotifier.fireTestIgnored();
-                } else {
-                    eachNotifier.addFailure(thrown);
-                }
-            } finally {
-                eachNotifier.fireTestFinished();
-            }
-        } while (doRetry);
-    }
-    
-    /**
-     * Determine if the indicated failure should be retried.
-     * 
-     * @param method failed test method
-     * @param thrown exception for this failed test
-     * @param retryCounter retry counter (remaining attempts)
-     * @return {@code true} if failed test should be retried; otherwise {@code false}
-     */
-    static boolean doRetry(Object runner, FrameworkMethod method, Throwable thrown, AtomicInteger retryCounter) {
-        boolean doRetry = false;
-        if ((retryCounter.decrementAndGet() > -1) && isRetriable(method, thrown)) {
-            LOGGER.warn("### RETRY ### {}", method);
-            doRetry = true;
-        }
-        return doRetry;
-    }
-
-    /**
-     * Get the configured maximum retry count for failed tests ({@link JUnitSetting#MAX_RETRY MAX_RETRY}).
-     * <p>
-     * <b>NOTE</b>: If the specified method or the class that declares it are marked with the {@code @NoRetry}
-     * annotation, this method returns zero (0).
-     * 
-     * @param method test method for which retry is being considered
-     * @return maximum retry attempts that will be made if the specified method fails
-     */
-    static int getMaxRetry(Object runner, final FrameworkMethod method) {
-        int maxRetry = 0;
-        
-        // determine if retry is disabled for this method
-        NoRetry noRetryOnMethod = method.getAnnotation(NoRetry.class);
-        // determine if retry is disabled for the class that declares this method
-        NoRetry noRetryOnClass = method.getDeclaringClass().getAnnotation(NoRetry.class);
-        
-        // if method isn't ignored or excluded from retry attempts
-        if (Boolean.FALSE.equals(invoke(runner, "isIgnored", method)) && (noRetryOnMethod == null) && (noRetryOnClass == null)) {
-            // get configured maximum retry count
-            maxRetry = getConfig().getInteger(JUnitSettings.MAX_RETRY.key(), Integer.valueOf(0));
-        }
-        
-        return maxRetry;
-    }
-    
-    /**
-     * Determine if the specified failed test should be retried.
-     * 
-     * @param method failed test method
-     * @param thrown exception for this failed test
-     * @return {@code true} if test should be retried; otherwise {@code false}
-     */
-    static boolean isRetriable(final FrameworkMethod method, final Throwable thrown) {
-        for (JUnitRetryAnalyzer analyzer : retryAnalyzerLoader) {
-            if (analyzer.retry(method, thrown)) {
-                return true;
-            }
-        }
-        return false;
-    }
-    
-    /**
      * Create an enhanced instance of the specified test class object.
      * 
      * @param testObj test class object to be enhanced
@@ -364,6 +302,7 @@ public class LifecycleHooks {
         if (proxyType == null) {
             try {
                 proxyType = new ByteBuddy()
+                        .with(AnnotationRetention.ENABLED)
                         .subclass(testClass)
                         .name(getSubclassName(testObj))
                         .method(isAnnotatedWith(anyOf(Test.class, Before.class, After.class)))

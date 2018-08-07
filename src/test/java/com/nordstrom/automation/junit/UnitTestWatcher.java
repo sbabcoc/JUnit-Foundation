@@ -1,6 +1,5 @@
 package com.nordstrom.automation.junit;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -10,6 +9,7 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runners.model.FrameworkMethod;
 
 public class UnitTestWatcher implements MethodWatcher2 {
 
@@ -26,7 +26,7 @@ public class UnitTestWatcher implements MethodWatcher2 {
     private List<String> m_leaveAfterClass = Collections.synchronizedList(new ArrayList<>());
     
     @Override
-    public void beforeInvocation(Object obj, Method method, Object[] args) {
+    public void beforeInvocation(Object obj, FrameworkMethod method) {
         if (null != method.getAnnotation(Before.class)) {
             m_enterBeforeMethod.add(method.getName());
         } else if (null != method.getAnnotation(Test.class)) {
@@ -37,7 +37,7 @@ public class UnitTestWatcher implements MethodWatcher2 {
     }
 
     @Override
-    public void afterInvocation(Object obj, Method method, Object[] args) {
+    public void afterInvocation(Object obj, FrameworkMethod method, Throwable thrown) {
         if (null != method.getAnnotation(Before.class)) {
             m_leaveBeforeMethod.add(method.getName());
         } else if (null != method.getAnnotation(Test.class)) {
@@ -48,7 +48,7 @@ public class UnitTestWatcher implements MethodWatcher2 {
     }
     
     @Override
-    public void beforeInvocation(Method method, Object[] args) {
+    public void beforeInvocation(FrameworkMethod method) {
         if (null != method.getAnnotation(BeforeClass.class)) {
             m_enterBeforeClass.add(method.getName());
         } else if (null != method.getAnnotation(AfterClass.class)) {
@@ -57,7 +57,7 @@ public class UnitTestWatcher implements MethodWatcher2 {
     }
 
     @Override
-    public void afterInvocation(Method method, Object[] args) {
+    public void afterInvocation(FrameworkMethod method, Throwable thrown) {
         if (null != method.getAnnotation(BeforeClass.class)) {
             m_leaveBeforeClass.add(method.getName());
         } else if (null != method.getAnnotation(AfterClass.class)) {
