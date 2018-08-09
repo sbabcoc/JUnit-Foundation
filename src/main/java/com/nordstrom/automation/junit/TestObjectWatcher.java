@@ -4,7 +4,7 @@ import org.junit.runners.model.TestClass;
 
 /**
  * This interface defines the methods implemented by JUnit test object watchers. These watchers are registered via a
- * ServiceLoader provider configuration file. To activate this feature, run with the {@link HookInstallingPlugin}.
+ * ServiceLoader provider configuration file.
  */
 public interface TestObjectWatcher {
     

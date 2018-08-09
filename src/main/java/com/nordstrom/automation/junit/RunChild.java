@@ -23,7 +23,7 @@ public class RunChild {
      * @param proxy callable proxy for the intercepted method
      * @param method test method to be run
      * @param notifier run notifier through which events are published
-     * @throws Exception if something goes wrong
+     * @throws Exception {@code anything} (exception thrown by the intercepted method)
      */
     public static void intercept(@This Object runner, @SuperCall Callable<?> proxy, @Argument(0) FrameworkMethod method, @Argument(1) RunNotifier notifier) throws Exception {
         int count = RetryHandler.getMaxRetry(runner, method);

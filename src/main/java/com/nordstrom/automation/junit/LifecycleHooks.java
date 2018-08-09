@@ -6,15 +6,12 @@ import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.Instrumentation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.Description;
 import org.junit.runner.notification.RunListener;
@@ -24,12 +21,11 @@ import com.nordstrom.automation.junit.JUnitConfig.JUnitSettings;
 import com.nordstrom.common.base.UncheckedThrow;
 import com.nordstrom.common.file.PathUtils.ReportsDirectory;
 
-import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.implementation.MethodDelegation;
-import net.bytebuddy.implementation.attribute.AnnotationRetention;
 import net.bytebuddy.implementation.bind.annotation.Argument;
+import net.bytebuddy.implementation.bind.annotation.RuntimeType;
 import net.bytebuddy.implementation.bind.annotation.SuperCall;
 import net.bytebuddy.implementation.bind.annotation.This;
 import net.bytebuddy.pool.TypePool;
@@ -39,7 +35,6 @@ import net.bytebuddy.pool.TypePool;
  */
 public class LifecycleHooks {
 
-    private static Map<Class<?>, Class<?>> proxyMap = new HashMap<>();
     private static JUnitConfig config;
     
     private LifecycleHooks() {
@@ -74,10 +69,15 @@ public class LifecycleHooks {
      * @return The installed class file transformer
      */
     public static ClassFileTransformer installTransformer(Instrumentation instrumentation) {
+        TypeDescription type0 = TypePool.Default.ofClassPath().describe("org.junit.internal.runners.model.ReflectiveCallable").resolve();
         TypeDescription type1 = TypePool.Default.ofClassPath().describe("org.junit.runners.ParentRunner").resolve();
         TypeDescription type2 = TypePool.Default.ofClassPath().describe("org.junit.runners.BlockJUnit4ClassRunner").resolve();
         
         return new AgentBuilder.Default()
+                .type(isSubTypeOf(type0))
+                .transform((builder, type, classLoader, module) -> 
+                        builder.method(named("runReflectiveCall")).intercept(MethodDelegation.to(RunReflectiveCall.class))
+                               .implement(Hooked.class))
                 .type(isSubTypeOf(type1))
                 .transform((builder, type, classLoader, module) -> 
                         builder.method(named("createTestClass")).intercept(MethodDelegation.to(CreateTestClass.class))
@@ -137,7 +137,7 @@ public class LifecycleHooks {
          * @param runner underlying test runner
          * @param proxy callable proxy for the intercepted method
          * @return new {@link TestClass} object
-         * @throws Exception if something goes wrong
+         * @throws Exception {@code anything} (exception thrown by the intercepted method)
          */
         public static TestClass intercept(@This Object runner, @SuperCall Callable<?> proxy) throws Exception {
             TestClass testClass = (TestClass) proxy.call();
@@ -169,9 +169,10 @@ public class LifecycleHooks {
          * @param runner underlying test runner
          * @param proxy callable proxy for the intercepted method
          * @param notifier run notifier through which events are published
-         * @throws Exception if something goes wrong
+         * @throws Exception {@code anything} (exception thrown by the intercepted method)
          */
-        public static void intercept(@This Object runner, @SuperCall Callable<?> proxy, @Argument(0) RunNotifier notifier) throws Exception {
+        public static void intercept(@This Object runner, @SuperCall Callable<?> proxy,
+                        @Argument(0) RunNotifier notifier) throws Exception {
             if (NOTIFIERS.add(notifier)) {
                 Description description = invoke(runner, "getDescription");
                 for (RunListener listener : runListenerLoader) {
@@ -184,8 +185,8 @@ public class LifecycleHooks {
     }
     
     /**
-     * This class declares the interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#createTest createTest}
-     * method.
+     * This class declares the interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#createTest
+     * createTest} method.
      */
     @SuppressWarnings("squid:S1118")
     public static class CreateTest {
@@ -203,10 +204,11 @@ public class LifecycleHooks {
          * @param runner target {@link org.junit.runners.BlockJUnit4ClassRunner BlockJUnit4ClassRunner} object
          * @param proxy callable proxy for the intercepted method
          * @return {@code anything}
-         * @throws Exception if something goes wrong
+         * @throws Exception {@code anything} (exception thrown by the intercepted method)
          */
+        @RuntimeType
         public static Object intercept(@This Object runner, @SuperCall Callable<?> proxy) throws Exception {
-            Object testObj = installHooks(proxy.call());
+            Object testObj = proxy.call();
             INSTANCE_TO_CLASS.put(testObj, invoke(runner, "getTestClass"));
             applyTimeout(testObj);
             
@@ -280,47 +282,6 @@ public class LifecycleHooks {
                     MutableTest.proxyFor(method).setTimeout(defaultTimeout);
                 }
             }
-        }
-    }
-    
-    /**
-     * Create an enhanced instance of the specified test class object.
-     * 
-     * @param testObj test class object to be enhanced
-     * @return enhanced test class object
-     */
-    static synchronized Object installHooks(Object testObj) {
-        Class<?> testClass = testObj.getClass();
-        MethodInterceptor.attachWatchers(testClass);
-        
-        if (testObj instanceof Hooked) {
-            return testObj;
-        }
-        
-        Class<?> proxyType = proxyMap.get(testClass);
-        
-        if (proxyType == null) {
-            try {
-                proxyType = new ByteBuddy()
-                        .with(AnnotationRetention.ENABLED)
-                        .subclass(testClass)
-                        .name(getSubclassName(testObj))
-                        .method(isAnnotatedWith(anyOf(Test.class, Before.class, After.class)))
-                        .intercept(MethodDelegation.to(MethodInterceptor.class))
-                        .implement(Hooked.class)
-                        .make()
-                        .load(testClass.getClassLoader())
-                        .getLoaded();
-                proxyMap.put(testClass, proxyType);
-            } catch (SecurityException | IllegalArgumentException e) {
-                throw UncheckedThrow.throwUnchecked(e);
-            }
-        }
-            
-        try {
-            return proxyType.newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
-            throw UncheckedThrow.throwUnchecked(e);
         }
     }
     
