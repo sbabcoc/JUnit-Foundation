@@ -26,18 +26,27 @@ public class RunReflectiveCall {
         methodWatcherLoader = ServiceLoader.load(MethodWatcher.class);
     }
     
+    /**
+     * Interceptor for the {@link org.junit.internal.runners.model.ReflectiveCallable#runReflectiveCall
+     * runReflectiveCall} method.
+     * 
+     * @param callable {@code ReflectiveCallable} object being intercepted 
+     * @param proxy callable proxy for the intercepted method
+     * @return {@code anything} - value returned by the intercepted method
+     * @throws Exception {@code anything} (exception thrown by the intercepted method)
+     */
     @RuntimeType
-    public static Object intercept(@This final Object obj, @SuperCall final Callable<?> proxy) throws Exception {
+    public static Object intercept(@This final Object callable, @SuperCall final Callable<?> proxy) throws Exception {
         FrameworkMethod method = null;
         Object target = null;
         Object[] params = null;
 
         try {
-            Object owner = LifecycleHooks.getFieldValue(obj, "this$0");
+            Object owner = LifecycleHooks.getFieldValue(callable, "this$0");
             if (owner instanceof FrameworkMethod) {
                 method = (FrameworkMethod) owner;
-                target = LifecycleHooks.getFieldValue(obj, "val$target");
-                params = LifecycleHooks.getFieldValue(obj, "val$params");
+                target = LifecycleHooks.getFieldValue(callable, "val$target");
+                params = LifecycleHooks.getFieldValue(callable, "val$params");
             }
         } catch (IllegalAccessException | NoSuchFieldException | SecurityException | IllegalArgumentException e) {
             // handled below

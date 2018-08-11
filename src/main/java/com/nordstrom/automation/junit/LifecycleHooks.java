@@ -171,7 +171,7 @@ public class LifecycleHooks {
          * 
          * @param runner target {@link org.junit.runners.BlockJUnit4ClassRunner BlockJUnit4ClassRunner} object
          * @param proxy callable proxy for the intercepted method
-         * @return {@code anything}
+         * @return {@code anything} - JUnit test class instance
          * @throws Exception {@code anything} (exception thrown by the intercepted method)
          */
         @RuntimeType
@@ -323,14 +323,23 @@ public class LifecycleHooks {
         throw UncheckedThrow.throwUnchecked(thrown);
     }
     
-    public static Field getDeclaredField(Object target, String name) throws NoSuchFieldException, SecurityException, IllegalArgumentException {
+    /**
+     * Get the specified field of the supplied object.
+     * 
+     * @param target target object
+     * @param name field name
+     * @return {@link Field} object for the requested field
+     * @throws NoSuchFieldException if a field with the specified name is not found
+     * @throws SecurityException if the request is denied
+     */
+    public static Field getDeclaredField(Object target, String name) throws NoSuchFieldException, SecurityException {
         Throwable thrown = null;
         for (Class<?> current = target.getClass(); current != null; current = current.getSuperclass()) {
             try {
                 return current.getDeclaredField(name);
             } catch (NoSuchFieldException e) {
                 thrown = e;
-            } catch (SecurityException | IllegalArgumentException e) {
+            } catch (SecurityException e) {
                 thrown = e;
                 break;
             }
@@ -339,14 +348,34 @@ public class LifecycleHooks {
         throw UncheckedThrow.throwUnchecked(thrown);
     }
 
+    /**
+     * Get the value of the specified field from the supplied object.
+     * 
+     * @param target target object
+     * @param name field name
+     * @return {@code anything} - the value of the specified field in the supplied object
+     * @throws IllegalAccessException if the {@code Field} object is enforcing access control for an inaccessible field
+     * @throws NoSuchFieldException if a field with the specified name is not found
+     * @throws SecurityException if the request is denied
+     */
     @SuppressWarnings("unchecked")
-    public static <T> T getFieldValue(Object target, String name) throws IllegalAccessException, NoSuchFieldException, SecurityException, IllegalArgumentException {
+    public static <T> T getFieldValue(Object target, String name) throws IllegalAccessException, NoSuchFieldException, SecurityException {
         Field field = getDeclaredField(target, name);
         field.setAccessible(true);
         return (T) field.get(target);
     }
 
-    public static void setFieldValue(Object target, String name, Object value) throws IllegalAccessException, NoSuchFieldException, SecurityException, IllegalArgumentException {
+    /**
+     * Set the value of the specified field of the supplied object.
+     * 
+     * @param target target object
+     * @param name field name
+     * @param value value to set in the specified field of the supplied object
+     * @throws IllegalAccessException if the {@code Field} object is enforcing access control for an inaccessible field
+     * @throws NoSuchFieldException if a field with the specified name is not found
+     * @throws SecurityException if the request is denied
+     */
+    public static void setFieldValue(Object target, String name, Object value) throws IllegalAccessException, NoSuchFieldException, SecurityException {
         Field field = getDeclaredField(target, name);
         field.setAccessible(true);
         field.set(target, value);
