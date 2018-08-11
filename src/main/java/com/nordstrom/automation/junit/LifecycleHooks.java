@@ -4,6 +4,7 @@ import static net.bytebuddy.matcher.ElementMatchers.*;
 
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.Instrumentation;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashSet;
@@ -78,12 +79,12 @@ public class LifecycleHooks {
                 .transform((builder, type, classLoader, module) -> 
                         builder.method(named("runReflectiveCall")).intercept(MethodDelegation.to(RunReflectiveCall.class))
                                .implement(Hooked.class))
-                .type(isSubTypeOf(type1))
+                .type(is(type1))
                 .transform((builder, type, classLoader, module) -> 
                         builder.method(named("createTestClass")).intercept(MethodDelegation.to(CreateTestClass.class))
                                .method(named("run")).intercept(MethodDelegation.to(Run.class))
                                .implement(Hooked.class))
-                .type(isSubTypeOf(type2))
+                .type(is(type2))
                 .transform((builder, type, classLoader, module) -> 
                         builder.method(named("createTest")).intercept(MethodDelegation.to(CreateTest.class))
                                .method(named("runChild")).intercept(MethodDelegation.to(RunChild.class))
@@ -116,39 +117,6 @@ public class LifecycleHooks {
             config = JUnitConfig.getConfig();
         }
         return config;
-    }
-    
-    /**
-     * This class declares the interceptor for the {@link org.junit.runners.ParentRunner#createTestClass
-     * createTestClass} method.
-     */
-    @SuppressWarnings("squid:S1118")
-    public static class CreateTestClass {
-        static final ServiceLoader<TestClassWatcher> classWatcherLoader;
-        static final Map<TestClass, Object> CLASS_TO_RUNNER = new ConcurrentHashMap<>();
-        
-        static {
-            classWatcherLoader = ServiceLoader.load(TestClassWatcher.class);
-        }
-        
-        /**
-         * Interceptor for the {@link org.junit.runners.ParentRunner#createTestClass createTestClass} method.
-         * 
-         * @param runner underlying test runner
-         * @param proxy callable proxy for the intercepted method
-         * @return new {@link TestClass} object
-         * @throws Exception {@code anything} (exception thrown by the intercepted method)
-         */
-        public static TestClass intercept(@This Object runner, @SuperCall Callable<?> proxy) throws Exception {
-            TestClass testClass = (TestClass) proxy.call();
-            CLASS_TO_RUNNER.put(testClass, runner);
-            
-            for (TestClassWatcher watcher : classWatcherLoader) {
-                watcher.testClassCreated(testClass, runner);
-            }
-            
-            return testClass;
-        }
     }
     
     /**
@@ -353,5 +321,34 @@ public class LifecycleHooks {
         }
         
         throw UncheckedThrow.throwUnchecked(thrown);
+    }
+    
+    public static Field getDeclaredField(Object target, String name) throws NoSuchFieldException, SecurityException, IllegalArgumentException {
+        Throwable thrown = null;
+        for (Class<?> current = target.getClass(); current != null; current = current.getSuperclass()) {
+            try {
+                return current.getDeclaredField(name);
+            } catch (NoSuchFieldException e) {
+                thrown = e;
+            } catch (SecurityException | IllegalArgumentException e) {
+                thrown = e;
+                break;
+            }
+        }
+        
+        throw UncheckedThrow.throwUnchecked(thrown);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> T getFieldValue(Object target, String name) throws IllegalAccessException, NoSuchFieldException, SecurityException, IllegalArgumentException {
+        Field field = getDeclaredField(target, name);
+        field.setAccessible(true);
+        return (T) field.get(target);
+    }
+
+    public static void setFieldValue(Object target, String name, Object value) throws IllegalAccessException, NoSuchFieldException, SecurityException, IllegalArgumentException {
+        Field field = getDeclaredField(target, name);
+        field.setAccessible(true);
+        field.set(target, value);
     }
 }

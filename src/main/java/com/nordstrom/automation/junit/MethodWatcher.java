@@ -3,8 +3,7 @@ package com.nordstrom.automation.junit;
 import org.junit.runners.model.FrameworkMethod;
 
 /**
- * This interface defines the methods implemented by JUnit method watchers. These watchers are attached to test classes
- * via the {@link MethodWatchers} annotation.
+ * This interface defines the methods implemented by JUnit method watchers.
  */
 public interface MethodWatcher {
 

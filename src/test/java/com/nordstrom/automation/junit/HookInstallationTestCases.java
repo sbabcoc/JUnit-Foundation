@@ -8,7 +8,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-@MethodWatchers({UnitTestWatcher.class})
 public class HookInstallationTestCases {
     
     @BeforeClass
