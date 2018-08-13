@@ -54,12 +54,10 @@ public class RunReflectiveCall {
                 target = getFieldValue(callable, "val$target");
                 params = getFieldValue(callable, "val$params");
                 
-                // if static method
-                if (target == null) {
-                    target = method.getDeclaringClass();
+                // if not static
+                if (target != null) {
+                    METHOD_TO_TARGET.put(method, target);
                 }
-                
-                METHOD_TO_TARGET.put(method, target);
             }
         } catch (IllegalAccessException | NoSuchFieldException | SecurityException | IllegalArgumentException e) {
             // handled below
@@ -92,17 +90,21 @@ public class RunReflectiveCall {
         return result;
     }
     
-    static void fireTestStarted(FrameworkMethod method) {
-        Object target = getTargetFor(method);
-        for (MethodWatcher watcher : methodWatcherLoader) {
-            watcher.testStarted(method, target);
+    static void fireTestStarted(Object statement) {
+        AtomicTest atomicTest = Evaluate.getAtomicTestFor(statement);
+        if (atomicTest != null) {
+            for (MethodWatcher watcher : methodWatcherLoader) {
+                watcher.testStarted(atomicTest.getTestMethod(), atomicTest.getTarget());
+            }
         }
     }
     
-    static void fireTestFinished(FrameworkMethod method) {
-        Object target = getTargetFor(method);
-        for (MethodWatcher watcher : methodWatcherLoader) {
-            watcher.testFinished(method, target);
+    static void fireTestFinished(Object statement) {
+        AtomicTest atomicTest = Evaluate.getAtomicTestFor(statement);
+        if (atomicTest != null) {
+            for (MethodWatcher watcher : methodWatcherLoader) {
+                watcher.testFinished(atomicTest.getTestMethod(), atomicTest.getTarget());
+            }
         }
     }
     

@@ -82,7 +82,7 @@ public class CreateTestClass {
                     }
                 }
                 
-                // FIXME Need to fire 'testStarted' here
+                RunReflectiveCall.fireTestStarted(childStatement);
                 
                 if (scheduler != null) {
                     scheduler.schedule(childStatement);
@@ -90,7 +90,7 @@ public class CreateTestClass {
                     childStatement.run();
                 }
                 
-                // FIXME Need to fire 'testFinished' here
+                RunReflectiveCall.fireTestFinished(childStatement);
             }
 
             public void finished() {

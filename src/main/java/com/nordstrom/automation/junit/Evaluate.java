@@ -22,21 +22,16 @@ public class Evaluate {
     public static void intercept(@This final Object statement,
                     @SuperCall final Callable<?> proxy) throws Exception {
         
-        try {
-            Object target = getFieldValue(statement, "target");
-            FrameworkMethod method = getFieldValue(statement, "testMethod");
-            
-            // if static method
-            if (target == null) {
-                target = method.getDeclaringClass();
-            }
-            
-            STATEMENT_TO_TARGET.put(statement, target);
-            if (statement instanceof InvokeMethod) {
+        if (statement instanceof InvokeMethod) {
+            try {
+                Object target = getFieldValue(statement, "target");
+                FrameworkMethod method = getFieldValue(statement, "testMethod");
+                
+                STATEMENT_TO_TARGET.put(statement, target);
                 TARGET_TO_METHOD.put(target, method);
+            } catch (IllegalAccessException | NoSuchFieldException | SecurityException e) {
+                // nothing to do here
             }
-        } catch (IllegalAccessException | NoSuchFieldException | SecurityException e) {
-            // nothing to do here
         }
         
         proxy.call();

@@ -29,7 +29,7 @@ public interface MethodWatcher {
      * Called when a test will not be run, generally because a test method is annotated with {@link org.junit.Ignore}.
      * 
      * @param method {@link FrameworkMethod} object for this atomic test
-     * @param testClass {@link TestClass} object that owns this framework method
+     * @param target test class instance for this atomic test
      */
     public void testIgnored(FrameworkMethod method, Object target);
     
