@@ -1,9 +1,13 @@
 package com.nordstrom.automation.junit;
 
+import static com.nordstrom.automation.junit.LifecycleHooks.getFieldValue;
+
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.junit.runners.model.FrameworkMethod;
 
@@ -20,7 +24,8 @@ import net.bytebuddy.implementation.bind.annotation.This;
 @SuppressWarnings("squid:S1118")
 public class RunReflectiveCall {
     
-    static final ServiceLoader<MethodWatcher> methodWatcherLoader;
+    private static final ServiceLoader<MethodWatcher> methodWatcherLoader;
+    private static final Map<FrameworkMethod, Object> METHOD_TO_TARGET = new ConcurrentHashMap<>();
   
     static {
         methodWatcherLoader = ServiceLoader.load(MethodWatcher.class);
@@ -36,17 +41,25 @@ public class RunReflectiveCall {
      * @throws Exception {@code anything} (exception thrown by the intercepted method)
      */
     @RuntimeType
-    public static Object intercept(@This final Object callable, @SuperCall final Callable<?> proxy) throws Exception {
+    public static Object intercept(@This final Object callable, @SuperCall final Callable<?> proxy)
+                    throws Exception {
         FrameworkMethod method = null;
         Object target = null;
         Object[] params = null;
 
         try {
-            Object owner = LifecycleHooks.getFieldValue(callable, "this$0");
+            Object owner = getFieldValue(callable, "this$0");
             if (owner instanceof FrameworkMethod) {
                 method = (FrameworkMethod) owner;
-                target = LifecycleHooks.getFieldValue(callable, "val$target");
-                params = LifecycleHooks.getFieldValue(callable, "val$params");
+                target = getFieldValue(callable, "val$target");
+                params = getFieldValue(callable, "val$params");
+                
+                // if static method
+                if (target == null) {
+                    target = method.getDeclaringClass();
+                }
+                
+                METHOD_TO_TARGET.put(method, target);
             }
         } catch (IllegalAccessException | NoSuchFieldException | SecurityException | IllegalArgumentException e) {
             // handled below
@@ -79,6 +92,35 @@ public class RunReflectiveCall {
         return result;
     }
     
+    static void fireTestStarted(FrameworkMethod method) {
+        Object target = getTargetFor(method);
+        for (MethodWatcher watcher : methodWatcherLoader) {
+            watcher.testStarted(method, target);
+        }
+    }
+    
+    static void fireTestFinished(FrameworkMethod method) {
+        Object target = getTargetFor(method);
+        for (MethodWatcher watcher : methodWatcherLoader) {
+            watcher.testFinished(method, target);
+        }
+    }
+    
+    static void fireTestIgnored(FrameworkMethod method) {
+        Object target = getTargetFor(method);
+        for (MethodWatcher watcher : methodWatcherLoader) {
+            watcher.testIgnored(method, target);
+        }
+    }
+    
+    static Object getTargetFor(FrameworkMethod method) {
+        Object target = METHOD_TO_TARGET.get(method);
+        if (target != null) {
+            return target;
+        }
+        throw new IllegalArgumentException("No associated test class instance was found for the specified method");
+    }
+    
     /**
      * Get reference to an instance of the specified watcher type.
      * 
@@ -95,5 +137,5 @@ public class RunReflectiveCall {
         }
         return Optional.empty();
     }
-
+    
 }

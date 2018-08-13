@@ -2,9 +2,9 @@ package com.nordstrom.automation.junit;
 
 import java.util.concurrent.Callable;
 
+import org.junit.Ignore;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.FrameworkMethod;
-
 import net.bytebuddy.implementation.bind.annotation.Argument;
 import net.bytebuddy.implementation.bind.annotation.SuperCall;
 import net.bytebuddy.implementation.bind.annotation.This;
@@ -25,13 +25,30 @@ public class RunChild {
      * @param notifier run notifier through which events are published
      * @throws Exception {@code anything} (exception thrown by the intercepted method)
      */
-    public static void intercept(@This Object runner, @SuperCall Callable<?> proxy, @Argument(0) FrameworkMethod method, @Argument(1) RunNotifier notifier) throws Exception {
+    public static void intercept(@This final Object runner, @SuperCall final Callable<?> proxy,
+                    @Argument(0) final FrameworkMethod method,
+                    @Argument(1) final RunNotifier notifier) throws Exception {
         int count = RetryHandler.getMaxRetry(runner, method);
+        boolean isIgnored = (null != method.getAnnotation(Ignore.class));
         
-        if (count > 0) {
-            RetryHandler.runChildWithRetry(runner, method, notifier, count);
-        } else {
+        if (isIgnored) {
+            RunReflectiveCall.fireTestIgnored(method);
+        }
+        
+        if (count == 0) {
             proxy.call();
+        } else if (!isIgnored) {
+            RetryHandler.runChildWithRetry(runner, method, notifier, count);
         }
     }
+    
+    /*
+        
+        if (childMethod != null) {
+            for (TestClassWatcher watcher : classWatcherLoader) {
+                watcher.testFinished(childMethod, target);
+            }
+        }
+     */
+    
 }

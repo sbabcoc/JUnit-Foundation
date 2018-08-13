@@ -1,6 +1,5 @@
 package com.nordstrom.automation.junit;
 
-import org.junit.runner.Description;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.TestClass;
 
@@ -33,20 +32,4 @@ public interface TestClassWatcher {
      * @param runner {@link org.junit.runners.ParentRunner ParentRunner} object for the parent runner
      */
     void testClassFinished(TestClass testClass, Object runner);
-    
-    /**
-     * Called when an atomic test is about to be started.
-     *
-     * @param method {@link FrameworkMethod} object for this atomic test
-     * @param testClass {@link TestClass} object that owns this framework method
-     */
-    public void testStarted(FrameworkMethod method, TestClass testClass);
-
-    /**
-     * Called when an atomic test has finished, whether the test succeeds or fails.
-     *
-     * @param method {@link FrameworkMethod} object for this atomic test
-     * @param testClass {@link TestClass} object that owns this framework method
-     */
-    public void testFinished(FrameworkMethod method, TestClass testClass);
 }

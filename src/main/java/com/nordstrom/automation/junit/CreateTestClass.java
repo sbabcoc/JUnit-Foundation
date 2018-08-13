@@ -1,13 +1,14 @@
 package com.nordstrom.automation.junit;
 
+import static com.nordstrom.automation.junit.LifecycleHooks.getFieldValue;
+import static com.nordstrom.automation.junit.LifecycleHooks.setFieldValue;
+
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.junit.runners.Suite;
-import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.RunnerScheduler;
 import org.junit.runners.model.TestClass;
 
@@ -20,8 +21,8 @@ import net.bytebuddy.implementation.bind.annotation.This;
  */
 @SuppressWarnings("squid:S1118")
 public class CreateTestClass {
-    static final ServiceLoader<TestClassWatcher> classWatcherLoader;
-    static final Map<TestClass, Object> CLASS_TO_RUNNER = new ConcurrentHashMap<>();
+    private static final ServiceLoader<TestClassWatcher> classWatcherLoader;
+    private static final Map<TestClass, Object> CLASS_TO_RUNNER = new ConcurrentHashMap<>();
     
     static {
         classWatcherLoader = ServiceLoader.load(TestClassWatcher.class);
@@ -35,7 +36,8 @@ public class CreateTestClass {
      * @return new {@link TestClass} object
      * @throws Exception {@code anything} (exception thrown by the intercepted method)
      */
-    public static TestClass intercept(@This Object runner, @SuperCall Callable<?> proxy) throws Exception {
+    public static TestClass intercept(@This final Object runner, @SuperCall final Callable<?> proxy)
+                    throws Exception {
         TestClass testClass = (TestClass) proxy.call();
         CLASS_TO_RUNNER.put(testClass, runner);
         
@@ -55,8 +57,8 @@ public class CreateTestClass {
      */
     private static void attachRunnerScheduler(final TestClass testClass, final Object runner) {
         try {
-            RunnerScheduler scheduler = LifecycleHooks.getFieldValue(runner, "scheduler");
-            LifecycleHooks.setFieldValue(runner, "scheduler", createRunnerScheduler(testClass, runner, scheduler));
+            RunnerScheduler scheduler = getFieldValue(runner, "scheduler");
+            setFieldValue(runner, "scheduler", createRunnerScheduler(testClass, runner, scheduler));
         } catch (IllegalAccessException | NoSuchFieldException | SecurityException | IllegalArgumentException e) {
         }
     }
@@ -70,29 +72,17 @@ public class CreateTestClass {
      * @return new lifecycle-reporting runner scheduler
      */
     private static RunnerScheduler createRunnerScheduler(final TestClass testClass, final Object runner, final RunnerScheduler scheduler) {
-        final boolean isSuite = runner instanceof Suite;
-        
         return new RunnerScheduler() {
             private AtomicBoolean scheduled = new AtomicBoolean(false);
             
             public void schedule(Runnable childStatement) {
-                FrameworkMethod childMethod = null;
-                
                 if (scheduled.compareAndSet(false, true)) {
                     for (TestClassWatcher watcher : classWatcherLoader) {
                         watcher.testClassStarted(testClass, runner);
                     }
                 }
                 
-                if (!isSuite) {
-                    try {
-                        childMethod = LifecycleHooks.getFieldValue(childStatement, "val$each");
-                        for (TestClassWatcher watcher : classWatcherLoader) {
-                            watcher.testStarted(childMethod, testClass);
-                        }
-                    } catch (IllegalAccessException | NoSuchFieldException | SecurityException | IllegalArgumentException e) {
-                    }
-                }
+                // FIXME Need to fire 'testStarted' here
                 
                 if (scheduler != null) {
                     scheduler.schedule(childStatement);
@@ -100,11 +90,7 @@ public class CreateTestClass {
                     childStatement.run();
                 }
                 
-                if (childMethod != null) {
-                    for (TestClassWatcher watcher : classWatcherLoader) {
-                        watcher.testFinished(childMethod, testClass);
-                    }
-                }
+                // FIXME Need to fire 'testFinished' here
             }
 
             public void finished() {
@@ -113,5 +99,13 @@ public class CreateTestClass {
                 }
             }
         };
+    }
+    
+    static Object getRunnerFor(TestClass testClass) {
+        Object runner = CLASS_TO_RUNNER.get(testClass);
+        if (runner != null) {
+            return runner;
+        }
+        throw new IllegalArgumentException("No associated runner was found for specified test class");
     }
 }
