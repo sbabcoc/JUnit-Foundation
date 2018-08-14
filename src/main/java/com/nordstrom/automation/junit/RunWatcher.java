@@ -36,7 +36,7 @@ public interface RunWatcher {
      * 
      * @param method {@link FrameworkMethod} object for this atomic test
      * @param testClass {@link TestClass} object for this atomic test
-     * @param thrown {@link AssumptionViolatedExceptionexception thrown by method
+     * @param thrown {@link AssumptionViolatedException} thrown by method
      */
     public void testAssumptionFailure(FrameworkMethod method, TestClass testClass, AssumptionViolatedException thrown);
     

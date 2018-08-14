@@ -220,7 +220,7 @@ public class RunReflectiveCall {
     /**
      * Get the atomic test associated with the specified test class.
      * 
-     * @param testClass {@TestClass} object
+     * @param testClass {@link TestClass} object
      * @return {@link AtomicTest} object for the specified test class
      */
     public static AtomicTest getAtomicTestFor(TestClass testClass) {
