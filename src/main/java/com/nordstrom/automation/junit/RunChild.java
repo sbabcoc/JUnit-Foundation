@@ -41,14 +41,4 @@ public class RunChild {
             RetryHandler.runChildWithRetry(runner, method, notifier, count);
         }
     }
-    
-    /*
-        
-        if (childMethod != null) {
-            for (TestClassWatcher watcher : classWatcherLoader) {
-                watcher.testFinished(childMethod, target);
-            }
-        }
-     */
-    
 }

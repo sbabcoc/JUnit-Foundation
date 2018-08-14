@@ -71,26 +71,11 @@ public class LifecycleHooks {
      * @return The installed class file transformer
      */
     public static ClassFileTransformer installTransformer(Instrumentation instrumentation) {
-        TypeDescription testRule = TypePool.Default.ofClassPath().describe("org.junit.rules.TestRule").resolve();
-        TypeDescription methodRule = TypePool.Default.ofClassPath().describe("org.junit.rules.MethodRule").resolve();
-        TypeDescription statement = TypePool.Default.ofClassPath().describe("org.junit.runners.model.Statement").resolve();
         TypeDescription reflectiveCallable = TypePool.Default.ofClassPath().describe("org.junit.internal.runners.model.ReflectiveCallable").resolve();
         TypeDescription parentRunner = TypePool.Default.ofClassPath().describe("org.junit.runners.ParentRunner").resolve();
         TypeDescription blockJUnit4ClassRunner = TypePool.Default.ofClassPath().describe("org.junit.runners.BlockJUnit4ClassRunner").resolve();
         
         return new AgentBuilder.Default()
-                .type(isSubTypeOf(testRule))
-                .transform((builder, type, classLoader, module) -> 
-                        builder.method(named("apply")).intercept(MethodDelegation.to(ApplyTestRule.class))
-                               .implement(Hooked.class))
-                .type(isSubTypeOf(methodRule))
-                .transform((builder, type, classLoader, module) -> 
-                        builder.method(named("apply")).intercept(MethodDelegation.to(ApplyMethodRule.class))
-                               .implement(Hooked.class))
-                .type(isSubTypeOf(statement))
-                .transform((builder, type, classLoader, module) -> 
-                        builder.method(named("evaluate")).intercept(MethodDelegation.to(Evaluate.class))
-                               .implement(Hooked.class))
                 .type(isSubTypeOf(reflectiveCallable))
                 .transform((builder, type, classLoader, module) -> 
                         builder.method(named("runReflectiveCall")).intercept(MethodDelegation.to(RunReflectiveCall.class))
@@ -172,6 +157,12 @@ public class LifecycleHooks {
             proxy.call();
         }
         
+        /**
+         * Get the parent runner that owns specified child runner.
+         * 
+         * @param child {@link org.junit.runners.ParentRunner ParentRunner} object
+         * @return {@code ParentRunner} object that owns the specified child ({@code null} for root objects)
+         */
         static Object getParentOf(Object child) {
             return CHILD_TO_PARENT.get(child);
         }
@@ -185,7 +176,7 @@ public class LifecycleHooks {
     public static class CreateTest {
         
         private static final ServiceLoader<TestObjectWatcher> objectWatcherLoader;
-        private static final Map<Object, TestClass> INSTANCE_TO_CLASS = new ConcurrentHashMap<>();
+        private static final Map<Object, TestClass> TARGET_TO_TESTCLASS = new ConcurrentHashMap<>();
         
         static {
             objectWatcherLoader = ServiceLoader.load(TestObjectWatcher.class);
@@ -203,18 +194,24 @@ public class LifecycleHooks {
         public static Object intercept(@This final Object runner,
                         @SuperCall final Callable<?> proxy) throws Exception {
             Object testObj = proxy.call();
-            INSTANCE_TO_CLASS.put(testObj, getTestClassOf(runner));
+            TARGET_TO_TESTCLASS.put(testObj, getTestClassOf(runner));
             applyTimeout(testObj);
             
             for (TestObjectWatcher watcher : objectWatcherLoader) {
-                watcher.testObjectCreated(testObj, INSTANCE_TO_CLASS.get(testObj));
+                watcher.testObjectCreated(testObj, TARGET_TO_TESTCLASS.get(testObj));
             }
             
             return testObj;
         }
         
-        static TestClass getTestClassFor(Object instance) {
-            TestClass testClass = INSTANCE_TO_CLASS.get(instance);
+        /**
+         * Get the test class object that wraps the specified instance.
+         * 
+         * @param target instance of JUnit test class
+         * @return {@link TestClass} associated with specified instance
+         */
+        static TestClass getTestClassFor(Object target) {
+            TestClass testClass = TARGET_TO_TESTCLASS.get(target);
             if (testClass != null) {
                 return testClass;
             }
@@ -225,11 +222,11 @@ public class LifecycleHooks {
     /**
      * Get the test class object that wraps the specified instance.
      * 
-     * @param instance instance object (either test class or Suite)
+     * @param target instance of JUnit test class
      * @return {@link TestClass} associated with specified instance object
      */
-    public static TestClass getTestClassFor(Object instance) {
-        return CreateTest.getTestClassFor(instance);
+    public static TestClass getTestClassFor(Object target) {
+        return CreateTest.getTestClassFor(target);
     }
     
     /**
@@ -263,14 +260,25 @@ public class LifecycleHooks {
     }
     
     /**
+     * Determine if the atomic test associated with the specified test class has configuration methods.
+     * 
+     * @param testClass {@link TestClass} object
+     * @return {@code true} if the atomic test has configuration; otherwise {@code false}
+     */
+    public static boolean hasConfiguration(TestClass testClass) {
+        AtomicTest atomicTest = RunReflectiveCall.getAtomicTestFor(testClass);
+        return atomicTest.hasConfiguration();
+    }
+    
+    /**
      * Get the description of the indicated child object from the runner for the specified test class instance.
      * 
-     * @param instance test class instance
+     * @param target test class instance
      * @param child child object
      * @return {@link Description} object for the indicated child
      */
-    public static Description describeChild(Object instance, Object child) {
-        TestClass testClass = getTestClassFor(instance);
+    public static Description describeChild(Object target, Object child) {
+        TestClass testClass = getTestClassFor(target);
         Object runner = getRunnerFor(testClass);
         return invoke(runner, "describeChild", child);
     }

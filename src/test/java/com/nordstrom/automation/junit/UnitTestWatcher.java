@@ -26,24 +26,6 @@ public class UnitTestWatcher implements MethodWatcher {
     private List<String> m_leaveAfterClass = Collections.synchronizedList(new ArrayList<>());
     
     @Override
-    public void testStarted(FrameworkMethod method, Object target) {
-        // TODO Auto-generated method stub
-        
-    }
-
-    @Override
-    public void testFinished(FrameworkMethod method, Object target) {
-        // TODO Auto-generated method stub
-        
-    }
-
-    @Override
-    public void testIgnored(FrameworkMethod method, Object target) {
-        // TODO Auto-generated method stub
-        
-    }
-
-    @Override
     public void beforeInvocation(Object target, FrameworkMethod method, Object... params) {
         if (null != method.getAnnotation(BeforeClass.class)) {
             m_enterBeforeClass.add(method.getName());
@@ -112,5 +94,4 @@ public class UnitTestWatcher implements MethodWatcher {
     public List<String> getLeaveAfterClass() {
         return m_leaveAfterClass;
     }
-
 }

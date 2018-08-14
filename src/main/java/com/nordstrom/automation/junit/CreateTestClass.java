@@ -22,7 +22,7 @@ import net.bytebuddy.implementation.bind.annotation.This;
 @SuppressWarnings("squid:S1118")
 public class CreateTestClass {
     private static final ServiceLoader<TestClassWatcher> classWatcherLoader;
-    private static final Map<TestClass, Object> CLASS_TO_RUNNER = new ConcurrentHashMap<>();
+    private static final Map<TestClass, Object> TESTCLASS_TO_RUNNER = new ConcurrentHashMap<>();
     
     static {
         classWatcherLoader = ServiceLoader.load(TestClassWatcher.class);
@@ -39,7 +39,7 @@ public class CreateTestClass {
     public static TestClass intercept(@This final Object runner, @SuperCall final Callable<?> proxy)
                     throws Exception {
         TestClass testClass = (TestClass) proxy.call();
-        CLASS_TO_RUNNER.put(testClass, runner);
+        TESTCLASS_TO_RUNNER.put(testClass, runner);
         
         for (TestClassWatcher watcher : classWatcherLoader) {
             watcher.testClassCreated(testClass, runner);
@@ -78,11 +78,11 @@ public class CreateTestClass {
             public void schedule(Runnable childStatement) {
                 if (scheduled.compareAndSet(false, true)) {
                     for (TestClassWatcher watcher : classWatcherLoader) {
-                        watcher.testClassStarted(testClass, runner);
+                        watcher.testClassStarted(testClass);
                     }
                 }
                 
-                RunReflectiveCall.fireTestStarted(childStatement);
+                RunReflectiveCall.fireTestStarted(testClass, childStatement);
                 
                 if (scheduler != null) {
                     scheduler.schedule(childStatement);
@@ -90,19 +90,25 @@ public class CreateTestClass {
                     childStatement.run();
                 }
                 
-                RunReflectiveCall.fireTestFinished(childStatement);
+                RunReflectiveCall.fireTestFinished(testClass);
             }
 
             public void finished() {
                 for (TestClassWatcher watcher : classWatcherLoader) {
-                    watcher.testClassFinished(testClass, runner);
+                    watcher.testClassFinished(testClass);
                 }
             }
         };
     }
     
+    /**
+     * Get the parent runner associate with the specified test class.
+     * 
+     * @param testClass {@link TestClass} object
+     * @return {@code ParentRunner} object associated with the specified test class
+     */
     static Object getRunnerFor(TestClass testClass) {
-        Object runner = CLASS_TO_RUNNER.get(testClass);
+        Object runner = TESTCLASS_TO_RUNNER.get(testClass);
         if (runner != null) {
             return runner;
         }
