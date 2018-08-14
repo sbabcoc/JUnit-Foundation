@@ -4,7 +4,7 @@ import org.junit.runners.model.TestClass;
 
 /**
  * This interface defines the methods implemented by JUnit TestClass watchers. These watchers are registered via a
- * ServiceLoader provider configuration file. To activate this feature, run with the {@link HookInstallingPlugin}.
+ * ServiceLoader provider configuration file.
  */
 public interface TestClassWatcher {
     
@@ -15,5 +15,18 @@ public interface TestClassWatcher {
      * @param runner {@link org.junit.runners.ParentRunner ParentRunner} object that owns this test class object
      */
     void testClassCreated(TestClass testClass, Object runner);
-
+    
+    /**
+     * Called when a runner (test class or suite) is about to be started.
+     * 
+     * @param testClass {@link TestClass} object for the parent runner
+     */
+    void testClassStarted(TestClass testClass);
+    
+    /**
+     * Called when a runner (test class or suite) has finished.
+     * 
+     * @param testClass {@link TestClass} object for the parent runner
+     */
+    void testClassFinished(TestClass testClass);
 }

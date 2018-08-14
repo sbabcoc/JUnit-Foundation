@@ -15,7 +15,7 @@ public class HookInstallationTest {
         JUnitCore runner = new JUnitCore();
         Result result = runner.run(HookInstallationTestCases.class);
         assertTrue(result.wasSuccessful());
-        Optional<MethodWatcher> optWatcher = MethodInterceptor.getAttachedWatcher(UnitTestWatcher.class);
+        Optional<MethodWatcher> optWatcher = RunReflectiveCall.getAttachedWatcher(UnitTestWatcher.class);
         assertTrue(optWatcher.isPresent());
         UnitTestWatcher watcher = (UnitTestWatcher) optWatcher.get();
         assertTrue(watcher.getEnterBeforeClass().contains("unitTestBeforeClass"));

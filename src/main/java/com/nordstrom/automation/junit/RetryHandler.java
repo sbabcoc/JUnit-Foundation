@@ -57,6 +57,7 @@ public class RetryHandler {
                 doRetry = doRetry(runner, method, thrown, count);
                 if (doRetry) {
                     description = RetriedTest.proxyFor(description, thrown);
+                    RunReflectiveCall.fireTestIgnored(method);
                     eachNotifier.fireTestIgnored();
                 } else {
                     eachNotifier.addFailedAssumption(thrown);
@@ -65,6 +66,7 @@ public class RetryHandler {
                 doRetry = doRetry(runner, method, thrown, count);
                 if (doRetry) {
                     description = RetriedTest.proxyFor(description, thrown);
+                    RunReflectiveCall.fireTestIgnored(method);
                     eachNotifier.fireTestIgnored();
                 } else {
                     eachNotifier.addFailure(thrown);

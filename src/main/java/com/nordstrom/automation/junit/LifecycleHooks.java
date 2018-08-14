@@ -4,17 +4,16 @@ import static net.bytebuddy.matcher.ElementMatchers.*;
 
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.Instrumentation;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.Description;
 import org.junit.runner.notification.RunListener;
@@ -24,12 +23,11 @@ import com.nordstrom.automation.junit.JUnitConfig.JUnitSettings;
 import com.nordstrom.common.base.UncheckedThrow;
 import com.nordstrom.common.file.PathUtils.ReportsDirectory;
 
-import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.implementation.MethodDelegation;
-import net.bytebuddy.implementation.attribute.AnnotationRetention;
 import net.bytebuddy.implementation.bind.annotation.Argument;
+import net.bytebuddy.implementation.bind.annotation.RuntimeType;
 import net.bytebuddy.implementation.bind.annotation.SuperCall;
 import net.bytebuddy.implementation.bind.annotation.This;
 import net.bytebuddy.pool.TypePool;
@@ -39,7 +37,6 @@ import net.bytebuddy.pool.TypePool;
  */
 public class LifecycleHooks {
 
-    private static Map<Class<?>, Class<?>> proxyMap = new HashMap<>();
     private static JUnitConfig config;
     
     private LifecycleHooks() {
@@ -74,16 +71,21 @@ public class LifecycleHooks {
      * @return The installed class file transformer
      */
     public static ClassFileTransformer installTransformer(Instrumentation instrumentation) {
-        TypeDescription type1 = TypePool.Default.ofClassPath().describe("org.junit.runners.ParentRunner").resolve();
-        TypeDescription type2 = TypePool.Default.ofClassPath().describe("org.junit.runners.BlockJUnit4ClassRunner").resolve();
+        TypeDescription reflectiveCallable = TypePool.Default.ofClassPath().describe("org.junit.internal.runners.model.ReflectiveCallable").resolve();
+        TypeDescription parentRunner = TypePool.Default.ofClassPath().describe("org.junit.runners.ParentRunner").resolve();
+        TypeDescription blockJUnit4ClassRunner = TypePool.Default.ofClassPath().describe("org.junit.runners.BlockJUnit4ClassRunner").resolve();
         
         return new AgentBuilder.Default()
-                .type(isSubTypeOf(type1))
+                .type(isSubTypeOf(reflectiveCallable))
+                .transform((builder, type, classLoader, module) -> 
+                        builder.method(named("runReflectiveCall")).intercept(MethodDelegation.to(RunReflectiveCall.class))
+                               .implement(Hooked.class))
+                .type(is(parentRunner))
                 .transform((builder, type, classLoader, module) -> 
                         builder.method(named("createTestClass")).intercept(MethodDelegation.to(CreateTestClass.class))
                                .method(named("run")).intercept(MethodDelegation.to(Run.class))
                                .implement(Hooked.class))
-                .type(isSubTypeOf(type2))
+                .type(is(blockJUnit4ClassRunner))
                 .transform((builder, type, classLoader, module) -> 
                         builder.method(named("createTest")).intercept(MethodDelegation.to(CreateTest.class))
                                .method(named("runChild")).intercept(MethodDelegation.to(RunChild.class))
@@ -119,45 +121,13 @@ public class LifecycleHooks {
     }
     
     /**
-     * This class declares the interceptor for the {@link org.junit.runners.ParentRunner#createTestClass
-     * createTestClass} method.
-     */
-    @SuppressWarnings("squid:S1118")
-    public static class CreateTestClass {
-        static final ServiceLoader<TestClassWatcher> classWatcherLoader;
-        static final Map<TestClass, Object> CLASS_TO_RUNNER = new ConcurrentHashMap<>();
-        
-        static {
-            classWatcherLoader = ServiceLoader.load(TestClassWatcher.class);
-        }
-        
-        /**
-         * Interceptor for the {@link org.junit.runners.ParentRunner#createTestClass createTestClass} method.
-         * 
-         * @param runner underlying test runner
-         * @param proxy callable proxy for the intercepted method
-         * @return new {@link TestClass} object
-         * @throws Exception if something goes wrong
-         */
-        public static TestClass intercept(@This Object runner, @SuperCall Callable<?> proxy) throws Exception {
-            TestClass testClass = (TestClass) proxy.call();
-            CLASS_TO_RUNNER.put(testClass, runner);
-            
-            for (TestClassWatcher watcher : classWatcherLoader) {
-                watcher.testClassCreated(testClass, runner);
-            }
-            
-            return testClass;
-        }
-    }
-    
-    /**
      * This class declares the interceptor for the {@link org.junit.runners.ParentRunner#run run} method.
      */
     @SuppressWarnings("squid:S1118")
     public static class Run {
-        static final ServiceLoader<RunListener> runListenerLoader;
+        private static final ServiceLoader<RunListener> runListenerLoader;
         private static final Set<RunNotifier> NOTIFIERS = new HashSet<>();
+        private static final Map<Object, Object> CHILD_TO_PARENT = new ConcurrentHashMap<>();
         
         static {
             runListenerLoader = ServiceLoader.load(RunListener.class);
@@ -169,9 +139,16 @@ public class LifecycleHooks {
          * @param runner underlying test runner
          * @param proxy callable proxy for the intercepted method
          * @param notifier run notifier through which events are published
-         * @throws Exception if something goes wrong
+         * @throws Exception {@code anything} (exception thrown by the intercepted method)
          */
-        public static void intercept(@This Object runner, @SuperCall Callable<?> proxy, @Argument(0) RunNotifier notifier) throws Exception {
+        public static void intercept(@This final Object runner, @SuperCall final Callable<?> proxy,
+                        @Argument(0) final RunNotifier notifier) throws Exception {
+            
+            List<?> children = invoke(runner, "getChildren");
+            for (Object child : children) {
+                CHILD_TO_PARENT.put(child, runner);
+            }
+            
             if (NOTIFIERS.add(notifier)) {
                 Description description = invoke(runner, "getDescription");
                 for (RunListener listener : runListenerLoader) {
@@ -179,19 +156,30 @@ public class LifecycleHooks {
                     listener.testRunStarted(description);
                 }
             }
+            
             proxy.call();
-        }        
+        }
+        
+        /**
+         * Get the parent runner that owns specified child runner.
+         * 
+         * @param child {@code ParentRunner} or {@code FrameworkMethod} object
+         * @return {@code ParentRunner} object that owns the specified child ({@code null} for root objects)
+         */
+        static Object getParentOf(Object child) {
+            return CHILD_TO_PARENT.get(child);
+        }
     }
     
     /**
-     * This class declares the interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#createTest createTest}
-     * method.
+     * This class declares the interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#createTest
+     * createTest} method.
      */
     @SuppressWarnings("squid:S1118")
     public static class CreateTest {
         
-        static final ServiceLoader<TestObjectWatcher> objectWatcherLoader;
-        static final Map<Object, TestClass> INSTANCE_TO_CLASS = new ConcurrentHashMap<>();
+        private static final ServiceLoader<TestObjectWatcher> objectWatcherLoader;
+        private static final Map<Object, TestClass> TARGET_TO_TESTCLASS = new ConcurrentHashMap<>();
         
         static {
             objectWatcherLoader = ServiceLoader.load(TestObjectWatcher.class);
@@ -202,59 +190,98 @@ public class LifecycleHooks {
          * 
          * @param runner target {@link org.junit.runners.BlockJUnit4ClassRunner BlockJUnit4ClassRunner} object
          * @param proxy callable proxy for the intercepted method
-         * @return {@code anything}
-         * @throws Exception if something goes wrong
+         * @return {@code anything} - JUnit test class instance
+         * @throws Exception {@code anything} (exception thrown by the intercepted method)
          */
-        public static Object intercept(@This Object runner, @SuperCall Callable<?> proxy) throws Exception {
-            Object testObj = installHooks(proxy.call());
-            INSTANCE_TO_CLASS.put(testObj, invoke(runner, "getTestClass"));
+        @RuntimeType
+        public static Object intercept(@This final Object runner,
+                        @SuperCall final Callable<?> proxy) throws Exception {
+            Object testObj = proxy.call();
+            TARGET_TO_TESTCLASS.put(testObj, getTestClassOf(runner));
             applyTimeout(testObj);
             
             for (TestObjectWatcher watcher : objectWatcherLoader) {
-                watcher.testObjectCreated(testObj, INSTANCE_TO_CLASS.get(testObj));
+                watcher.testObjectCreated(testObj, TARGET_TO_TESTCLASS.get(testObj));
             }
             
             return testObj;
+        }
+        
+        /**
+         * Get the test class object that wraps the specified instance.
+         * 
+         * @param target instance of JUnit test class
+         * @return {@link TestClass} associated with specified instance
+         */
+        static TestClass getTestClassFor(Object target) {
+            TestClass testClass = TARGET_TO_TESTCLASS.get(target);
+            if (testClass != null) {
+                return testClass;
+            }
+            throw new IllegalArgumentException("No associated test class was found for specified instance");
         }
     }
     
     /**
      * Get the test class object that wraps the specified instance.
      * 
-     * @param instance instance object (either test class or Suite)
+     * @param target instance of JUnit test class
      * @return {@link TestClass} associated with specified instance object
      */
-    public static TestClass getTestClassFor(Object instance) {
-        TestClass testClass = CreateTest.INSTANCE_TO_CLASS.get(instance);
-        if (testClass != null) {
-            return testClass;
-        }
-        throw new IllegalStateException("No associated test class was found for specified instance");
+    public static TestClass getTestClassFor(Object target) {
+        return CreateTest.getTestClassFor(target);
     }
     
     /**
-     * Get the parent runner that owns the specified test class object;
+     * Get the parent runner associated with the specified test class object.
      * 
      * @param testClass {@link TestClass} object
      * @return {@link org.junit.runners.ParentRunner ParentRunner} that owns the specified test class object
      */
     public static Object getRunnerFor(TestClass testClass) {
-        Object runner = CreateTestClass.CLASS_TO_RUNNER.get(testClass);
-        if (runner != null) {
-            return runner;
-        }
-        throw new IllegalStateException("No associated runner was for for specified test class");
+        return CreateTestClass.getRunnerFor(testClass);
+    }
+    
+    /**
+     * Get the parent runner that owns specified child runner.
+     * 
+     * @param child {@link org.junit.runners.ParentRunner ParentRunner} object
+     * @return {@code ParentRunner} object that owns the specified child ({@code null} for root objects)
+     */
+    public static Object getParentOf(Object child) {
+        return Run.getParentOf(child);
+    }
+    
+    /**
+     * Get the test class object associated with the specified parent runner.
+     * 
+     * @param runner target {@link org.junit.runners.ParentRunner ParentRunner} object
+     * @return {@link TestClass} associated with specified runner
+     */
+    public static TestClass getTestClassOf(Object runner) {
+        return invoke(runner, "getTestClass");
+    }
+    
+    /**
+     * Determine if the atomic test associated with the specified test class has configuration methods.
+     * 
+     * @param testClass {@link TestClass} object
+     * @return {@code true} if the atomic test has configuration; otherwise {@code false}
+     */
+    public static boolean hasConfiguration(TestClass testClass) {
+        AtomicTest atomicTest = RunReflectiveCall.getAtomicTestFor(testClass);
+        return atomicTest.hasConfiguration();
     }
     
     /**
      * Get the description of the indicated child object from the runner for the specified test class instance.
      * 
-     * @param instance test class instance
+     * @param target test class instance
      * @param child child object
      * @return {@link Description} object for the indicated child
      */
-    public static Description describeChild(Object instance, Object child) {
-        TestClass testClass = getTestClassFor(instance);
+    public static Description describeChild(Object target, Object child) {
+        TestClass testClass = getTestClassFor(target);
         Object runner = getRunnerFor(testClass);
         return invoke(runner, "describeChild", child);
     }
@@ -280,47 +307,6 @@ public class LifecycleHooks {
                     MutableTest.proxyFor(method).setTimeout(defaultTimeout);
                 }
             }
-        }
-    }
-    
-    /**
-     * Create an enhanced instance of the specified test class object.
-     * 
-     * @param testObj test class object to be enhanced
-     * @return enhanced test class object
-     */
-    static synchronized Object installHooks(Object testObj) {
-        Class<?> testClass = testObj.getClass();
-        MethodInterceptor.attachWatchers(testClass);
-        
-        if (testObj instanceof Hooked) {
-            return testObj;
-        }
-        
-        Class<?> proxyType = proxyMap.get(testClass);
-        
-        if (proxyType == null) {
-            try {
-                proxyType = new ByteBuddy()
-                        .with(AnnotationRetention.ENABLED)
-                        .subclass(testClass)
-                        .name(getSubclassName(testObj))
-                        .method(isAnnotatedWith(anyOf(Test.class, Before.class, After.class)))
-                        .intercept(MethodDelegation.to(MethodInterceptor.class))
-                        .implement(Hooked.class)
-                        .make()
-                        .load(testClass.getClassLoader())
-                        .getLoaded();
-                proxyMap.put(testClass, proxyType);
-            } catch (SecurityException | IllegalArgumentException e) {
-                throw UncheckedThrow.throwUnchecked(e);
-            }
-        }
-            
-        try {
-            return proxyType.newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
-            throw UncheckedThrow.throwUnchecked(e);
         }
     }
     
@@ -364,6 +350,7 @@ public class LifecycleHooks {
     /**
      * Invoke the named method with the specified parameters on the specified target object.
      * 
+     * @param <T> method return type
      * @param target target object
      * @param methodName name of the desired method
      * @param parameters parameters for the method invocation
@@ -392,5 +379,64 @@ public class LifecycleHooks {
         }
         
         throw UncheckedThrow.throwUnchecked(thrown);
+    }
+    
+    /**
+     * Get the specified field of the supplied object.
+     * 
+     * @param target target object
+     * @param name field name
+     * @return {@link Field} object for the requested field
+     * @throws NoSuchFieldException if a field with the specified name is not found
+     * @throws SecurityException if the request is denied
+     */
+    static Field getDeclaredField(Object target, String name) throws NoSuchFieldException, SecurityException {
+        Throwable thrown = null;
+        for (Class<?> current = target.getClass(); current != null; current = current.getSuperclass()) {
+            try {
+                return current.getDeclaredField(name);
+            } catch (NoSuchFieldException e) {
+                thrown = e;
+            } catch (SecurityException e) {
+                thrown = e;
+                break;
+            }
+        }
+        
+        throw UncheckedThrow.throwUnchecked(thrown);
+    }
+
+    /**
+     * Get the value of the specified field from the supplied object.
+     * 
+     * @param <T> field value type
+     * @param target target object
+     * @param name field name
+     * @return {@code anything} - the value of the specified field in the supplied object
+     * @throws IllegalAccessException if the {@code Field} object is enforcing access control for an inaccessible field
+     * @throws NoSuchFieldException if a field with the specified name is not found
+     * @throws SecurityException if the request is denied
+     */
+    @SuppressWarnings("unchecked")
+    static <T> T getFieldValue(Object target, String name) throws IllegalAccessException, NoSuchFieldException, SecurityException {
+        Field field = getDeclaredField(target, name);
+        field.setAccessible(true);
+        return (T) field.get(target);
+    }
+
+    /**
+     * Set the value of the specified field of the supplied object.
+     * 
+     * @param target target object
+     * @param name field name
+     * @param value value to set in the specified field of the supplied object
+     * @throws IllegalAccessException if the {@code Field} object is enforcing access control for an inaccessible field
+     * @throws NoSuchFieldException if a field with the specified name is not found
+     * @throws SecurityException if the request is denied
+     */
+    static void setFieldValue(Object target, String name, Object value) throws IllegalAccessException, NoSuchFieldException, SecurityException {
+        Field field = getDeclaredField(target, name);
+        field.setAccessible(true);
+        field.set(target, value);
     }
 }
