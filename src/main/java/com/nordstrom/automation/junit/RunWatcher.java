@@ -4,6 +4,9 @@ import org.junit.internal.AssumptionViolatedException;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.TestClass;
 
+/**
+ * This interface defines the methods implemented by JUnit run watchers.
+ */
 public interface RunWatcher {
 
     /**

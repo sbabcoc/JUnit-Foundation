@@ -108,7 +108,7 @@ public class RunReflectiveCall {
         AtomicTest atomicTest = createAtomicTest(testClass, runnable);
         if (atomicTest != null) {
             for (RunWatcher watcher : runWatcherLoader) {
-                watcher.testStarted(atomicTest.getTestMethod(), atomicTest.getTestClass());
+                watcher.testStarted(atomicTest.getIdentity(), atomicTest.getTestClass());
             }
         }
     }
@@ -123,7 +123,7 @@ public class RunReflectiveCall {
         if (atomicTest != null) {
             for (RunWatcher watcher : runWatcherLoader) {
                 notifyIfTestFailed(watcher, atomicTest);
-                watcher.testFinished(atomicTest.getTestMethod(), atomicTest.getTestClass());
+                watcher.testFinished(atomicTest.getIdentity(), atomicTest.getTestClass());
             }
         }
     }
@@ -138,10 +138,10 @@ public class RunReflectiveCall {
         Throwable thrown = atomicTest.getThrowable();
         if (thrown != null) {
             if (thrown instanceof AssumptionViolatedException) {
-                watcher.testAssumptionFailure(atomicTest.getTestMethod(), atomicTest.getTestClass(),
+                watcher.testAssumptionFailure(atomicTest.getIdentity(), atomicTest.getTestClass(),
                                 (AssumptionViolatedException) thrown);
             } else {
-                watcher.testFailure(atomicTest.getTestMethod(), atomicTest.getTestClass(), thrown);
+                watcher.testFailure(atomicTest.getIdentity(), atomicTest.getTestClass(), thrown);
             }
         }
     }
@@ -239,7 +239,7 @@ public class RunReflectiveCall {
      */
     public static AtomicTest getAtomicTestFor(FrameworkMethod method) {
         for (AtomicTest atomicTest : TESTCLASS_TO_ATOMICTEST.values()) {
-            if (atomicTest.contains(method)) {
+            if (atomicTest.includes(method)) {
                 return atomicTest;
             }
         }
