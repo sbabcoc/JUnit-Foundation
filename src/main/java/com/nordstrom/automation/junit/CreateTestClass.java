@@ -11,6 +11,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.runners.model.RunnerScheduler;
 import org.junit.runners.model.TestClass;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import net.bytebuddy.implementation.bind.annotation.SuperCall;
 import net.bytebuddy.implementation.bind.annotation.This;
@@ -22,6 +24,7 @@ import net.bytebuddy.implementation.bind.annotation.This;
 @SuppressWarnings("squid:S1118")
 public class CreateTestClass {
     private static final ServiceLoader<TestClassWatcher> classWatcherLoader;
+    private static final Logger LOGGER = LoggerFactory.getLogger(CreateTestClass.class);
     private static final Map<TestClass, Object> TESTCLASS_TO_RUNNER = new ConcurrentHashMap<>();
     
     static {
@@ -38,6 +41,7 @@ public class CreateTestClass {
      */
     public static TestClass intercept(@This final Object runner, @SuperCall final Callable<?> proxy)
                     throws Exception {
+        
         TestClass testClass = (TestClass) proxy.call();
         TESTCLASS_TO_RUNNER.put(testClass, runner);
         
@@ -58,20 +62,20 @@ public class CreateTestClass {
     private static void attachRunnerScheduler(final TestClass testClass, final Object runner) {
         try {
             RunnerScheduler scheduler = getFieldValue(runner, "scheduler");
-            setFieldValue(runner, "scheduler", createRunnerScheduler(testClass, runner, scheduler));
+            setFieldValue(runner, "scheduler", createRunnerScheduler(testClass, scheduler));
         } catch (IllegalAccessException | NoSuchFieldException | SecurityException | IllegalArgumentException e) {
+            LOGGER.warn("Unable to attach notifying runner scheduler", e);
         }
     }
     
     /**
-     * Create lifecycle-reporting runner scheduler, which forwards to the previous scheduler if specified.
+     * Create notifying runner scheduler, which forwards to the previous scheduler if specified.
      * 
      * @param testClass {@link TestClass} object that was just created
-     * @param runner {@link ParentRunner} for the specified test class
      * @param scheduler runner scheduler that's currently attached to the specified runner (may be {@code null})
-     * @return new lifecycle-reporting runner scheduler
+     * @return new notifying runner scheduler
      */
-    private static RunnerScheduler createRunnerScheduler(final TestClass testClass, final Object runner, final RunnerScheduler scheduler) {
+    private static RunnerScheduler createRunnerScheduler(final TestClass testClass, final RunnerScheduler scheduler) {
         return new RunnerScheduler() {
             private AtomicBoolean scheduled = new AtomicBoolean(false);
             

@@ -1,6 +1,5 @@
 package com.nordstrom.automation.junit;
 
-import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.TestClass;
 
 /**
