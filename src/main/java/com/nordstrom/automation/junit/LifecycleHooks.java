@@ -143,24 +143,27 @@ public class LifecycleHooks {
          */
         public static void intercept(@This final Object runner, @SuperCall final Callable<?> proxy,
                         @Argument(0) final RunNotifier notifier) throws Exception {
+            
+            List<?> children = invoke(runner, "getChildren");
+            for (Object child : children) {
+                CHILD_TO_PARENT.put(child, runner);
+            }
+            
             if (NOTIFIERS.add(notifier)) {
-                List<?> children = invoke(runner, "getChildren");
-                for (Object child : children) {
-                    CHILD_TO_PARENT.put(child, runner);
-                }
                 Description description = invoke(runner, "getDescription");
                 for (RunListener listener : runListenerLoader) {
                     notifier.addListener(listener);
                     listener.testRunStarted(description);
                 }
             }
+            
             proxy.call();
         }
         
         /**
          * Get the parent runner that owns specified child runner.
          * 
-         * @param child {@link org.junit.runners.ParentRunner ParentRunner} object
+         * @param child {@code ParentRunner} or {@code FrameworkMethod} object
          * @return {@code ParentRunner} object that owns the specified child ({@code null} for root objects)
          */
         static Object getParentOf(Object child) {
