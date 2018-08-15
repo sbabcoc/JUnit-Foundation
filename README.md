@@ -1,4 +1,4 @@
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.nordstrom.tools/junit-foundation/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.nordstrom.tools/junit-foundation)
+[![Maven Central](https://img.shields.io/maven-central/v/com.nordstrom.tools/junit-foundation.svg)](https://mvnrepository.com/artifact/com.nordstrom.tools/junit-foundation)
 
 # INTRODUCTION
 
