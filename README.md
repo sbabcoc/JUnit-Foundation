@@ -164,6 +164,7 @@ If you plan to import your project to Eclipse, add this as well:
         </plugin>
         
         [...]
+        
       </plugins>
     </pluginManagement>
   </build>
