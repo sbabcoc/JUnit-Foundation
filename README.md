@@ -279,7 +279,7 @@ Note that the implementation in this method watcher uses the annotations attache
 
 ### Support for Standard JUnit RunListener Providers
 
-As indicated previously, **JUnit Foundation** will automatically attach standard JUnit **RunListener** providers that are declared in the associated **ServiceLoader** provider configuration file (i.e. - `org.junit.runner.notification.RunListener`). Declared run listeners are attached to the **RunNotifier** supplied to the `run()` method of JUnit runners. This feature eliminates behavioral differences between the various test execution environments like Maven, Gradle, and native IDE test runners.
+As indicated previously, **JUnit Foundation** will automatically attach standard JUnit **RunListener** providers that are declared in the associated **ServiceLoader** provider configuration file (i.e. - **_org.junit.runner.notification.RunListener_**). Declared run listeners are attached to the **RunNotifier** supplied to the `run()` method of JUnit runners. This feature eliminates behavioral differences between the various test execution environments like Maven, Gradle, and native IDE test runners.
 
 ## Test Method Timeout Management
 
