@@ -100,7 +100,6 @@ The hooks that enable **JUnit Foundation** test lifecycle notifications are inst
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-dependency-plugin</artifactId>
           <version>${dependency-plugin.version}</version>
-        
       </plugins>
     </pluginManagement>
     <plugins>
