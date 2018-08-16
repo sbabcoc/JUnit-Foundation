@@ -69,17 +69,13 @@ The hooks that enable **JUnit Foundation** test lifecycle notifications are inst
   
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <junit-foundation.version>6.0.0</junit-foundation.version>
-    <compiler-plugin.version>3.6.0</compiler-plugin.version>
-    <dependency-plugin.version>3.1.1</dependency-plugin.version>
-    <surefire-plugin.version>2.22.0</surefire-plugin.version>
   </properties>
   
   <dependencies>
     <dependency>
       <groupId>com.nordstrom.tools</groupId>
       <artifactId>junit-foundation</artifactId>
-      <version>${junit-foundation.version}</version>
+      <version>6.0.0</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -90,16 +86,11 @@ The hooks that enable **JUnit Foundation** test lifecycle notifications are inst
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>${compiler-plugin.version}</version>
+          <version>3.6.0</version>
           <configuration>
             <source>1.8</source>
             <target>1.8</target>
           </configuration>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-dependency-plugin</artifactId>
-          <version>${dependency-plugin.version}</version>
         </plugin>
         <!-- Add this if you plan to import into Eclipse -->
         <plugin>
@@ -133,7 +124,7 @@ The hooks that enable **JUnit Foundation** test lifecycle notifications are inst
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
-        <version>${dependency-plugin.version}</version>
+        <version>3.1.1</version>
         <executions>
           <execution>
             <id>getClasspathFilenames</id>
@@ -146,7 +137,7 @@ The hooks that enable **JUnit Foundation** test lifecycle notifications are inst
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>${surefire-plugin.version}</version>
+        <version>2.22.0</version>
         <configuration>
           <argLine>-javaagent:${com.nordstrom.tools:junit-foundation:jar}</argLine>
         </configuration>
