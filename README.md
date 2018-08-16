@@ -130,6 +130,47 @@ The hooks that enable **JUnit Foundation** test lifecycle notifications are inst
 </project>
 ```
 
+If you plan to import your project to Eclipse, add this as well:
+
+```xml
+  [...]
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.eclipse.m2e</groupId>
+          <artifactId>lifecycle-mapping</artifactId>
+          <version>1.0.0</version>
+          <configuration>
+            <lifecycleMappingMetadata>
+              <pluginExecutions>
+                <pluginExecution>
+                  <pluginExecutionFilter>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <versionRange>[1.0.0,)</versionRange>
+                    <goals>
+                      <goal>properties</goal>
+                    </goals>
+                  </pluginExecutionFilter>
+                  <action>
+                    <execute />
+                  </action>
+                </pluginExecution>
+              </pluginExecutions>
+            </lifecycleMappingMetadata>
+          </configuration>
+        </plugin>
+        
+        [...]
+      </plugins>
+    </pluginManagement>
+  </build>
+  
+  [...]
+```
+
 #### Gradle Configuration for JUnit Foundation
 ```
 // build.gradle
