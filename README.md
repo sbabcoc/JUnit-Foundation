@@ -163,7 +163,7 @@ dependencies {
 
 #### IDE Configuration for JUnit Foundation
 
-To enable notifications in the native test runner of IDEs like Eclipse or IDEA, add the `-javaagent` option to the JVM options or your run/debug configuration.
+To enable notifications in the native test runner of IDEs like Eclipse or IDEA, add the `-javaagent` option to the JVM options of your run/debug configuration.
 
 #### ServiceLoader Configuration Files
 
