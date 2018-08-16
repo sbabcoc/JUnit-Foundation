@@ -100,43 +100,8 @@ The hooks that enable **JUnit Foundation** test lifecycle notifications are inst
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-dependency-plugin</artifactId>
           <version>${dependency-plugin.version}</version>
-      </plugins>
-    </pluginManagement>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-dependency-plugin</artifactId>
-        <version>${dependency-plugin.version}</version>
-        <executions>
-          <execution>
-            <id>getClasspathFilenames</id>
-            <goals>
-              <goal>properties</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <version>${surefire-plugin.version}</version>
-        <configuration>
-          <argLine>-javaagent:${com.nordstrom.tools:junit-foundation:jar}</argLine>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
-</project>
-```
-
-If you plan to import your project to Eclipse, add this as well:
-
-```xml
-  [...]
-
-  <build>
-    <pluginManagement>
-      <plugins>
+        </plugin>
+        <!-- Add this if you plan to import into Eclipse -->
         <plugin>
           <groupId>org.eclipse.m2e</groupId>
           <artifactId>lifecycle-mapping</artifactId>
@@ -161,14 +126,34 @@ If you plan to import your project to Eclipse, add this as well:
             </lifecycleMappingMetadata>
           </configuration>
         </plugin>
-        
-        [...]
-        
       </plugins>
     </pluginManagement>
+    <plugins>
+      <!-- This provides the path to the Java agent -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>${dependency-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>getClasspathFilenames</id>
+            <goals>
+              <goal>properties</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${surefire-plugin.version}</version>
+        <configuration>
+          <argLine>-javaagent:${com.nordstrom.tools:junit-foundation:jar}</argLine>
+        </configuration>
+      </plugin>
+    </plugins>
   </build>
-  
-  [...]
+</project>
 ```
 
 #### Gradle Configuration for JUnit Foundation
