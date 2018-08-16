@@ -4,51 +4,254 @@
 
 **JUnit Foundation** is a lightweight collection of JUnit watchers, interfaces, and static utility classes that supplement and augment the functionality provided by the JUnit API. The facilities provided by **JUnit Foundation** include method invocation hooks, test method timeout management, automatic retry of failed tests, shutdown hook installation, and test artifact capture.
 
-## Method Invocation Hooks
+## Test Lifecycle Notifications
 
-The standard **TestWatcher** feature of JUnit provides a basic facility for implementing setup and cleanup procedures. However, the granularity of control offered by this feature is relatively coarse, firing before the first **`@Before`** method and after the last **`@After`** method. With **JUnit Foundation**, you can easily intercept the invocation of every configuration and test method in your test class. This method interception feature is analogous to the **IInvokedMethodListener** feature of TestNG.
+The standard **RunListener** feature of JUnit provides a basic facility for implementing setup, cleanup, and monitoring procedures. However, the granularity of notifications offered by this feature is relatively coarse, firing before the first **`@Before`** method and after the last **`@After`** method - a unit of functionality known as an `atomic test`. Notifications are available for the start, finish, and failure of atomic tests, but not for the `particle methods` of which they're composed - individual **`@Test`** and configuration methods (**`@Before`**, **`@After`**, **`@BeforeClass`**, and **`@AfterClass`**).
 
-Method invocation hooks are installed dynamically with bytecode enhancement performed by [Byte Buddy](http://bytebuddy.net). Basic support is provided by the **HookInstallingRunner**, which enables you to perform pre-processing and post-processing on every test method, 'before' configuration method, and 'after' configuration method. Extended support is provided by the **HookInstallingPlugin**, which extends pre-processing and post-processing support to every 'before class' method and 'after class' method as well.
+With **JUnit Foundation**, you can get notifications for the invocation of every configuration and test method. This method interception feature is analogous to the **IInvokedMethodListener** feature of TestNG. You can also get notifications for the creation of test class instances, the creation and invocation of JUnit runners (both test classes and suites), and the completion of test runs. **JUnit Foundation** also provides notifications for the start, finish, and failure of `atomic tests`, with all of the details and context that are omitted by the standard JUnit **RunListener**.
 
-### Basic Interception Support
+### Notification Context and Test Run Hierarchy
 
-Basic support for the method interception feature of **JUnit Foundation** is provided by the **HookInstallingRunner**. This test runner installs hooks on every method annotated with **`@Test`**, **`@Before`**, or **`@After`**. For classes that require method-level setup and cleanup processing, add the **`@MethodWatchers`** annotation. The value of this annotation is an array of classes that implement the **MethodWatcher** interface:
+The notifications provided by **JUnit Foundation** include the context that owns them - the JUnit runner. With this context and associated mapping methods, you're able to explore the entire hierarchy of the test run. For example, you can get the class runner that owns an invoked method or the suite runner that owns a class runner:
 
-###### Implementing MethodWatcher
+###### Exploring the Test Run Hierarchy
 ```java
 package com.nordstrom.example;
 
-import java.lang.reflect.Method;
+import com.nordstrom.automation.junit.AtomicTest;
+import com.nordstrom.automation.junit.LifecycleHooks;
+import com.nordstrom.automation.junit.MethodWatcher;
+import com.nordstrom.automation.junit.RunReflectiveCall;
+import com.nordstrom.automation.junit.TestClassWatcher;
+import org.junit.runners.model.FrameworkMethod;
+import org.junit.runners.model.TestClass;
+
+public class ExploringWatcher implements TestClassWatcher, MethodWatcher {
+
+    ...
+
+    @Override
+    public void testClassStarted(TestClass testClass) {
+        // get the 'atomic test' for this runner
+        AtomicTest atomicTest = RunReflectiveCall.getAtomicTestFor(testClass);
+        // get the 'particle' methods of this 'atomic test'
+        List<FrameworkMethod> particles = atomicTest.getParticles();
+        // get the parent of this runner
+        TestClass parent = LifecycleHooks.getParentOf(testClass);
+        ...
+    }
+
+    @Override
+    public void beforeInvocation(Object target, FrameworkMethod method, Object... params) {
+        // get the 'atomic test' for this method
+        AtomicTest atomicTest = RunReflectiveCall.getAtomicTestFor(method);
+        // get the test class of the runner that owns this method
+        TestClass testClass = LifecycleHooks.getTestClassFor(target);
+        ...
+    }
+
+    ...
+
+}
+```
+
+### How to Enable Notifications
+
+The hooks that enable **JUnit Foundation** test lifecycle notifications are installed dynamically with bytecode enhancement performed by [Byte Buddy](http://bytebuddy.net). To maintain compatibility with solution-specific runners like [SpringRunner](https://spring.io/guides/tutorials/bookmarks/#_testing_a_rest_service), **JUnit Foundation** intercepts calls to several core JUnit classes directly via its Java agent implementation:
+
+#### Maven Configuration for JUnit Foundation
+```xml
+[pom.xml]
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  
+  [...]
+  
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <junit-foundation.version>6.0.0</junit-foundation.version>
+    <compiler-plugin.version>3.6.0</compiler-plugin.version>
+    <dependency-plugin.version>3.1.1</dependency-plugin.version>
+    <surefire-plugin.version>2.22.0</surefire-plugin.version>
+  </properties>
+  
+  <dependencies>
+    <dependency>
+      <groupId>com.nordstrom.tools</groupId>
+      <artifactId>junit-foundation</artifactId>
+      <version>${junit-foundation.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+  
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>${compiler-plugin.version}</version>
+          <configuration>
+            <source>1.6</source>
+            <target>1.6</target>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-dependency-plugin</artifactId>
+          <version>${dependency-plugin.version}</version>
+        
+      </plugins>
+    </pluginManagement>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>${dependency-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>getClasspathFilenames</id>
+            <goals>
+              <goal>properties</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${surefire-plugin.version}</version>
+        <configuration>
+          <argLine>-javaagent:${com.nordstrom.tools:junit-foundation:jar}</argLine>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+```
+
+#### Gradle Configuration for JUnit Foundation
+```
+// build.gradle
+...
+apply plugin: 'maven'
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+repositories {
+    mavenLocal()
+    mavenCentral()
+    ...
+}
+configurations {
+    ...
+    junitAgent
+}
+test.doFirst {
+    jvmArgs "-javaagent:${configurations.junitAgent.files.iterator().next()}"
+}
+test {
+//  debug true
+    // not required, but definitely useful
+    testLogging.showStandardStreams = true
+}
+dependencies {
+    ...
+    compile 'com.nordstrom.tools:junit-foundation:6.0.0'
+    junitAgent 'com.nordstrom.tools:junit-foundation:6.0.0'
+}
+```
+
+#### IDE Configuration for JUnit Foundation
+
+To enable notifications in the native test runner of IDEs like Eclipse or IDEA, add the `-javaagent` option to the JVM options or your run/debug configuration.
+
+#### ServiceLoader Configuration Files
+
+To provide reliable, consistent behavior regardless of execution environment, **JUnit Foundation** notification subscribers are registered through the standard Java **ServiceLoader** mechanism. To attach **JUnit Foundation** watchers and standard JUnit run listeners to your tests, declare them in **ServiceLoader** [provider configuration files](https://docs.oracle.com/javase/tutorial/ext/basics/spi.html#register-service-providers) in a **_META-INF/services/_** folder of your project resorces:
+
+###### com.nordstrom.automation.junit.MethodWatcher
+```
+com.mycompany.example.MyWatcher
+```
+
+###### org.junit.runner.notification.RunListener
+```
+com.mycompany.example.MyListener
+```
+
+The preceding **ServiceLoader** provider configuration files declare a **JUnit Foundation** [MethodWatcher](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/MethodWatcher.java) and a standard JUnit [RunListener](https://github.com/junit-team/junit4/blob/41d44734f41aba0cf6ba5a11ff5d32ffed155027/src/main/java/org/junit/runner/notification/RunListener.java).
+
+### Defined Service Provider Interfaces
+
+**JUnit Foundation** defines several service provider interfaces that notification subscribers can implement:
+
+* [ShutdownListener](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/ShutdownListener.java)  
+**ShutdownListener** provides callbacks for events in the lifecycle of the JVM that runs the Java code that comprises your tests. It receives the following notification:
+  * The JVM that's running the tests is about to close. This signals the completion the the test run.
+* [TestClassWatcher](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/TestClassWatcher.java)  
+**TestClassWatcher** provides callbacks for events in the lifecycle of **`TestClass`** objects. It receives the following notifications:
+  * A **`TestClass`** object has been created to represent a JUnit test class or suite. Each **`TestClass`** has a one-to-one relationship with the JUnit runner that created it.
+  * A **`TestClass`** object has been scheduled to run. This signals that the first child of the JUnit test class or suite is about start.
+  * A **`TestClass`** object has finished running. This signals that the last child of the JUnit test class or suite is done.
+* [TestObjectWatcher](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/TestObjectWatcher.java)  
+**TestObjectWatcher** provides callbacks for events in the lifecycle of Java test class instances. It receives the following notification:
+  * An instance of a JUnit test class has been created for the execution of a single `atomic test`.
+* [RunWatcher](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/RunWatcher.java)  
+**RunWatcher** provides callbacks for events in the lifecycle of `atomic tests`. This is a functional replacement for the standard JUnit **RunListener**, with the execution context that the standard interface lacks. It receives the following notifications:
+  * An `atomic test` is about to start.
+  * An `atomic test` has finished, pass or fail.
+  * An `atomic test` has failed.
+  * An `atomic test` flags that it assumes a condition that is false.
+  * An `atomic test` has been ignored.
+* [MethodWatcher](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/MethodWatcher.java)  
+**MethodWatcher** provides callbacks for events in the lifecycle of a `particle method`, which is a component of an `atomic test`. It receives the following notifications:
+  * A `particle method` is about to be invoked.
+  * A `particle method` has just been invoked.
+
+###### Service Provider Example - Implementing MethodWatcher
+```java
+package com.nordstrom.example;
 
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
-
-import com.nordstrom.automation.junit.MethodWatcher;
+import org.junit.runners.model.FrameworkMethod;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class LoggingWatcher implements MethodWatcher {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggingWatcher.class);
-    
+
     @Override
-    public void beforeInvocation(Object obj, Method method, Object[] args) {
-        if (null != method.getAnnotation(Before.class)) {
-            LOGGER.info(">>>>> ENTER 'before' method {}", method.getName());
-        } else if (null != method.getAnnotation(Test.class)) {
+    public void beforeInvocation(Object target, FrameworkMethod method, Object... params) {
+        if (null != method.getAnnotation(Test.class)) {
             LOGGER.info(">>>>> ENTER 'test' method {}", method.getName());
+        } else if (null != method.getAnnotation(Before.class)) {
+            LOGGER.info(">>>>> ENTER 'before' method {}", method.getName());
         } else if (null != method.getAnnotation(After.class)) {
             LOGGER.info(">>>>> ENTER 'after' method {}", method.getName());
+        } else if (null != method.getAnnotation(BeforeClass.class)) {
+            LOGGER.info(">>>>> ENTER 'before-class' method {}", method.getName());
+        } else if (null != method.getAnnotation(AfterClass.class)) {
+            LOGGER.info(">>>>> ENTER 'after-class' method {}", method.getName());
         }
     }
 
     @Override
-    public void afterInvocation(Object obj, Method method, Object[] args) {
-        if (null != method.getAnnotation(Before.class)) {
-            LOGGER.info("<<<<< LEAVE 'before' method {}", method.getName());
-        } else if (null != method.getAnnotation(Test.class)) {
+    public void afterInvocation(Object obj, FrameworkMethod method, Object... params) {
+        if (null != method.getAnnotation(Test.class)) {
             LOGGER.info("<<<<< LEAVE 'test' method {}", method.getName());
+        } else if (null != method.getAnnotation(Before.class)) {
+            LOGGER.info("<<<<< LEAVE 'before' method {}", method.getName());
         } else if (null != method.getAnnotation(After.class)) {
             LOGGER.info("<<<<< LEAVE 'after' method {}", method.getName());
+        } else if (null != method.getAnnotation(BeforeClass.class)) {
+            LOGGER.info("<<<<< LEAVE 'before-class' method {}", method.getName());
+        } else if (null != method.getAnnotation(AfterClass.class)) {
+            LOGGER.info("<<<<< LEAVE 'after-class' method {}", method.getName());
         }
     }
 }
@@ -57,145 +260,21 @@ public class LoggingWatcher implements MethodWatcher {
 
 Note that the implementation in this method watcher uses the annotations attached to the method objects to determine the type of method they're intercepting. Because each test method can have multiple configuration methods (both before and after), you may need to define additional conditions to control when your implementation runs. Examples of additional conditions include method name, method annotation, or an execution flag.
 
-###### MethodWatchers annotation
-```java
-package com.nordstrom.example;
+### Support for Standard JUnit RunListener Providers
 
-import org.junit.runner.RunWith;
-
-import com.nordstrom.automation.junit.HookInstallingRunner;
-import com.nordstrom.automation.junit.MethodWatchers;
-
-@RunWith(HookInstallingRunner.class)
-@MethodWatchers({LoggingWatcher.class})
-public class ExampleTest {
-    
-    ...
-    
-}
-```
-
-As shown above, we use the **`@MethodWatchers`** annotation to attach **LoggingWatcher**. Running with the **HookInstallingRunner** connects the method watchers declared in the **`@MethodWatchers`** annotation to the chain (in this case, **LoggingWatcher**). This activates the method watchers' `beforeInvocation(Object, Method, Object[])` and `afterInvocation(Object, Method, Object[])` methods, enabling them to perform their respective method-level pre-processing and post-processing tasks.
-
-### Extended Interception Support
-
-Extended support for the method interception feature of **JUnit Foundation** is provided by the **HookInstallingPlugin**. This plugin provides the implementation used by the **Byte Buddy Maven Plugin** to install hooks on every method annotated with **`@Test`**, **`@Before`**, **`@After`**, **`@BeforeClass`**, or **`@AfterClass`**. To activate this support, add the following sections to your project POM file:
-
-###### pom.xml
-```xml
-  <build>
-    <plugins>
-      ...
-      <plugin>
-        <groupId>net.bytebuddy</groupId>
-        <artifactId>byte-buddy-maven-plugin</artifactId>
-        <version>1.7.5</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>transform-test</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <transformations>
-            <transformation>
-              <plugin>com.nordstrom.automation.junit.HookInstallingPlugin</plugin>
-            </transformation>
-          </transformations>
-        </configuration>
-      </plugin>
-      ...
-    </plugins>
-  </build>
-
-```
-
-The `byte-buddy-maven-plugin` element informs Maven to execute the `transform-test` goal using the transformation specified by **HookInstallingPlugin**. With this POM change in place, method invocation hooks will be installed during the `process-test-classes` phase of the build:
-
-###### Implementing MethodWatcher2
-```java
-package com.nordstrom.example;
-
-import java.lang.reflect.Method;
-
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-
-import com.nordstrom.automation.junit.MethodWatcher2;
-
-public class LoggingWatcher2 implements MethodWatcher2 {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(LoggingWatcher.class);
-    
-    @Override
-    public void beforeInvocation(Object obj, Method method, Object[] args) {
-        // perform method-level processing
-        ...
-    }
-
-    @Override
-    public void afterInvocation(Object obj, Method method, Object[] args) {
-        // perform method-level processing
-        ...
-    }
-    
-    @Override
-    public void beforeInvocation(Method method, Object[] args) {
-        if (null != method.getAnnotation(BeforeClass.class)) {
-            LOGGER.info(">>>>> ENTER 'before class' method {}", method.getName());
-        } else if (null != method.getAnnotation(AfterClass.class)) {
-            LOGGER.info(">>>>> ENTER 'after class' method {}", method.getName());
-        }
-    }
-    
-    @Override
-    public void afterInvocation(Method method, Object[] args) {
-        if (null != method.getAnnotation(BeforeClass.class)) {
-            LOGGER.info("<<<<< LEAVE 'before class' method {}", method.getName());
-        } else if (null != method.getAnnotation(AfterClass.class)) {
-            LOGGER.info("<<<<< LEAVE 'after class' method {}", method.getName());
-        }
-    }
-}
-
-```
-
-This method watcher implements the **MethodWatcher2** interface, which extends the **MethodWatcher** interface to add methods for intercepted class-level configuration methods. Note that the implementation in this method watcher uses the annotations attached to the method objects to determine the type of method they're intercepting. Because each class can have multiple configuration methods (both before class and after class), you may need to define additional conditions to control when your implementation runs. Examples of additional conditions include method name, method annotation, or an execution flag.
-
-###### MethodWatchers annotation
-```java
-package com.nordstrom.example;
-
-import org.junit.runner.RunWith;
-
-import com.nordstrom.automation.junit.HookInstallingRunner;
-import com.nordstrom.automation.junit.MethodWatchers;
-
-@RunWith(HookInstallingRunner.class)
-@MethodWatchers({LoggingWatcher2.class})
-public class ExampleTest {
-    
-    ...
-    
-}
-```
-
-As shown above, we use the **`@MethodWatchers`** annotation to attach **LoggingWatcher2**. Running with the **HookInstallingRunner** connects the method watchers declared in the **`@MethodWatchers`** annotation to the chain (in this case, **LoggingWatchers2**). This activates the method watchers' `beforeInvocation(Method, Object[])` and `afterInvocation(Method, Object[])` methods, enabling them to perform their respective class-level pre-processing and post-processing tasks. Note that the method-level interfaces defined in the **MethodWatcher** interface are also connected in watchers that implement **MethodWatcher2**.
-
-For a complete reference implementation of the **MethodWatcher2** interface, check out **UnitTestWatcher** in the unit tests collection of this project.
+As indicated previously, **JUnit Foundation** will automatically attach standard JUnit **RunListener** providers that are declared in the associated **ServiceLoader** provider configuration file. Declared run listeners are attached to the **RunNotifier** supplied to the `run()` method of JUnit runners. This feature eliminates behavioral differences between the various test execution environments like Maven, Gradle, and native IDE test runners.
 
 ## Test Method Timeout Management
 
 **JUnit** provides test method timeout functionality via the `timeout` parameter of the **`@Test`** annotation. With this parameter, you can set an explicit timeout interval in milliseconds on an individual test method. If a test fails to complete within the specified interval, **JUnit** terminates the test and throws **TestTimedOutException**.
 
-**JUnit Foundation** extends this functionality, providing configurable test timeout management. Timeout management is applied by **HookInstallingRunner**, activated by setting the `TEST_TIMEOUT` configuration option to the desired default test timeout interval in milliseconds. This timeout specification is applied to every test method that doesn't explicitly specify a longer interval.
+**JUnit Foundation** extends this functionality, providing configurable test timeout management. Timeout management is applied by the **JUnit Foundation** Java agent, activated by setting the `TEST_TIMEOUT` configuration option to the desired default test timeout interval in milliseconds. This timeout specification is applied to every test method that doesn't explicitly specify a longer interval.
 
 ## Automatic retry of failed tests
 
 Some types of tests are inherently non-deterministic, which can cause them to fail sporadically in the absence of an actual defect. Most of the time, these tests will pass if you run them again. For these sorts of "noise" failures, **JUnit Foundation** provides an automatic retry feature.
 
-Automatic retry is applied by **HookInstallingRunner**, activated by setting the `MAX_RETRY` configuration option to the maximum retry attempts that will be made if a test method fails. The automatic retry feature can be disabled on a per-method or per-class basis via the **`@NoRetry`** annotation.
+Automatic retry is applied by the **JUnit Foundation** Java agent, activated by setting the `MAX_RETRY` configuration option to the maximum retry attempts that will be made if a test method fails. The automatic retry feature can be disabled on a per-method or per-class basis via the **`@NoRetry`** annotation.
 
 **_META-INF/services/com.nordstrom.automation.junit.JUnitRetryAnalyzer_** is the service loader retry analyzer configuration file. By default, this file is absent. To add managed analyzers, create this file and add the fully-qualified names of their classes, one line per item.
 
@@ -206,7 +285,7 @@ Failed attempts of tests that are selected for retry are tallied as ignored test
 **JUnit** provides a run listener feature, but this operates most readily on a per-class basis. The method for attaching these run listeners also imposes structural and operational constraints on **JUnit** projects, and the configuration required to register for end-of-suite notifications necessitates hard-coding the composition of the suite. All of these factors make run listeners unattractive or ineffectual for final cleanup operations.
 
 **JUnit Foundation** enables you to declare shutdown listeners in a service loader configuration file.  
-**_META-INF/services/com.nordstrom.automation.junit.ShutdownListener_** is the service loader shutdown listener configuration file. By default, this file is absent. To add managed listeners, create this file and add the fully-qualified names of their classes, one line per item. When it loads, **HookInstallingRunner** uses the service loader to instantiate your shutdown listeners and attaches them to the active JVM.
+**_META-INF/services/com.nordstrom.automation.junit.ShutdownListener_** is the service loader shutdown listener configuration file. By default, this file is absent. To add managed listeners, create this file and add the fully-qualified names of their classes, one line per item. When it loads, the **JUnit Foundation** Java agent uses the service loader to instantiate your shutdown listeners and attaches them to the active JVM.
 
 ## Artifact Capture
 
