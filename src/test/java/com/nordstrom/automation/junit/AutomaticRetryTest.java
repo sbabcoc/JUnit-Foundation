@@ -79,6 +79,21 @@ public class AutomaticRetryTest {
         assertEquals(rla.getRetriedTests().size(), 0, "Incorrect retried test count");
     }
     
+    @Test
+    public void testIgnore() {
+        RunListenerAdapter rla = new RunListenerAdapter();
+        
+        JUnitCore runner = new JUnitCore();
+        runner.addListener(rla);
+        Result result = runner.run(AutomaticRetryIgnore.class);
+        assertTrue(result.wasSuccessful());
+        
+        assertEquals(rla.getPassedTests().size(), 0, "Incorrect passed test count");
+        assertEquals(rla.getFailedTests().size(), 0, "Incorrect failed test count");
+        assertEquals(rla.getIgnoredTests().size(), 1, "Incorrect ignored test count");
+        assertEquals(rla.getRetriedTests().size(), 0, "Incorrect retried test count");
+    }
+    
     @AfterClass
     public static void afterClass() {
         System.clearProperty(JUnitSettings.MAX_RETRY.key());

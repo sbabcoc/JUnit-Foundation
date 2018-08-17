@@ -1,6 +1,7 @@
 package com.nordstrom.automation.junit;
 
 import static com.nordstrom.automation.junit.LifecycleHooks.getFieldValue;
+import static com.nordstrom.automation.junit.LifecycleHooks.getTestClassOf;
 
 import java.util.Map;
 import java.util.Objects;
@@ -149,11 +150,11 @@ public class RunReflectiveCall {
     /**
      * Invoke to tell listeners that an atomic test was ignored.
      * 
-     * @param runnable {@link Runnable} object that wraps the atomic test
+     * @param runner JUnit test runner
+     * @param method {@link FrameworkMethod} object
      */
-    static void fireTestIgnored(FrameworkMethod method) {
-        Object target = getTargetFor(method);
-        TestClass testClass = LifecycleHooks.getTestClassFor(target);
+    static void fireTestIgnored(Object runner, FrameworkMethod method) {
+        TestClass testClass = getTestClassOf(runner);
         for (RunWatcher watcher : runWatcherLoader) {
             watcher.testIgnored(method, testClass);
         }
@@ -203,8 +204,8 @@ public class RunReflectiveCall {
         AtomicTest atomicTest = null;
         
         try {
-            runner = LifecycleHooks.getFieldValue(runnable, "this$0");
-            child = LifecycleHooks.getFieldValue(runnable, "val$each");
+            runner = getFieldValue(runnable, "this$0");
+            child = getFieldValue(runnable, "val$each");
         } catch (IllegalAccessException | NoSuchFieldException | SecurityException e) {
             // nothing to do here
         }

@@ -35,7 +35,7 @@ public class RetryHandler {
     /**
      * Run the specified method, retrying on failure.
      * 
-     * @param runner underlying test runner
+     * @param runner JUnit test runner
      * @param method test method to be run
      * @param notifier run notifier through which events are published
      * @param maxRetry maximum number of retry attempts
@@ -54,19 +54,19 @@ public class RetryHandler {
                 statement.evaluate();
                 doRetry = false;
             } catch (AssumptionViolatedException thrown) {
-                doRetry = doRetry(runner, method, thrown, count);
+                doRetry = doRetry(method, thrown, count);
                 if (doRetry) {
                     description = RetriedTest.proxyFor(description, thrown);
-                    RunReflectiveCall.fireTestIgnored(method);
+                    RunReflectiveCall.fireTestIgnored(runner, method);
                     eachNotifier.fireTestIgnored();
                 } else {
                     eachNotifier.addFailedAssumption(thrown);
                 }
             } catch (Throwable thrown) {
-                doRetry = doRetry(runner, method, thrown, count);
+                doRetry = doRetry(method, thrown, count);
                 if (doRetry) {
                     description = RetriedTest.proxyFor(description, thrown);
-                    RunReflectiveCall.fireTestIgnored(method);
+                    RunReflectiveCall.fireTestIgnored(runner, method);
                     eachNotifier.fireTestIgnored();
                 } else {
                     eachNotifier.addFailure(thrown);
@@ -85,7 +85,7 @@ public class RetryHandler {
      * @param retryCounter retry counter (remaining attempts)
      * @return {@code true} if failed test should be retried; otherwise {@code false}
      */
-    static boolean doRetry(Object runner, FrameworkMethod method, Throwable thrown, AtomicInteger retryCounter) {
+    static boolean doRetry(FrameworkMethod method, Throwable thrown, AtomicInteger retryCounter) {
         boolean doRetry = false;
         if ((retryCounter.decrementAndGet() > -1) && isRetriable(method, thrown)) {
             LOGGER.warn("### RETRY ### {}", method);
@@ -100,6 +100,7 @@ public class RetryHandler {
      * <b>NOTE</b>: If the specified method or the class that declares it are marked with the {@code @NoRetry}
      * annotation, this method returns zero (0).
      * 
+     * @param runner JUnit test runner
      * @param method test method for which retry is being considered
      * @return maximum retry attempts that will be made if the specified method fails
      */
