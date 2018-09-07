@@ -204,7 +204,7 @@ The preceding **ServiceLoader** provider configuration files declare a **JUnit F
 
 * [ShutdownListener](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/ShutdownListener.java)  
 **ShutdownListener** provides callbacks for events in the lifecycle of the JVM that runs the Java code that comprises your tests. It receives the following notification:
-  * The JVM that's running the tests is about to close. This signals the completion the the test run.
+  * The JVM that's running the tests is about to close. This signals the completion of the test run.
 * [TestClassWatcher](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/TestClassWatcher.java)  
 **TestClassWatcher** provides callbacks for events in the lifecycle of **`TestClass`** objects. It receives the following notifications:
   * A **`TestClass`** object has been created to represent a JUnit test class or suite. Each **`TestClass`** has a one-to-one relationship with the JUnit runner that created it.
@@ -223,7 +223,7 @@ The preceding **ServiceLoader** provider configuration files declare a **JUnit F
 * [MethodWatcher](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/MethodWatcher.java)  
 **MethodWatcher** provides callbacks for events in the lifecycle of a `particle method`, which is a component of an `atomic test`. It receives the following notifications:
   * A `particle method` is about to be invoked.
-  * A `particle method` has just been invoked.
+  * A `particle method` has just finished.
 
 ###### Service Provider Example - Implementing MethodWatcher
 ```java
