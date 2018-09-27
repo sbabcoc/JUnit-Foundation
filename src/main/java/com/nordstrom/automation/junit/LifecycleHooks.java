@@ -159,16 +159,14 @@ public class LifecycleHooks {
                 }
             }
             
-            TestClass testClass = getTestClassOf(runner);
-            
             for (RunnerWatcher watcher : runnerWatcherLoader) {
-                watcher.runStarted(testClass);
+                watcher.runStarted(runner);
             }
             
             proxy.call();
             
             for (RunnerWatcher watcher : runnerWatcherLoader) {
-                watcher.runFinished(testClass);
+                watcher.runFinished(runner);
             }
         }
         
