@@ -8,7 +8,7 @@ import org.junit.runners.model.TestClass;
  * This interface defines the methods implemented by JUnit run watchers.
  */
 public interface RunWatcher {
-    
+
     /**
      * Called when an atomic test is about to be started.
      *
