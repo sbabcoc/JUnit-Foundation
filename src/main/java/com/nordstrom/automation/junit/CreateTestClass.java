@@ -26,6 +26,7 @@ public class CreateTestClass {
     private static final ServiceLoader<TestClassWatcher> classWatcherLoader;
     private static final Logger LOGGER = LoggerFactory.getLogger(CreateTestClass.class);
     private static final Map<TestClass, Object> TESTCLASS_TO_RUNNER = new ConcurrentHashMap<>();
+    private static final Map<Object, TestClass> METHOD_TO_TESTCLASS = new ConcurrentHashMap<>();
     
     static {
         classWatcherLoader = ServiceLoader.load(TestClassWatcher.class);
@@ -44,6 +45,10 @@ public class CreateTestClass {
         
         TestClass testClass = (TestClass) proxy.call();
         TESTCLASS_TO_RUNNER.put(testClass, runner);
+        
+        for (Object method : testClass.getAnnotatedMethods()) {
+            METHOD_TO_TESTCLASS.put(method, testClass);
+        }
         
         for (TestClassWatcher watcher : classWatcherLoader) {
             watcher.testClassCreated(testClass, runner);
@@ -117,5 +122,19 @@ public class CreateTestClass {
             return runner;
         }
         throw new IllegalArgumentException("No associated runner was found for specified test class");
+    }
+    
+    /**
+     * Get the test class associated with the specified framework method.
+     * 
+     * @param method {@code FrameworkMethod} object
+     * @return {@link TestClass} object associated with the specified framework method
+     */
+    static TestClass getTestClassWith(Object method) {
+        TestClass testClass = METHOD_TO_TESTCLASS.get(method);
+        if (testClass != null) {
+            return testClass;
+        }
+        throw new IllegalArgumentException("No associated test class was found for specified framework method");
     }
 }

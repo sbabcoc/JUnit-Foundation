@@ -126,11 +126,13 @@ public class LifecycleHooks {
     @SuppressWarnings("squid:S1118")
     public static class Run {
         private static final ServiceLoader<RunListener> runListenerLoader;
+        private static final ServiceLoader<RunnerWatcher> runnerWatcherLoader;
         private static final Set<RunNotifier> NOTIFIERS = new HashSet<>();
         private static final Map<Object, Object> CHILD_TO_PARENT = new ConcurrentHashMap<>();
         
         static {
             runListenerLoader = ServiceLoader.load(RunListener.class);
+            runnerWatcherLoader = ServiceLoader.load(RunnerWatcher.class);
         }
         
         /**
@@ -157,7 +159,15 @@ public class LifecycleHooks {
                 }
             }
             
+            for (RunnerWatcher watcher : runnerWatcherLoader) {
+                watcher.runStarted(runner);
+            }
+            
             proxy.call();
+            
+            for (RunnerWatcher watcher : runnerWatcherLoader) {
+                watcher.runFinished(runner);
+            }
         }
         
         /**
@@ -240,6 +250,16 @@ public class LifecycleHooks {
      */
     public static Object getRunnerFor(TestClass testClass) {
         return CreateTestClass.getRunnerFor(testClass);
+    }
+    
+    /**
+     * Get the test class associated with the specified framework method.
+     * 
+     * @param method {@code FrameworkMethod} object
+     * @return {@link TestClass} object associated with the specified framework method
+     */
+    public static TestClass getTestClassWith(Object method) {
+        return CreateTestClass.getTestClassWith(method);
     }
     
     /**
