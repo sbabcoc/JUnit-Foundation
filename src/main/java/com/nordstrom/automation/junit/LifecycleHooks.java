@@ -163,7 +163,7 @@ public class LifecycleHooks {
                 watcher.runStarted(runner);
             }
             
-            proxy.call();
+            callProxy(proxy);
             
             for (RunnerWatcher watcher : runnerWatcherLoader) {
                 watcher.runFinished(runner);
@@ -206,7 +206,7 @@ public class LifecycleHooks {
         @RuntimeType
         public static Object intercept(@This final Object runner,
                         @SuperCall final Callable<?> proxy) throws Exception {
-            Object testObj = proxy.call();
+            Object testObj = callProxy(proxy);
             TARGET_TO_TESTCLASS.put(testObj, getTestClassOf(runner));
             applyTimeout(testObj);
             
@@ -458,5 +458,22 @@ public class LifecycleHooks {
         Field field = getDeclaredField(target, name);
         field.setAccessible(true);
         field.set(target, value);
+    }
+    
+    /**
+     * Invoke an intercepted method through its callable proxy.
+     * <p>
+     * <b>NOTE</b>: If the invoked method throws an exception, this method re-throws the original exception.
+     * 
+     * @param proxy callable proxy for the intercepted method
+     * @return {@code anything} - value returned by the intercepted method
+     * @throws Exception {@code anything} (exception thrown by the intercepted method)
+     */
+    static Object callProxy(final Callable<?> proxy) throws Exception {
+        try {
+            return proxy.call();
+        } catch (InvocationTargetException e) {
+            throw UncheckedThrow.throwUnchecked(e.getCause());
+        }
     }
 }

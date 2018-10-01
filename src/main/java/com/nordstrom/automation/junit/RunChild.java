@@ -36,7 +36,7 @@ public class RunChild {
         }
         
         if (count == 0) {
-            proxy.call();
+            LifecycleHooks.callProxy(proxy);
         } else if (!isIgnored) {
             RetryHandler.runChildWithRetry(runner, method, notifier, count);
         }
