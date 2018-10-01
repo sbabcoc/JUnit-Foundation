@@ -43,7 +43,7 @@ public class CreateTestClass {
     public static TestClass intercept(@This final Object runner, @SuperCall final Callable<?> proxy)
                     throws Exception {
         
-        TestClass testClass = (TestClass) proxy.call();
+        TestClass testClass = (TestClass) LifecycleHooks.callProxy(proxy);
         TESTCLASS_TO_RUNNER.put(testClass, runner);
         
         for (Object method : testClass.getAnnotatedMethods()) {

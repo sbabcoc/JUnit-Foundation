@@ -72,7 +72,7 @@ public class RunReflectiveCall {
         }
         
         if (method == null) {
-            return proxy.call();
+            return LifecycleHooks.callProxy(proxy);
         }
 
         Object result = null;
@@ -82,7 +82,7 @@ public class RunReflectiveCall {
         }
 
         try {
-            result = proxy.call();
+            result = LifecycleHooks.callProxy(proxy);
         } catch (Throwable t) {
             thrown = t;
         } finally {
