@@ -222,6 +222,38 @@ The preceding **ServiceLoader** provider configuration files declare a **JUnit F
   * A `particle method` is about to be invoked.
   * A `particle method` has just finished.
 
+###### Walking the Object Hierarchy
+
+The objects passed to your serice provider implementation are members of a hierarchy that **JUnit** builds to represent the test collection being executed. **JUnit Foundation** provides a set of static methods that enable you walk this object hierarchy.
+
+* `LifecycleHooks.getParentOf(Object runner)`  
+Get the parent runner that owns the specified child runner.
+* `LifecycleHooks.getTestClassFor(Object target)`  
+Get the test class object that wraps the specified instance.
+* `LifecycleHooks.getRunnerFor(TestClass testClass)`  
+Get the parent runner associated with the specified test class object.
+* `LifecycleHooks.getTestClassWith(Object method)`  
+Get the test class associated with the specified framework method.
+* `LifecycleHooks.getTestClassOf(Object runner)`  
+Get the test class object associated with the specified parent runner.
+* `RunReflectiveCall.getTargetFor(FrameworkMethod method)`  
+Get the target test class instance for the specified method.
+* `RunReflectiveCall.getAtomicTestFor(TestClass testClass)`  
+Get the atomic test associated with the specified test class.
+* `RunReflectiveCall.getAtomicTestFor(FrameworkMethod method)`  
+Get the atomic test associated with the specified method.
+
+###### Useful Utility Methods
+
+**JUnit Foundation** provides several static utility methods that can be useful in your service provider implementation.
+
+* `LifecycleHooks.describeChild(Object target, Object child)`  
+Get a `Description` for the indicated child object from the runner for the specified test class instance.
+* `LifecycleHooks.hasConfiguration(TestClass testClass)`  
+Determine if the atomic test associated with the specified test class has configuration methods.
+* `LifecycleHooks.getInstanceClass(Object instance)`  
+Get class of specified test class instance.
+
 ###### Service Provider Example - Implementing MethodWatcher
 ```java
 package com.nordstrom.example;
