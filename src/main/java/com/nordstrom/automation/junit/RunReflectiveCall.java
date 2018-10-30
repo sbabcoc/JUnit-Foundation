@@ -166,7 +166,7 @@ public class RunReflectiveCall {
      * @param method {@link FrameworkMethod} object
      * @return target test class instance for the specified method
      */
-    static Object getTargetFor(FrameworkMethod method) {
+    public static Object getTargetFor(FrameworkMethod method) {
         Object target = METHOD_TO_TARGET.get(method);
         if (target != null) {
             return target;
