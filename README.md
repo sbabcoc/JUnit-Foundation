@@ -35,6 +35,12 @@ Get the atomic test associated with the specified test class.
 * `RunReflectiveCall.getAtomicTestFor(FrameworkMethod method)`  
 Get the atomic test associated with the specified method.
 
+Note that some associations are not available for specific context:
+
+* `TestClass` objects for `Suite` runners have no associated atomic tests.
+* `FrameworkMethod` objects for a static configuration methods (**`@BeforeClass`**/**`@AfterClass`**) have no associated atomic tests.
+* `FrameworkMethod` objects for ignored tests (**`@Ignore`**) have no associated target test class instances.
+
 ###### Exploring the Test Run Hierarchy
 ```java
 package com.nordstrom.example;
