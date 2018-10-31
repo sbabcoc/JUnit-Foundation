@@ -81,8 +81,8 @@ public class ExploringWatcher implements TestClassWatcher, MethodWatcher {
 Note that some associations are not available for specific context:
 
 * `TestClass` objects for `Suite` runners have no associated atomic tests.
-* `FrameworkMethod` objects for a static configuration methods (**`@BeforeClass`**/**`@AfterClass`**) have no associated atomic tests.
-* `FrameworkMethod` objects for ignored tests (**`@Ignore`**) have no associated target test class instances.
+* `FrameworkMethod` objects for static configuration methods (**`@BeforeClass`**/**`@AfterClass`**) have no associated atomic tests.
+* `FrameworkMethod` objects for ignored test methods (**`@Ignore`**) have no associated target test class instances.
 
 #### Useful Utility Methods
 
