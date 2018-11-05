@@ -117,7 +117,7 @@ The hooks that enable **JUnit Foundation** test lifecycle notifications are inst
     <dependency>
       <groupId>com.nordstrom.tools</groupId>
       <artifactId>junit-foundation</artifactId>
-      <version>6.1.4</version>
+      <version>6.2.0</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -206,8 +206,8 @@ test {
 }
 dependencies {
     ...
-    compile 'com.nordstrom.tools:junit-foundation:6.1.4'
-    junitAgent 'com.nordstrom.tools:junit-foundation:6.1.4'
+    compile 'com.nordstrom.tools:junit-foundation:6.2.0'
+    junitAgent 'com.nordstrom.tools:junit-foundation:6.2.0'
 }
 ```
 
