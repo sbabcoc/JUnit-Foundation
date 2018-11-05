@@ -71,9 +71,9 @@ public class LifecycleHooks {
      * @return The installed class file transformer
      */
     public static ClassFileTransformer installTransformer(Instrumentation instrumentation) {
-        TypeDescription reflectiveCallable = TypePool.Default.ofClassPath().describe("org.junit.internal.runners.model.ReflectiveCallable").resolve();
-        TypeDescription parentRunner = TypePool.Default.ofClassPath().describe("org.junit.runners.ParentRunner").resolve();
-        TypeDescription blockJUnit4ClassRunner = TypePool.Default.ofClassPath().describe("org.junit.runners.BlockJUnit4ClassRunner").resolve();
+        TypeDescription reflectiveCallable = TypePool.Default.ofSystemLoader().describe("org.junit.internal.runners.model.ReflectiveCallable").resolve();
+        TypeDescription parentRunner = TypePool.Default.ofSystemLoader().describe("org.junit.runners.ParentRunner").resolve();
+        TypeDescription blockJUnit4ClassRunner = TypePool.Default.ofSystemLoader().describe("org.junit.runners.BlockJUnit4ClassRunner").resolve();
         
         return new AgentBuilder.Default()
                 .type(isSubTypeOf(reflectiveCallable))
