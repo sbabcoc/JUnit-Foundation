@@ -20,6 +20,7 @@ public interface TestClassWatcher {
      * Called when a runner (test class or suite) is about to be started.
      * 
      * @param testClass {@link TestClass} object for the parent runner
+     * @deprecated Use {@link TestClassWatcher2#testClassStarted(TestClass, Object)} instead
      */
     void testClassStarted(TestClass testClass);
     
@@ -27,6 +28,7 @@ public interface TestClassWatcher {
      * Called when a runner (test class or suite) has finished.
      * 
      * @param testClass {@link TestClass} object for the parent runner
+     * @deprecated Use {@link TestClassWatcher2#testClassFinished(TestClass, Object)} instead
      */
     void testClassFinished(TestClass testClass);
 }
