@@ -24,12 +24,14 @@ import net.bytebuddy.implementation.bind.annotation.This;
 @SuppressWarnings("squid:S1118")
 public class CreateTestClass {
     private static final ServiceLoader<TestClassWatcher> classWatcherLoader;
+    private static final ServiceLoader<TestClassWatcher2> classWatcher2Loader;
     private static final Logger LOGGER = LoggerFactory.getLogger(CreateTestClass.class);
     private static final Map<TestClass, Object> TESTCLASS_TO_RUNNER = new ConcurrentHashMap<>();
     private static final Map<Object, TestClass> METHOD_TO_TESTCLASS = new ConcurrentHashMap<>();
     
     static {
         classWatcherLoader = ServiceLoader.load(TestClassWatcher.class);
+        classWatcher2Loader = ServiceLoader.load(TestClassWatcher2.class);
     }
     
     /**
@@ -53,6 +55,9 @@ public class CreateTestClass {
         for (TestClassWatcher watcher : classWatcherLoader) {
             watcher.testClassCreated(testClass, runner);
         }
+        for (TestClassWatcher2 watcher : classWatcher2Loader) {
+            watcher.testClassCreated(testClass, runner);
+        }
         
         attachRunnerScheduler(testClass, runner);
         return testClass;
@@ -67,7 +72,7 @@ public class CreateTestClass {
     private static void attachRunnerScheduler(final TestClass testClass, final Object runner) {
         try {
             RunnerScheduler scheduler = getFieldValue(runner, "scheduler");
-            setFieldValue(runner, "scheduler", createRunnerScheduler(testClass, scheduler));
+            setFieldValue(runner, "scheduler", createRunnerScheduler(testClass, runner, scheduler));
         } catch (IllegalAccessException | NoSuchFieldException | SecurityException | IllegalArgumentException e) {
             LOGGER.warn("Unable to attach notifying runner scheduler", e);
         }
@@ -77,10 +82,12 @@ public class CreateTestClass {
      * Create notifying runner scheduler, which forwards to the previous scheduler if specified.
      * 
      * @param testClass {@link TestClass} object that was just created
+     * @param runner {@link ParentRunner} for the specified test class
      * @param scheduler runner scheduler that's currently attached to the specified runner (may be {@code null})
      * @return new notifying runner scheduler
      */
-    private static RunnerScheduler createRunnerScheduler(final TestClass testClass, final RunnerScheduler scheduler) {
+    private static RunnerScheduler createRunnerScheduler(final TestClass testClass,
+                    final Object runner, final RunnerScheduler scheduler) {
         return new RunnerScheduler() {
             private AtomicBoolean scheduled = new AtomicBoolean(false);
             
@@ -88,6 +95,9 @@ public class CreateTestClass {
                 if (scheduled.compareAndSet(false, true)) {
                     for (TestClassWatcher watcher : classWatcherLoader) {
                         watcher.testClassStarted(testClass);
+                    }
+                    for (TestClassWatcher2 watcher : classWatcher2Loader) {
+                        watcher.testClassStarted(testClass, runner);
                     }
                 }
                 
@@ -105,6 +115,9 @@ public class CreateTestClass {
             public void finished() {
                 for (TestClassWatcher watcher : classWatcherLoader) {
                     watcher.testClassFinished(testClass);
+                }
+                for (TestClassWatcher2 watcher : classWatcher2Loader) {
+                    watcher.testClassFinished(testClass, runner);
                 }
             }
         };
