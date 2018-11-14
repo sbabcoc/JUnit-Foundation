@@ -23,16 +23,9 @@ import net.bytebuddy.implementation.bind.annotation.This;
  */
 @SuppressWarnings("squid:S1118")
 public class CreateTestClass {
-    private static final ServiceLoader<TestClassWatcher> classWatcherLoader;
-    private static final ServiceLoader<TestClassWatcher2> classWatcher2Loader;
     private static final Logger LOGGER = LoggerFactory.getLogger(CreateTestClass.class);
     private static final Map<TestClass, Object> TESTCLASS_TO_RUNNER = new ConcurrentHashMap<>();
     private static final Map<Object, TestClass> METHOD_TO_TESTCLASS = new ConcurrentHashMap<>();
-    
-    static {
-        classWatcherLoader = ServiceLoader.load(TestClassWatcher.class);
-        classWatcher2Loader = ServiceLoader.load(TestClassWatcher2.class);
-    }
     
     /**
      * Interceptor for the {@link org.junit.runners.ParentRunner#createTestClass createTestClass} method.
@@ -52,10 +45,10 @@ public class CreateTestClass {
             METHOD_TO_TESTCLASS.put(method, testClass);
         }
         
-        for (TestClassWatcher watcher : classWatcherLoader) {
+        for (TestClassWatcher watcher : ServiceLoader.load(TestClassWatcher.class)) {
             watcher.testClassCreated(testClass, runner);
         }
-        for (TestClassWatcher2 watcher : classWatcher2Loader) {
+        for (TestClassWatcher2 watcher : ServiceLoader.load(TestClassWatcher2.class)) {
             watcher.testClassCreated(testClass, runner);
         }
         
@@ -93,10 +86,10 @@ public class CreateTestClass {
             
             public void schedule(Runnable childStatement) {
                 if (scheduled.compareAndSet(false, true)) {
-                    for (TestClassWatcher watcher : classWatcherLoader) {
+                    for (TestClassWatcher watcher : ServiceLoader.load(TestClassWatcher.class)) {
                         watcher.testClassStarted(testClass);
                     }
-                    for (TestClassWatcher2 watcher : classWatcher2Loader) {
+                    for (TestClassWatcher2 watcher : ServiceLoader.load(TestClassWatcher2.class)) {
                         watcher.testClassStarted(testClass, runner);
                     }
                 }
@@ -113,10 +106,10 @@ public class CreateTestClass {
             }
 
             public void finished() {
-                for (TestClassWatcher watcher : classWatcherLoader) {
+                for (TestClassWatcher watcher : ServiceLoader.load(TestClassWatcher.class)) {
                     watcher.testClassFinished(testClass);
                 }
-                for (TestClassWatcher2 watcher : classWatcher2Loader) {
+                for (TestClassWatcher2 watcher : ServiceLoader.load(TestClassWatcher2.class)) {
                     watcher.testClassFinished(testClass, runner);
                 }
             }
