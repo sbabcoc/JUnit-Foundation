@@ -129,9 +129,11 @@ public class RetryHandler {
      * @return {@code true} if test should be retried; otherwise {@code false}
      */
     static boolean isRetriable(final FrameworkMethod method, final Throwable thrown) {
-        for (JUnitRetryAnalyzer analyzer : retryAnalyzerLoader) {
-            if (analyzer.retry(method, thrown)) {
-                return true;
+        synchronized(retryAnalyzerLoader) {
+            for (JUnitRetryAnalyzer analyzer : retryAnalyzerLoader) {
+                if (analyzer.retry(method, thrown)) {
+                    return true;
+                }
             }
         }
         return false;

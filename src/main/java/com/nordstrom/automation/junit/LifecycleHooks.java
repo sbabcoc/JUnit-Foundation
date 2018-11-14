@@ -151,22 +151,28 @@ public class LifecycleHooks {
                 CHILD_TO_PARENT.put(child, runner);
             }
             
-            if (NOTIFIERS.add(notifier)) {
-                Description description = invoke(runner, "getDescription");
-                for (RunListener listener : runListenerLoader) {
-                    notifier.addListener(listener);
-                    listener.testRunStarted(description);
+            synchronized(NOTIFIERS) {
+                if (NOTIFIERS.add(notifier)) {
+                    Description description = invoke(runner, "getDescription");
+                    for (RunListener listener : runListenerLoader) {
+                        notifier.addListener(listener);
+                        listener.testRunStarted(description);
+                    }
                 }
             }
             
-            for (RunnerWatcher watcher : runnerWatcherLoader) {
-                watcher.runStarted(runner);
+            synchronized(runnerWatcherLoader) {
+                for (RunnerWatcher watcher : runnerWatcherLoader) {
+                    watcher.runStarted(runner);
+                }
             }
             
             callProxy(proxy);
             
-            for (RunnerWatcher watcher : runnerWatcherLoader) {
-                watcher.runFinished(runner);
+            synchronized(runnerWatcherLoader) {
+                for (RunnerWatcher watcher : runnerWatcherLoader) {
+                    watcher.runFinished(runner);
+                }
             }
         }
         
@@ -210,8 +216,10 @@ public class LifecycleHooks {
             TARGET_TO_TESTCLASS.put(testObj, getTestClassOf(runner));
             applyTimeout(testObj);
             
-            for (TestObjectWatcher watcher : objectWatcherLoader) {
-                watcher.testObjectCreated(testObj, TARGET_TO_TESTCLASS.get(testObj));
+            synchronized(objectWatcherLoader) {
+                for (TestObjectWatcher watcher : objectWatcherLoader) {
+                    watcher.testObjectCreated(testObj, TARGET_TO_TESTCLASS.get(testObj));
+                }
             }
             
             return testObj;
