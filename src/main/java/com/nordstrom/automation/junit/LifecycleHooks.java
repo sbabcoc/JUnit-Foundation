@@ -126,8 +126,15 @@ public class LifecycleHooks {
      */
     @SuppressWarnings("squid:S1118")
     public static class Run {
+        private static final ServiceLoader<RunListener> runListenerLoader;
+        private static final ServiceLoader<RunnerWatcher> runnerWatcherLoader;
         private static final Set<RunNotifier> NOTIFIERS = new CopyOnWriteArraySet<>();
         private static final Map<Object, Object> CHILD_TO_PARENT = new ConcurrentHashMap<>();
+        
+        static {
+            runListenerLoader = ServiceLoader.load(RunListener.class);
+            runnerWatcherLoader = ServiceLoader.load(RunnerWatcher.class);
+        }
         
         /**
          * Interceptor for the {@link org.junit.runners.ParentRunner#run run} method.
@@ -147,20 +154,26 @@ public class LifecycleHooks {
             
             if (NOTIFIERS.add(notifier)) {
                 Description description = invoke(runner, "getDescription");
-                for (RunListener listener : ServiceLoader.load(RunListener.class)) {
-                    notifier.addListener(listener);
-                    listener.testRunStarted(description);
+                synchronized(runListenerLoader) {
+                    for (RunListener listener : runListenerLoader) {
+                        notifier.addListener(listener);
+                        listener.testRunStarted(description);
+                    }
                 }
             }
             
-            for (RunnerWatcher watcher : ServiceLoader.load(RunnerWatcher.class)) {
-                watcher.runStarted(runner);
+            synchronized(runnerWatcherLoader) {
+                for (RunnerWatcher watcher : runnerWatcherLoader) {
+                    watcher.runStarted(runner);
+                }
             }
             
             callProxy(proxy);
             
-            for (RunnerWatcher watcher : ServiceLoader.load(RunnerWatcher.class)) {
-                watcher.runFinished(runner);
+            synchronized(runnerWatcherLoader) {
+                for (RunnerWatcher watcher : runnerWatcherLoader) {
+                    watcher.runFinished(runner);
+                }
             }
         }
         
@@ -182,7 +195,12 @@ public class LifecycleHooks {
     @SuppressWarnings("squid:S1118")
     public static class CreateTest {
         
+        private static final ServiceLoader<TestObjectWatcher> objectWatcherLoader;
         private static final Map<Object, TestClass> TARGET_TO_TESTCLASS = new ConcurrentHashMap<>();
+        
+        static {
+            objectWatcherLoader = ServiceLoader.load(TestObjectWatcher.class);
+        }
         
         /**
          * Interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#createTest createTest} method.
@@ -199,8 +217,10 @@ public class LifecycleHooks {
             TARGET_TO_TESTCLASS.put(testObj, getTestClassOf(runner));
             applyTimeout(testObj);
             
-            for (TestObjectWatcher watcher : ServiceLoader.load(TestObjectWatcher.class)) {
-                watcher.testObjectCreated(testObj, TARGET_TO_TESTCLASS.get(testObj));
+            synchronized(objectWatcherLoader) {
+                for (TestObjectWatcher watcher : objectWatcherLoader) {
+                    watcher.testObjectCreated(testObj, TARGET_TO_TESTCLASS.get(testObj));
+                }
             }
             
             return testObj;
