@@ -27,17 +27,9 @@ import net.bytebuddy.implementation.bind.annotation.This;
 @SuppressWarnings("squid:S1118")
 public class RunReflectiveCall {
     
-    private static final ServiceLoader<MethodWatcher> methodWatcherLoader;
-    private static final ServiceLoader<RunWatcher> runWatcherLoader;
-    
     private static final Map<FrameworkMethod, Object> METHOD_TO_TARGET = new ConcurrentHashMap<>();
     private static final Map<TestClass, AtomicTest> TESTCLASS_TO_ATOMICTEST = new ConcurrentHashMap<>();
   
-    static {
-        methodWatcherLoader = ServiceLoader.load(MethodWatcher.class);
-        runWatcherLoader = ServiceLoader.load(RunWatcher.class);
-    }
-    
     /**
      * Interceptor for the {@link org.junit.internal.runners.model.ReflectiveCallable#runReflectiveCall
      * runReflectiveCall} method.
@@ -77,10 +69,8 @@ public class RunReflectiveCall {
 
         Object result = null;
         Throwable thrown = null;
-        synchronized(methodWatcherLoader) {
-            for (MethodWatcher watcher : methodWatcherLoader) {
-                watcher.beforeInvocation(target, method, params);
-            }
+        for (MethodWatcher watcher : ServiceLoader.load(MethodWatcher.class)) {
+            watcher.beforeInvocation(target, method, params);
         }
 
         try {
@@ -88,10 +78,8 @@ public class RunReflectiveCall {
         } catch (Throwable t) {
             thrown = t;
         } finally {
-            synchronized(methodWatcherLoader) {
-                for (MethodWatcher watcher : methodWatcherLoader) {
-                    watcher.afterInvocation(target, method, thrown);
-                }
+            for (MethodWatcher watcher : ServiceLoader.load(MethodWatcher.class)) {
+                watcher.afterInvocation(target, method, thrown);
             }
         }
 
@@ -112,10 +100,8 @@ public class RunReflectiveCall {
     static void fireTestStarted(TestClass testClass, Runnable runnable) {
         AtomicTest atomicTest = createAtomicTest(testClass, runnable);
         if (atomicTest != null) {
-            synchronized(runWatcherLoader) {
-                for (RunWatcher watcher : runWatcherLoader) {
-                    watcher.testStarted(atomicTest.getIdentity(), atomicTest.getTestClass());
-                }
+            for (RunWatcher watcher : ServiceLoader.load(RunWatcher.class)) {
+                watcher.testStarted(atomicTest.getIdentity(), atomicTest.getTestClass());
             }
         }
     }
@@ -128,11 +114,9 @@ public class RunReflectiveCall {
     static void fireTestFinished(TestClass testClass) {
         AtomicTest atomicTest = TESTCLASS_TO_ATOMICTEST.get(testClass);
         if (atomicTest != null) {
-            synchronized(runWatcherLoader) {
-                for (RunWatcher watcher : runWatcherLoader) {
-                    notifyIfTestFailed(watcher, atomicTest);
-                    watcher.testFinished(atomicTest.getIdentity(), atomicTest.getTestClass());
-                }
+            for (RunWatcher watcher : ServiceLoader.load(RunWatcher.class)) {
+                notifyIfTestFailed(watcher, atomicTest);
+                watcher.testFinished(atomicTest.getIdentity(), atomicTest.getTestClass());
             }
         }
     }
@@ -163,10 +147,8 @@ public class RunReflectiveCall {
      */
     static void fireTestIgnored(Object runner, FrameworkMethod method) {
         TestClass testClass = getTestClassOf(runner);
-        synchronized(runWatcherLoader) {
-            for (RunWatcher watcher : runWatcherLoader) {
-                watcher.testIgnored(method, testClass);
-            }
+        for (RunWatcher watcher : ServiceLoader.load(RunWatcher.class)) {
+            watcher.testIgnored(method, testClass);
         }
     }
     
@@ -193,11 +175,9 @@ public class RunReflectiveCall {
     public static Optional<MethodWatcher> getAttachedWatcher(
                     Class<? extends MethodWatcher> watcherType) {
         Objects.requireNonNull(watcherType, "[watcherType] must be non-null");
-        synchronized(methodWatcherLoader) {
-            for (MethodWatcher watcher : methodWatcherLoader) {
-                if (watcher.getClass() == watcherType) {
-                    return Optional.of(watcher);
-                }
+        for (MethodWatcher watcher : ServiceLoader.load(MethodWatcher.class)) {
+            if (watcher.getClass() == watcherType) {
+                return Optional.of(watcher);
             }
         }
         return Optional.empty();

@@ -7,13 +7,14 @@ import java.lang.instrument.Instrumentation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
+
 import org.junit.Test;
 import org.junit.runner.Description;
 import org.junit.runner.notification.RunListener;
@@ -125,15 +126,8 @@ public class LifecycleHooks {
      */
     @SuppressWarnings("squid:S1118")
     public static class Run {
-        private static final ServiceLoader<RunListener> runListenerLoader;
-        private static final ServiceLoader<RunnerWatcher> runnerWatcherLoader;
-        private static final Set<RunNotifier> NOTIFIERS = new HashSet<>();
+        private static final Set<RunNotifier> NOTIFIERS = new CopyOnWriteArraySet<>();
         private static final Map<Object, Object> CHILD_TO_PARENT = new ConcurrentHashMap<>();
-        
-        static {
-            runListenerLoader = ServiceLoader.load(RunListener.class);
-            runnerWatcherLoader = ServiceLoader.load(RunnerWatcher.class);
-        }
         
         /**
          * Interceptor for the {@link org.junit.runners.ParentRunner#run run} method.
@@ -151,28 +145,22 @@ public class LifecycleHooks {
                 CHILD_TO_PARENT.put(child, runner);
             }
             
-            synchronized(NOTIFIERS) {
-                if (NOTIFIERS.add(notifier)) {
-                    Description description = invoke(runner, "getDescription");
-                    for (RunListener listener : runListenerLoader) {
-                        notifier.addListener(listener);
-                        listener.testRunStarted(description);
-                    }
+            if (NOTIFIERS.add(notifier)) {
+                Description description = invoke(runner, "getDescription");
+                for (RunListener listener : ServiceLoader.load(RunListener.class)) {
+                    notifier.addListener(listener);
+                    listener.testRunStarted(description);
                 }
             }
             
-            synchronized(runnerWatcherLoader) {
-                for (RunnerWatcher watcher : runnerWatcherLoader) {
-                    watcher.runStarted(runner);
-                }
+            for (RunnerWatcher watcher : ServiceLoader.load(RunnerWatcher.class)) {
+                watcher.runStarted(runner);
             }
             
             callProxy(proxy);
             
-            synchronized(runnerWatcherLoader) {
-                for (RunnerWatcher watcher : runnerWatcherLoader) {
-                    watcher.runFinished(runner);
-                }
+            for (RunnerWatcher watcher : ServiceLoader.load(RunnerWatcher.class)) {
+                watcher.runFinished(runner);
             }
         }
         
@@ -194,12 +182,7 @@ public class LifecycleHooks {
     @SuppressWarnings("squid:S1118")
     public static class CreateTest {
         
-        private static final ServiceLoader<TestObjectWatcher> objectWatcherLoader;
         private static final Map<Object, TestClass> TARGET_TO_TESTCLASS = new ConcurrentHashMap<>();
-        
-        static {
-            objectWatcherLoader = ServiceLoader.load(TestObjectWatcher.class);
-        }
         
         /**
          * Interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#createTest createTest} method.
@@ -216,10 +199,8 @@ public class LifecycleHooks {
             TARGET_TO_TESTCLASS.put(testObj, getTestClassOf(runner));
             applyTimeout(testObj);
             
-            synchronized(objectWatcherLoader) {
-                for (TestObjectWatcher watcher : objectWatcherLoader) {
-                    watcher.testObjectCreated(testObj, TARGET_TO_TESTCLASS.get(testObj));
-                }
+            for (TestObjectWatcher watcher : ServiceLoader.load(TestObjectWatcher.class)) {
+                watcher.testObjectCreated(testObj, TARGET_TO_TESTCLASS.get(testObj));
             }
             
             return testObj;
