@@ -509,7 +509,7 @@ public class ExampleTest implements ArtifactParams {
     
     @Override
     public Description getDescription() {
-        return watcher.getDescription();
+        return watcher1.getDescription();
     }
 }
 ```
@@ -544,7 +544,7 @@ class MyParameterizedType extends MyArtifactType {
 }
 ```
 
-Below, we create a type-specific subclass of **ArtifactCollector** to produce a parameter-aware artifact collector:
+Below, we compose a type-specific subclass of **ArtifactCollector** to produce a parameter-aware artifact collector:
 
 ###### Parameter-aware artifact collector
 ```java
