@@ -1,6 +1,6 @@
 package com.nordstrom.automation.junit;
 
-import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -28,6 +28,6 @@ public class ArtifactCollectorParameterized extends TestBase {
     
     @Test
     public void parameterized() {
-        assertArrayEquals(getParameters(), watcher.getParameters());
+        assertEquals("first test", input);
     }
 }

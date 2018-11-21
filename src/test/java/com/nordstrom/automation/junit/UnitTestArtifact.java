@@ -10,7 +10,6 @@ public class UnitTestArtifact implements ArtifactType {
     private CaptureState captureState;
     
     private static final String EXTENSION = "txt";
-    private static final String ARTIFACT = "This text artifact was captured for '%s'";
     private static final Logger LOGGER = LoggerFactory.getLogger(UnitTestArtifact.class);
     
     public enum CaptureState {
@@ -37,8 +36,14 @@ public class UnitTestArtifact implements ArtifactType {
     public byte[] getArtifact(Object instance, Throwable reason) {
         if (willGet()) {
             setCaptureState(CaptureState.CAPTURE_SUCCESS);
-            ArtifactParams params = (ArtifactParams) instance;
-            return String.format(ARTIFACT, params.getDescription().getMethodName()).getBytes().clone();
+            ArtifactParams publisher = (ArtifactParams) instance;
+            StringBuilder artifact = new StringBuilder("method: ")
+                            .append(publisher.getDescription().getMethodName()).append("\n");
+            int i = 0;
+            for (Object param : publisher.getParameters()) {
+                artifact.append("param" + i++ + ": " + param + "\n");
+            }
+            return artifact.toString().getBytes().clone();
         } else {
             setCaptureState(CaptureState.CAPTURE_FAILED);
             return new byte[0];

@@ -108,4 +108,23 @@ public class ArtifactCollectorTest {
         assertEquals(watcher.getArtifactProvider().getCaptureState(), CaptureState.CAPTURE_SUCCESS, "Incorrect artifact provider capture state");
         assertTrue(watcher.getArtifactPath().isPresent(), "Artifact capture output path is not present");
     }
+    
+    @Test
+    public void verifyParameterizedCapture() {
+        RunListenerAdapter rla = new RunListenerAdapter();
+        
+        JUnitCore runner = new JUnitCore();
+        runner.addListener(rla);
+        Result result = runner.run(ArtifactCollectorParameterized.class);
+        assertFalse(result.wasSuccessful());
+        
+        assertEquals(rla.getPassedTests().size(), 1, "Incorrect passed test count");
+        assertEquals(rla.getFailedTests().size(), 1, "Incorrect failed test count");
+        assertEquals(rla.getIgnoredTests().size(), 0, "Incorrect ignored test count");
+        
+        Description description = rla.getPassedTests().get(0);
+        UnitTestCapture watcher = ArtifactCollector.getWatcher(description, UnitTestCapture.class).get();
+        assertNull(watcher.getArtifactProvider().getCaptureState(), "Artifact provider capture state should be 'null'");
+        assertNull(watcher.getArtifactPath(), "Artifact capture should not have been requested");
+    }
 }
