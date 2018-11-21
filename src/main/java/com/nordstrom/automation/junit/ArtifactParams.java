@@ -8,7 +8,7 @@ import org.junit.runner.Description;
 public interface ArtifactParams {
     
     /**
-     * Get get JUnit method description object for the current test class instance.
+     * Get the JUnit method description object for the current test class instance.
      * 
      * @return JUnit method description object
      */

@@ -8,7 +8,7 @@ import com.nordstrom.common.file.PathUtils;
 /**
  * This interface defines the contract fulfilled by artifact capture providers. Instances of this interface supply the
  * scenario-specific implementation for artifact capture through the {@link ArtifactCollector} listener.
- * <br><br>
+ * <p>
  * <b>IMPLEMENTING ARTIFACTTYPE</b>
  * <pre><code>
  * package com.nordstrom.example;
@@ -73,9 +73,11 @@ public interface ArtifactType {
     /**
      * Get the SLF4J {@link Logger} for this artifact type.
      * 
-     * @return logger for this artifact
+     * @return logger for this artifact (may be {@code null})
      */
-    Logger getLogger();
+    default Logger getLogger() {
+        return null;
+    }
     
     /**
      * Determine if artifact capture is available in the specified context.
@@ -96,6 +98,8 @@ public interface ArtifactType {
     
     /**
      * Get the path at which to store artifacts.
+     * <p>
+     * <b>NOTE</b>: The returned path can be either relative or absolute.
      * 
      * @param instance JUnit test class instance
      * @return artifact storage path
@@ -107,8 +111,6 @@ public interface ArtifactType {
     
     /**
      * Get the extension for artifact files of this type.
-     * <br><br>
-     * <b>NOTE</b>: The returned path can be either relative or absolute.
      * 
      * @return artifact file extension
      */

@@ -10,9 +10,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
-
 import com.nordstrom.common.file.PathUtils;
 
 /**
@@ -20,18 +18,16 @@ import com.nordstrom.common.file.PathUtils;
  * 
  * @param <T> scenario-specific artifact type
  */
-public class ArtifactCollector<T extends ArtifactType> extends TestWatcher {
+public class ArtifactCollector<T extends ArtifactType> extends AtomIdentity {
     
     private static final Map<Description, List<ArtifactCollector<? extends ArtifactType>>> watcherMap =
                     new ConcurrentHashMap<>();
     
     private final T provider;
-    private final Object instance;
-    private Description description;
     private final List<Path> artifactPaths = new ArrayList<>();
     
     public ArtifactCollector(Object instance, T provider) {
-        this.instance = instance;
+        super(instance);
         this.provider = provider;
     }
     
@@ -40,12 +36,9 @@ public class ArtifactCollector<T extends ArtifactType> extends TestWatcher {
      */
     @Override
     public void starting(Description description) {
-        this.description = description;
-        List<ArtifactCollector<? extends ArtifactType>> watcherList = watcherMap.get(description);
-        if (watcherList == null) {
-            watcherList = new ArrayList<>();
-            watcherMap.put(description, watcherList);
-        }
+        super.starting(description);
+        List<ArtifactCollector<? extends ArtifactType>> watcherList =
+                        watcherMap.computeIfAbsent(description, k -> new ArrayList<>());
         watcherList.add(this);
     }
     
@@ -64,11 +57,11 @@ public class ArtifactCollector<T extends ArtifactType> extends TestWatcher {
      * @return (optional) path at which the captured artifact was stored
      */
     public Optional<Path> captureArtifact(Throwable reason) {
-        if (! provider.canGetArtifact(instance)) {
+        if (! provider.canGetArtifact(getInstance())) {
             return Optional.empty();
         }
         
-        byte[] artifact = provider.getArtifact(instance, reason);
+        byte[] artifact = provider.getArtifact(getInstance(), reason);
         if ((artifact == null) || (artifact.length == 0)) {
             return Optional.empty();
         }
@@ -79,7 +72,7 @@ public class ArtifactCollector<T extends ArtifactType> extends TestWatcher {
                 Files.createDirectories(collectionPath);
             } catch (IOException e) {
                 String messageTemplate = "Unable to create collection directory ({}); no artifact was captured";
-                provider.getLogger().warn(messageTemplate, collectionPath, e);
+                Optional.ofNullable(provider.getLogger()).ifPresent(l -> l.warn(messageTemplate, collectionPath, e));
                 return Optional.empty();
             }
         }
@@ -91,15 +84,18 @@ public class ArtifactCollector<T extends ArtifactType> extends TestWatcher {
                             getArtifactBaseName(), 
                             provider.getArtifactExtension());
         } catch (IOException e) {
-            provider.getLogger().warn("Unable to get output path; no artifact was captured", e);
+            Optional.ofNullable(provider.getLogger()).ifPresent(
+                            l -> l.warn("Unable to get output path; no artifact was captured", e));
             return Optional.empty();
         }
         
         try {
-            provider.getLogger().info("Saving captured artifact to ({}).", artifactPath);
+            Optional.ofNullable(provider.getLogger()).ifPresent(
+                            l -> l.info("Saving captured artifact to ({}).", artifactPath));
             Files.write(artifactPath, artifact);
         } catch (IOException e) {
-            provider.getLogger().warn("I/O error saving to ({}); no artifact was captured", artifactPath, e);
+            Optional.ofNullable(provider.getLogger()).ifPresent(
+                            l -> l.warn("I/O error saving to ({}); no artifact was captured", artifactPath, e));
             return Optional.empty();
         }
         
@@ -113,8 +109,8 @@ public class ArtifactCollector<T extends ArtifactType> extends TestWatcher {
      * @return path of artifact storage directory
      */
     private Path getCollectionPath() {
-        Path collectionPath = PathUtils.ReportsDirectory.getPathForObject(instance);
-        return collectionPath.resolve(provider.getArtifactPath(instance));
+        Path collectionPath = PathUtils.ReportsDirectory.getPathForObject(getInstance());
+        return collectionPath.resolve(provider.getArtifactPath(getInstance()));
     }
     
     /**
@@ -127,16 +123,12 @@ public class ArtifactCollector<T extends ArtifactType> extends TestWatcher {
      * @return artifact file base name
      */
     private String getArtifactBaseName() {
-        Object[] parameters = new Object[0];
-        if (instance instanceof ArtifactParams) {
-            parameters = ((ArtifactParams) instance).getParameters();
-        }
-        if (parameters.length == 0) {
-            return description.getMethodName();
+        if (getParameters().length == 0) {
+            return getDescription().getMethodName();
         } else {
-            int hashcode = Arrays.deepHashCode(parameters);
+            int hashcode = Arrays.deepHashCode(getParameters());
             String hashStr = String.format("%08X", hashcode);
-            return description.getMethodName() + "-" + hashStr;
+            return getDescription().getMethodName() + "-" + hashStr;
         }
     }
     
@@ -169,15 +161,6 @@ public class ArtifactCollector<T extends ArtifactType> extends TestWatcher {
      */
     public T getArtifactProvider() {
         return provider;
-    }
-    
-    /**
-     * Get the JUnit {@link Description} object associated with this artifact collector.
-     * 
-     * @return JUnit method description object
-     */
-    public Description getDescription() {
-        return description;
     }
     
     /**
