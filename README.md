@@ -384,7 +384,7 @@ public class ExampleTest implements ArtifactParams {
 
 #### Artifact capture for parameterized tests
 
-For scenarios that require artifact capture of parameterized tests, the [ArtifactCollector](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/ArtifactCollector.java) class is an extension of [AtomIdentity](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/AtomIdentity.java). This enables artifact type implementations to access method invocation parameters. For more details, see the [Artifact Capture](#artifact-capture) section below.
+For scenarios that require artifact capture of parameterized tests, the [ArtifactCollector](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/ArtifactCollector.java) class extends the [AtomIdentity](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/AtomIdentity.java) test rule. This enables artifact type implementations to access invocation parameters and **Description** object for the current `atomic test`. For more details, see the [Artifact Capture](#artifact-capture) section below.
 
 ## Test Method Timeout Management
 
