@@ -544,7 +544,9 @@ class MyParameterizedType extends MyArtifactType {
 }
 ```
 
-Below, we compose a type-specific subclass of **ArtifactCollector** to produce a parameter-aware artifact collector:
+Notice the call to `getParameters()`, which retrieves the invocation parameters published by the test class instance. There's also a call to `getDescription()`, which returns the **Description** object for the current `atomic test`.
+
+The implementation below composes a type-specific subclass of **ArtifactCollector** to produce a parameter-aware artifact collector:
 
 ###### Parameter-aware artifact collector
 ```java
@@ -560,17 +562,23 @@ public class MyParameterizedCapture extends ArtifactCollector<MyParameterizedTyp
 }
 ```
 
-The following example implements a parameterized test class that publishes its invocation parameters through the **ArtifactParams** interface.
+The following example implements a parameterized test class that publishes its invocation parameters through the **ArtifactParams** interface. It uses the custom **Parameterized** runner to invoke the `parameterized()` test method twice - once with input "first test", and once with input "second test". The test class constructor accepts the invocation parameter as its argument and stores it in an instance field for use by the test.
+
+* The `getDescription()` method acquires the **Description** object for the current `atomic test` from the `watcher` test rule.
+* The `getParameters()` method assembles the array of invocation parameters from the `input` instance field populated by the constructor.
 
 ###### Parameterized test class
 ```java
 package com.nordstrom.example;
 
-import com.nordstrom.automation.junit.ArtifactCollector;
 import com.nordstrom.automation.junit.ArtifactParams;
 
 import org.junit.Rule;
+import org.junit.Test;
 import org.junit.runner.Description;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
 @RunWith(Parameterized.class)
 public class ParameterizedTest implements ArtifactParams {
@@ -587,6 +595,11 @@ public class ParameterizedTest implements ArtifactParams {
     @Parameters
     public static Object[] data() {
         return new Object[] { "first test", "second test" };
+    }
+    
+    @Override
+    public Description getDescription() {
+        return watcher.getDescription();
     }
     
     @Override
