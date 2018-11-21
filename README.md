@@ -325,6 +325,67 @@ Note that the implementation in this method watcher uses the annotations attache
 
 As indicated previously, **JUnit Foundation** will automatically attach standard JUnit **RunListener** providers that are declared in the associated **ServiceLoader** provider configuration file (i.e. - **_org.junit.runner.notification.RunListener_**). Declared run listeners are attached to the **RunNotifier** supplied to the `run()` method of JUnit runners. This feature eliminates behavioral differences between the various test execution environments like Maven, Gradle, and native IDE test runners.
 
+### Support for Parameterized Tests
+
+**JUnit** provides a custom [Parameterized](https://junit.org/junit4/javadoc/4.12/org/junit/runners/Parameterized.html) runner for executing parameterized tests. Third-party solutions are also available, such as [JUnitParams](https://github.com/Pragmatists/JUnitParams) and [ParameterizedSuite](https://github.com/PeterWippermann/parameterized-suite). Each of these solutions has its own implementation strategy, and no common interface is provided to access the parameters supplied to each invocation of the test methods in the parameterized class.
+
+For lifecycle notification subscribers that need access to test invocation parameters, **JUnit Foundation** defines the [ArtifactParams](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/ArtifactParams.java) interface. This interface, along with the [AtomIdentity](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/AtomIdentity.java) test rule, enables test classes to publish their invocation parameters.
+
+###### Publishing and Accessing Invocation Parameters
+```java
+package com.nordstrom.example;
+
+import static org.junit.Assert.assertArrayEquals;
+
+import com.nordstrom.automation.junit.ArtifactParams;
+import com.nordstrom.automation.junit.AtomIdentity;
+
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.runner.Description;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
+
+@RunWith(Parameterized.class)
+public class ExampleTest implements ArtifactParams {
+    
+    private String input;
+    
+    public ExampleTest(String input) {
+        this.input = input;
+    }
+    
+    @Rule
+    public final AtomIdentity identity = new AtomIdentity(this);
+    
+    @Parameters
+    public static Object[] data() {
+        return new Object[] { "first test", "second test" };
+    }
+    
+    @Override
+    public Description getDescription() {
+        return identity.getDescription();
+    }
+    
+    @Override
+    public Object[] getParameters() {
+        return new Object[] { input };
+    }
+    
+    @Test
+    public void parameterized() {
+        System.out.println("invoking: " + getDescription().getMethodName());
+        assertArrayEquals(getParameters(), identity.getParameters());
+    }
+}
+```
+
+#### Artifact capture for parameterized tests
+
+For scenarios that require artifact capture of parameterized tests, the [ArtifactCollector](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/ArtifactCollector.java) class is an extension of [AtomIdentity](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/AtomIdentity.java). This enables artifact type implementations to access method invocation parameters. For more details, see the [Artifact Capture](#artifact-capture) section below.
+
 ## Test Method Timeout Management
 
 **JUnit** provides test method timeout functionality via the `timeout` parameter of the **`@Test`** annotation. With this parameter, you can set an explicit timeout interval in milliseconds on an individual test method. If a test fails to complete within the specified interval, **JUnit** terminates the test and throws **TestTimedOutException**.
@@ -352,7 +413,6 @@ Failed attempts of tests that are selected for retry are tallied as ignored test
 
 * [ArtifactCollector](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/ArtifactCollector.java):  
 **ArtifactCollector** is a JUnit [test watcher](http://junit.org/junit4/javadoc/latest/org/junit/rules/TestWatcher.html) that serves as the foundation for artifact-capturing test watchers. This is a generic class, with the artifact-specific implementation provided by instances of the **ArtifactType** interface. For artifact capture scenarios where you need access to the current method description or the values provided to parameterized tests, the test class can implement the **ArtifactParams** interface.
-
 * [ArtifactParams](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/ArtifactParams.java):  
 By implementing the **ArtifactParams** interface in your test classes, you enable the artifact capture framework to access test method description objects and parameterized test values. These can be used for composing, naming, and storing artifacts. 
 * [ArtifactType](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/ArtifactType.java):  
@@ -422,16 +482,17 @@ public class MyArtifactCapture extends ArtifactCollector<MyArtifactType> {
     public MyArtifactCapture(Object instance) {
         super(instance, new MyArtifactType());
     }
-    
 }
 ```
 
 The preceding code is an example of how the artifact type definition can be assigned as the type parameter in a subclass of **ArtifactCollector**. This isn't strictly necessary, but will make your code more concise, as the next example demonstrates. This technique also provides the opportunity to extend or alter the basic artifact capture behavior.
 
 ###### Attaching artifact collectors to test classes
-
 ```java
 package com.nordstrom.example;
+
+import com.nordstrom.automation.junit.ArtifactCollector;
+import com.nordstrom.automation.junit.ArtifactParams;
 
 import org.junit.Rule;
 import org.junit.runner.Description;
@@ -453,4 +514,89 @@ public class ExampleTest implements ArtifactParams {
 }
 ```
 
-This example demonstrates two techniques for attaching artifact collectors to test classes. Either technique will activate basic artifact capture functionality. Of course, the first option is required to activate extended behavior implemented in a type-specific subclass of **ArtifactCapture**.
+This example demonstrates two techniques for attaching artifact collectors to test classes. Either technique will activate basic artifact capture functionality. Of course, the first option is required to activate extended behavior implemented in a type-specific subclass of **ArtifactCollector**.
+
+### Parameter-Aware Artifact Capture
+
+Although the **ExampleTest** class in the previous section implements the [ArtifactParams](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/ArtifactParams.java) interface, this non-parameterized example only shows half of the story. In addition to the **Description** objects of `atomic tests`, classes that implement parameterized tests are able to publish their invocation parameters, and the artifact capture feature is able to access them.
+
+The following example extends the previous artifact type to add parameter-awareness:
+
+###### Parameter-aware artifact type
+```java
+class MyParameterizedType extends MyArtifactType {
+
+    @Override
+    public byte[] getArtifact(Object instance, Throwable reason) {
+        if (instance instanceof ArtifactParams) {
+            ArtifactParams params = (ArtifactParams) instance;
+            StringBuilder artifact = new StringBuilder();
+            artifact.append("method: " + params.getDescription().getMethodName() + "\n");
+            int i = 0;
+            for (Object param : params.getParameters()) {
+                "param" + i++ + ": [" + param + "]\n";
+            }
+            return artifact.toString().getBytes().clone();
+        } else {
+            return new byte[0];
+        }
+    }
+}
+```
+
+Below, we create a type-specific subclass of **ArtifactCollector** to produce a parameter-aware artifact collector:
+
+###### Parameter-aware artifact collector
+```java
+package com.nordstrom.example;
+
+import com.nordstrom.automation.junit.ArtifactCollector;
+
+public class MyParameterizedCapture extends ArtifactCollector<MyParameterizedType> {
+    
+    public MyParameterizedCapture(Object instance) {
+        super(instance, new MyParameterizedType());
+    }
+}
+```
+
+The following example implements a parameterized test class that publishes its invocation parameters through the **ArtifactParams** interface.
+
+###### Parameterized test class
+```java
+package com.nordstrom.example;
+
+import com.nordstrom.automation.junit.ArtifactCollector;
+import com.nordstrom.automation.junit.ArtifactParams;
+
+import org.junit.Rule;
+import org.junit.runner.Description;
+
+@RunWith(Parameterized.class)
+public class ParameterizedTest implements ArtifactParams {
+
+    @Rule
+    public final MyParameterizedCapture watcher = new MyParameterizedCapture(this);
+    
+    private String input;
+    
+    public ParameterizedTest(String input) {
+        this.input = input;
+    }
+    
+    @Parameters
+    public static Object[] data() {
+        return new Object[] { "first test", "second test" };
+    }
+    
+    @Override
+    public Object[] getParameters() {
+        return new Object[] { input };
+    }
+    
+    @Test
+    public void parameterized() {
+        assertArrayEquals(getParameters(), watcher.getParameters());
+    }
+}
+```
