@@ -445,8 +445,8 @@ public class MyArtifactType implements ArtifactType {
     @Override
     public byte[] getArtifact(Object instance, Throwable reason) {
         if (instance instanceof ArtifactParams) {
-            ArtifactParams params = (ArtifactParams) instance;
-            return String.format(ARTIFACT, params.getDescription().getMethodName()).getBytes().clone();
+            ArtifactParams publisher = (ArtifactParams) instance;
+            return String.format(ARTIFACT, publisher.getDescription().getMethodName()).getBytes().clone();
         } else {
             return new byte[0];
         }
@@ -529,11 +529,11 @@ class MyParameterizedType extends MyArtifactType {
     @Override
     public byte[] getArtifact(Object instance, Throwable reason) {
         if (instance instanceof ArtifactParams) {
-            ArtifactParams params = (ArtifactParams) instance;
-            StringBuilder artifact = new StringBuilder();
-            artifact.append("method: " + params.getDescription().getMethodName() + "\n");
+            ArtifactParams publisher = (ArtifactParams) instance;
+            StringBuilder artifact = new StringBuilder("method: ")
+                            .append(publisher.getDescription().getMethodName()).append("\n");
             int i = 0;
-            for (Object param : params.getParameters()) {
+            for (Object param : publisher.getParameters()) {
                 "param" + i++ + ": [" + param + "]\n";
             }
             return artifact.toString().getBytes().clone();

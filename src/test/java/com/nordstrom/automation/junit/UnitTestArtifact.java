@@ -41,7 +41,7 @@ public class UnitTestArtifact implements ArtifactType {
                             .append(publisher.getDescription().getMethodName()).append("\n");
             int i = 0;
             for (Object param : publisher.getParameters()) {
-                artifact.append("param" + i++ + ": " + param + "\n");
+                artifact.append("param" + i++ + ": [" + param + "]\n");
             }
             return artifact.toString().getBytes().clone();
         } else {
