@@ -20,8 +20,10 @@ The objects passed to your service provider implementation are members of a hier
 
 * `LifecycleHooks.getParentOf(Object runner)`  
 Get the parent runner that owns the specified child runner.
-* `LifecycleHooks.getTestClassFor(Object target)`  
-Get the test class object that wraps the specified instance.
+* `LifecycleHooks.getParentOf(FrameworkMethod method)`  
+Get the parent runner that owns the specified method.
+* `LifecycleHooks.getRunnerForTarget(Object target)`  
+Get the parent runner owns the specified instance.
 * `LifecycleHooks.getRunnerFor(TestClass testClass)`  
 Get the parent runner associated with the specified test class object.
 * `LifecycleHooks.getTestClassWith(Object method)`  
@@ -72,8 +74,8 @@ public class ExploringWatcher implements TestClassWatcher2, MethodWatcher {
     public void beforeInvocation(Object target, FrameworkMethod method, Object... params) {
         // get the 'atomic test' for this method
         AtomicTest atomicTest = RunReflectiveCall.getAtomicTestFor(method);
-        // get the test class of the runner that owns this method
-        TestClass testClass = LifecycleHooks.getTestClassFor(target);
+        // get the runner that owns this target
+        Object runner = LifecycleHooks.getRunnerForTarget(target);
         ...
     }
 

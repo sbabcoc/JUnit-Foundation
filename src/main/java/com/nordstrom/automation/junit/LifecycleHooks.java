@@ -232,7 +232,7 @@ public class LifecycleHooks {
          * @param target instance of JUnit test class
          * @return {@link org.junit.runners.BlockJUnit4ClassRunner BlockJUnit4ClassRunner} for specified instance
          */
-        static Object getRunnerFor(Object target) {
+        static Object getRunnerForTarget(Object target) {
             return TARGET_TO_RUNNER.get(target);
         }
     }
@@ -243,8 +243,8 @@ public class LifecycleHooks {
      * @param target instance of JUnit test class
      * @return {@link org.junit.runners.BlockJUnit4ClassRunner BlockJUnit4ClassRunner} for specified instance
      */
-    public static Object getRunnerFor(Object target) {
-        return CreateTest.getRunnerFor(target);
+    public static Object getRunnerForTarget(Object target) {
+        return CreateTest.getRunnerForTarget(target);
     }
     
     /**
@@ -306,7 +306,7 @@ public class LifecycleHooks {
      * @return {@link Description} object for the indicated child
      */
     public static Description describeChild(Object target, Object child) {
-        Object runner = getRunnerFor(target);
+        Object runner = getRunnerForTarget(target);
         return invoke(runner, "describeChild", child);
     }
     
