@@ -86,7 +86,7 @@ public class LifecycleHooks {
                         builder.method(named("createTestClass")).intercept(MethodDelegation.to(CreateTestClass.class))
                                .method(named("run")).intercept(MethodDelegation.to(Run.class))
                                .implement(Hooked.class))
-                .type(is(blockJUnit4ClassRunner))
+                .type(isSubTypeOf(blockJUnit4ClassRunner))
                 .transform((builder, type, classLoader, module) -> 
                         builder.method(named("createTest")).intercept(MethodDelegation.to(CreateTest.class))
                                .method(named("runChild")).intercept(MethodDelegation.to(RunChild.class))
@@ -196,7 +196,7 @@ public class LifecycleHooks {
     public static class CreateTest {
         
         private static final ServiceLoader<TestObjectWatcher> objectWatcherLoader;
-        private static final Map<Object, TestClass> TARGET_TO_TESTCLASS = new ConcurrentHashMap<>();
+        private static final Map<Object, Object> TARGET_TO_RUNNER = new ConcurrentHashMap<>();
         
         static {
             objectWatcherLoader = ServiceLoader.load(TestObjectWatcher.class);
@@ -214,12 +214,12 @@ public class LifecycleHooks {
         public static Object intercept(@This final Object runner,
                         @SuperCall final Callable<?> proxy) throws Exception {
             Object testObj = callProxy(proxy);
-            TARGET_TO_TESTCLASS.put(testObj, getTestClassOf(runner));
+            TARGET_TO_RUNNER.put(testObj, runner);
             applyTimeout(testObj);
             
             synchronized(objectWatcherLoader) {
                 for (TestObjectWatcher watcher : objectWatcherLoader) {
-                    watcher.testObjectCreated(testObj, TARGET_TO_TESTCLASS.get(testObj));
+                    watcher.testObjectCreated(testObj, runner);
                 }
             }
             
@@ -227,28 +227,24 @@ public class LifecycleHooks {
         }
         
         /**
-         * Get the test class object that wraps the specified instance.
+         * Get the class runner associated with the specified instance.
          * 
          * @param target instance of JUnit test class
-         * @return {@link TestClass} associated with specified instance
+         * @return {@link org.junit.runners.BlockJUnit4ClassRunner BlockJUnit4ClassRunner} for specified instance
          */
-        static TestClass getTestClassFor(Object target) {
-            TestClass testClass = TARGET_TO_TESTCLASS.get(target);
-            if (testClass != null) {
-                return testClass;
-            }
-            throw new IllegalArgumentException("No associated test class was found for specified instance");
+        static Object getRunnerFor(Object target) {
+            return TARGET_TO_RUNNER.get(target);
         }
     }
     
     /**
-     * Get the test class object that wraps the specified instance.
+     * Get the class runner associated with the specified instance.
      * 
      * @param target instance of JUnit test class
-     * @return {@link TestClass} associated with specified instance object
+     * @return {@link org.junit.runners.BlockJUnit4ClassRunner BlockJUnit4ClassRunner} for specified instance
      */
-    public static TestClass getTestClassFor(Object target) {
-        return CreateTest.getTestClassFor(target);
+    public static Object getRunnerFor(Object target) {
+        return CreateTest.getRunnerFor(target);
     }
     
     /**
@@ -310,8 +306,7 @@ public class LifecycleHooks {
      * @return {@link Description} object for the indicated child
      */
     public static Description describeChild(Object target, Object child) {
-        TestClass testClass = getTestClassFor(target);
-        Object runner = getRunnerFor(testClass);
+        Object runner = getRunnerFor(target);
         return invoke(runner, "describeChild", child);
     }
     
