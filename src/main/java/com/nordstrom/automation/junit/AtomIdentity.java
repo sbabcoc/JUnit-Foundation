@@ -1,5 +1,8 @@
 package com.nordstrom.automation.junit;
 
+import java.util.Map;
+import java.util.Optional;
+
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
@@ -47,11 +50,11 @@ public class AtomIdentity extends TestWatcher implements ArtifactParams {
      * {@inheritDoc}
      */
     @Override
-    public Object[] getParameters() {
+    public Optional<Map<String, Object>> getParameters() {
         if (instance instanceof ArtifactParams) {
             return ((ArtifactParams) instance).getParameters();
         }
-        return new Object[0];
+        return Optional.empty();
     }
     
 }
