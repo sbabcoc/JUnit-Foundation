@@ -74,8 +74,11 @@ public class ExploringWatcher implements TestClassWatcher2, MethodWatcher {
     public void beforeInvocation(Object target, FrameworkMethod method, Object... params) {
         // get the 'atomic test' for this method
         AtomicTest atomicTest = RunReflectiveCall.getAtomicTestFor(method);
-        // get the runner that owns this target
-        Object runner = LifecycleHooks.getRunnerForTarget(target);
+        // if target defined
+        if (target != null) {
+            // get the runner that owns this target
+            Object runner = LifecycleHooks.getRunnerForTarget(target);
+        }
         ...
     }
 
