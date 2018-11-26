@@ -337,10 +337,12 @@ For lifecycle notification subscribers that need access to test invocation param
 ```java
 package com.nordstrom.example;
 
-import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static com.nordstrom.automation.junit.ArtifactParams.param;
 
-import com.nordstrom.automation.junit.ArtifactParams;
-import com.nordstrom.automation.junit.AtomIdentity;
+import java.util.Map;
+import java.util.Optional;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -349,17 +351,24 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
+import com.nordstrom.automation.junit.ArtifactParams;
+import com.nordstrom.automation.junit.AtomIdentity;
+
+
+import com.nordstrom.automation.junit.ArtifactParams;
+import com.nordstrom.automation.junit.AtomIdentity;
+
 @RunWith(Parameterized.class)
 public class ExampleTest implements ArtifactParams {
+    
+    @Rule
+    public final AtomIdentity identity = new AtomIdentity(this);
     
     private String input;
     
     public ExampleTest(String input) {
         this.input = input;
     }
-    
-    @Rule
-    public final AtomIdentity identity = new AtomIdentity(this);
     
     @Parameters
     public static Object[] data() {
@@ -372,14 +381,17 @@ public class ExampleTest implements ArtifactParams {
     }
     
     @Override
-    public Object[] getParameters() {
-        return new Object[] { input };
+    public Optional<Map<String, Object>> getParameters() {
+        return ArtifactParams.mapOf(param("input", input));
     }
     
     @Test
     public void parameterized() {
         System.out.println("invoking: " + getDescription().getMethodName());
-        assertArrayEquals(getParameters(), identity.getParameters());
+    	Optional<Map<String, Object>> params = identity.getParameters();
+    	assertTrue(params.isPresent());
+    	assertTrue(params.get().containsKey("input"));
+        assertEquals(input, params.get().get("input"));
     }
 }
 ```
@@ -534,9 +546,10 @@ class MyParameterizedType extends MyArtifactType {
             ArtifactParams publisher = (ArtifactParams) instance;
             StringBuilder artifact = new StringBuilder("method: ")
                             .append(publisher.getDescription().getMethodName()).append("\n");
-            int i = 0;
-            for (Object param : publisher.getParameters()) {
-                "param" + i++ + ": [" + param + "]\n";
+            if (publisher.getParameters().isPresent()) {
+                for (Entry<String, Object> param : publisher.getParameters().get().entrySet()) {
+                    artifact.append(param.getKey() + ": [" + param.getValue() + "]\n");
+                }
             }
             return artifact.toString().getBytes().clone();
         } else {
@@ -546,7 +559,7 @@ class MyParameterizedType extends MyArtifactType {
 }
 ```
 
-Notice the call to `getParameters()`, which retrieves the invocation parameters published by the test class instance. There's also a call to `getDescription()`, which returns the **Description** object for the current `atomic test`.
+Notice the calls to `getParameters()`, which retrieve the invocation parameters published by the test class instance. There's also a call to `getDescription()`, which returns the **Description** object for the current `atomic test`.
 
 The implementation below composes a type-specific subclass of **ArtifactCollector** to produce a parameter-aware artifact collector:
 
@@ -567,13 +580,14 @@ public class MyParameterizedCapture extends ArtifactCollector<MyParameterizedTyp
 The following example implements a parameterized test class that publishes its invocation parameters through the **ArtifactParams** interface. It uses the custom **Parameterized** runner to invoke the `parameterized()` test method twice - once with input "first test", and once with input "second test". The test class constructor accepts the invocation parameter as its argument and stores it in an instance field for use by the test.
 
 * The `getDescription()` method acquires the **Description** object for the current `atomic test` from the `watcher` test rule.
-* The `getParameters()` method assembles the array of invocation parameters from the `input` instance field populated by the constructor.
+* The `getParameters()` method uses static methods of the **ArtifactParams** interface to assemble the map of invocation parameters from the `input` instance field populated by the constructor.
 
 ###### Parameterized test class
 ```java
 package com.nordstrom.example;
 
-import com.nordstrom.automation.junit.ArtifactParams;
+import static com.nordstrom.automation.junit.ArtifactParams.param;
+import static org.junit.Assert.assertEquals;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -581,6 +595,13 @@ import org.junit.runner.Description;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
+
+import com.nordstrom.automation.junit.ArtifactParams;
+import com.nordstrom.automation.junit.AtomIdentity;
+
+import java.util.Arrays;
+import java.util.Map;
+import java.util.Optional;
 
 @RunWith(Parameterized.class)
 public class ParameterizedTest implements ArtifactParams {
@@ -605,13 +626,16 @@ public class ParameterizedTest implements ArtifactParams {
     }
     
     @Override
-    public Object[] getParameters() {
-        return new Object[] { input };
+    public Optional<Map<String, Object>> getParameters() {
+    	return ArtifactParams.mapOf(param("input", input));
     }
     
     @Test
     public void parameterized() {
-        assertArrayEquals(getParameters(), watcher.getParameters());
+    	Optional<Map<String, Object>> params = watcher.getParameters();
+    	assertTrue(params.isPresent());
+    	assertTrue(params.get().containsKey("input"));
+        assertEquals(input, params.get().get("input"));
     }
 }
 ```
