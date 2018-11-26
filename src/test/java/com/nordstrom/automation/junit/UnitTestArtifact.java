@@ -1,5 +1,6 @@
 package com.nordstrom.automation.junit;
 
+import java.util.Map.Entry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,9 +40,10 @@ public class UnitTestArtifact implements ArtifactType {
             ArtifactParams publisher = (ArtifactParams) instance;
             StringBuilder artifact = new StringBuilder("method: ")
                             .append(publisher.getDescription().getMethodName()).append("\n");
-            int i = 0;
-            for (Object param : publisher.getParameters()) {
-                artifact.append("param" + i++ + ": [" + param + "]\n");
+            if (publisher.getParameters().isPresent()) {
+                for (Entry<String, Object> param : publisher.getParameters().get().entrySet()) {
+                    artifact.append(param.getKey() + ": [" + param.getValue() + "]\n");
+                }
             }
             return artifact.toString().getBytes().clone();
         } else {

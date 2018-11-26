@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -123,12 +122,12 @@ public class ArtifactCollector<T extends ArtifactType> extends AtomIdentity {
      * @return artifact file base name
      */
     private String getArtifactBaseName() {
-        if (getParameters().length == 0) {
-            return getDescription().getMethodName();
-        } else {
-            int hashcode = Arrays.deepHashCode(getParameters());
+        int hashcode = getParameters().hashCode();
+        if (hashcode != 0) {
             String hashStr = String.format("%08X", hashcode);
             return getDescription().getMethodName() + "-" + hashStr;
+        } else {
+            return getDescription().getMethodName();
         }
     }
     
