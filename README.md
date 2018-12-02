@@ -23,7 +23,7 @@ Get the parent runner that owns the specified child runner.
 * `LifecycleHooks.getParentOf(FrameworkMethod method)`  
 Get the parent runner that owns the specified method.
 * `LifecycleHooks.getRunnerForTarget(Object target)`  
-Get the parent runner owns the specified instance.
+Get the parent runner that owns the specified instance.
 * `LifecycleHooks.getRunnerFor(TestClass testClass)`  
 Get the parent runner associated with the specified test class object.
 * `LifecycleHooks.getTestClassWith(Object method)`  
