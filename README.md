@@ -24,6 +24,8 @@ Get the parent runner that owns the specified child runner.
 Get the parent runner that owns the specified method.
 * `LifecycleHooks.getRunnerForTarget(Object target)`  
 Get the parent runner that owns the specified instance.
+* `LifecycleHooks.getTargetForRunner(Object runner)`  
+Get the JUnit test class instance owned by the specified parent runner.
 * `LifecycleHooks.getTestClassWith(Object method)`  
 Get the test class associated with the specified framework method.
 * `LifecycleHooks.getTestClassOf(Object runner)`  

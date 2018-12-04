@@ -245,7 +245,7 @@ public class LifecycleHooks {
          * @return JUnit test class instance for specified runner
          */
         static Object getTargetForRunner(Object runner) {
-            return TARGET_TO_RUNNER.get(runner);
+            return RUNNER_TO_TARGET.get(runner);
         }
     }
     
