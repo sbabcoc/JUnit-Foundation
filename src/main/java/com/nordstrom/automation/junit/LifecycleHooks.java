@@ -7,10 +7,12 @@ import java.lang.instrument.Instrumentation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.EmptyStackException;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.Stack;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -126,12 +128,20 @@ public class LifecycleHooks {
      */
     @SuppressWarnings("squid:S1118")
     public static class Run {
+        private static final ThreadLocal<Stack<Object>> runnerStack;
         private static final ServiceLoader<RunListener> runListenerLoader;
         private static final ServiceLoader<RunnerWatcher> runnerWatcherLoader;
         private static final Set<RunNotifier> NOTIFIERS = new CopyOnWriteArraySet<>();
         private static final Map<Object, Object> CHILD_TO_PARENT = new ConcurrentHashMap<>();
         
         static {
+            runnerStack = new InheritableThreadLocal<Stack<Object>>() {
+                @Override
+                protected Stack<Object> initialValue() {
+                    return new Stack<>();
+                }
+            };
+            
             runListenerLoader = ServiceLoader.load(RunListener.class);
             runnerWatcherLoader = ServiceLoader.load(RunnerWatcher.class);
         }
@@ -168,7 +178,9 @@ public class LifecycleHooks {
                 }
             }
             
+            runnerStack.get().push(runner);
             callProxy(proxy);
+            runnerStack.get().pop();
             
             synchronized(runnerWatcherLoader) {
                 for (RunnerWatcher watcher : runnerWatcherLoader) {
@@ -185,6 +197,16 @@ public class LifecycleHooks {
          */
         static Object getParentOf(Object child) {
             return CHILD_TO_PARENT.get(child);
+        }
+        
+        /**
+         * Get the runner that owns the active thread context.
+         * 
+         * @return active {@code ParentRunner} object
+         * @throws EmptyStackException if called outside the scope of an active runner
+         */
+        static Object getThreadRunner() {
+            return runnerStack.get().peek();
         }
     }
     
@@ -287,6 +309,16 @@ public class LifecycleHooks {
      */
     public static Object getParentOf(Object child) {
         return Run.getParentOf(child);
+    }
+    
+    /**
+     * Get the runner that owns the active thread context.
+     * 
+     * @return active {@code ParentRunner} object
+     * @throws EmptyStackException if called outside the scope of an active runner
+     */
+    public static Object getThreadRunner() {
+        return Run.getThreadRunner();
     }
     
     /**

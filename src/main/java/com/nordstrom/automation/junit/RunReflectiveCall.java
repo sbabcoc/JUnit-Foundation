@@ -9,11 +9,15 @@ import java.util.ServiceLoader;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.internal.AssumptionViolatedException;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.TestClass;
 
-import com.nordstrom.automation.junit.LifecycleHooks.CreateTest;
 import com.nordstrom.automation.junit.LifecycleHooks.Run;
 import com.nordstrom.common.base.UncheckedThrow;
 
@@ -51,8 +55,9 @@ public class RunReflectiveCall {
     public static Object intercept(@This final Object callable, @SuperCall final Callable<?> proxy)
                     throws Exception {
         
-        FrameworkMethod method = null;
+        Object runner = null;
         Object target = null;
+        FrameworkMethod method = null;
         Object[] params = null;
 
         try {
@@ -61,6 +66,10 @@ public class RunReflectiveCall {
                 method = (FrameworkMethod) owner;
                 target = getFieldValue(callable, "val$target");
                 params = getFieldValue(callable, "val$params");
+                
+                if (isParticleMethod(method)) {
+                    runner = Run.getThreadRunner();
+                }
             }
         } catch (IllegalAccessException | NoSuchFieldException | SecurityException | IllegalArgumentException e) {
             // handled below
@@ -70,13 +79,6 @@ public class RunReflectiveCall {
             return LifecycleHooks.callProxy(proxy);
         }
         
-        Object runner = null;
-        if (target != null) {
-            runner = CreateTest.getRunnerForTarget(target);
-        } else {
-            runner = Run.getParentOf(method);
-        }
-
         Object result = null;
         Exception thrown = null;
         synchronized(methodWatcherLoader) {
@@ -242,5 +244,19 @@ public class RunReflectiveCall {
             }
         }
         throw new IllegalArgumentException("No associated atomic test was found for the specified method");
+    }
+    
+    /**
+     * Determine if the specified method is a test or configuration method.
+     * 
+     * @param method method whose type is in question
+     * @return {@code true} if specified method is a particle; otherwise {@code false}
+     */
+    public static boolean isParticleMethod(FrameworkMethod method) {
+        return ((null != method.getAnnotation(Test.class)) ||
+                (null != method.getAnnotation(Before.class)) ||
+                (null != method.getAnnotation(After.class)) ||
+                (null != method.getAnnotation(BeforeClass.class)) ||
+                (null != method.getAnnotation(AfterClass.class)));
     }
 }
