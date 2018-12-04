@@ -22,14 +22,12 @@ import org.junit.runners.model.TestClass;
 @SuppressWarnings("all")
 public class AtomicTest {
     private final Object runner;
-    private final TestClass testClass;
     private final FrameworkMethod identity;
     private final List<FrameworkMethod> particles;
-    private Throwable thrown;
+    private Exception thrown;
 
-    public AtomicTest(Object runner, TestClass testClass, FrameworkMethod testMethod) {
+    public AtomicTest(Object runner, FrameworkMethod testMethod) {
         this.runner = runner;
-        this.testClass = testClass;
         this.identity = testMethod;
         this.particles = invoke(runner, "getChildren");
     }
@@ -41,15 +39,6 @@ public class AtomicTest {
      */
     public Object getRunner() {
         return runner;
-    }
-
-    /**
-     * Get the test class associated with this atomic test.
-     * 
-     * @return {@link TestClass} object associated with this atomic test
-     */
-    public TestClass getTestClass() {
-        return testClass;
     }
 
     /**
@@ -84,7 +73,7 @@ public class AtomicTest {
      * 
      * @param thrown exception for this atomic test
      */
-    void setThrowable(Throwable thrown) {
+    void setException(Exception thrown) {
         this.thrown = thrown;
     }
     
@@ -93,7 +82,7 @@ public class AtomicTest {
      * 
      * @return exception for this atomic test; {@code null} if test finished normally
      */
-    public Throwable getThrowable() {
+    public Exception getException() {
         return thrown;
     }
     

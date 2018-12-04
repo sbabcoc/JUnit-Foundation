@@ -1,7 +1,6 @@
 package com.nordstrom.automation.junit;
 
 import static com.nordstrom.automation.junit.LifecycleHooks.getFieldValue;
-import static com.nordstrom.automation.junit.LifecycleHooks.getTestClassOf;
 
 import java.util.Map;
 import java.util.Objects;
@@ -14,6 +13,8 @@ import org.junit.internal.AssumptionViolatedException;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.TestClass;
 
+import com.nordstrom.automation.junit.LifecycleHooks.CreateTest;
+import com.nordstrom.automation.junit.LifecycleHooks.Run;
 import com.nordstrom.common.base.UncheckedThrow;
 
 import net.bytebuddy.implementation.bind.annotation.RuntimeType;
@@ -30,8 +31,7 @@ public class RunReflectiveCall {
     private static final ServiceLoader<MethodWatcher> methodWatcherLoader;
     private static final ServiceLoader<RunWatcher> runWatcherLoader;
     
-    private static final Map<FrameworkMethod, Object> METHOD_TO_TARGET = new ConcurrentHashMap<>();
-    private static final Map<TestClass, AtomicTest> TESTCLASS_TO_ATOMICTEST = new ConcurrentHashMap<>();
+    private static final Map<Object, AtomicTest> RUNNER_TO_ATOMICTEST = new ConcurrentHashMap<>();
   
     static {
         methodWatcherLoader = ServiceLoader.load(MethodWatcher.class);
@@ -61,11 +61,6 @@ public class RunReflectiveCall {
                 method = (FrameworkMethod) owner;
                 target = getFieldValue(callable, "val$target");
                 params = getFieldValue(callable, "val$params");
-                
-                // if not static
-                if (target != null) {
-                    METHOD_TO_TARGET.put(method, target);
-                }
             }
         } catch (IllegalAccessException | NoSuchFieldException | SecurityException | IllegalArgumentException e) {
             // handled below
@@ -74,29 +69,36 @@ public class RunReflectiveCall {
         if (method == null) {
             return LifecycleHooks.callProxy(proxy);
         }
+        
+        Object runner = null;
+        if (target != null) {
+            runner = CreateTest.getRunnerForTarget(target);
+        } else {
+            runner = Run.getParentOf(method);
+        }
 
         Object result = null;
-        Throwable thrown = null;
+        Exception thrown = null;
         synchronized(methodWatcherLoader) {
             for (MethodWatcher watcher : methodWatcherLoader) {
-                watcher.beforeInvocation(target, method, params);
+                watcher.beforeInvocation(runner, target, method, params);
             }
         }
 
         try {
             result = LifecycleHooks.callProxy(proxy);
-        } catch (Throwable t) {
-            thrown = t;
+        } catch (Exception e) {
+            thrown = e;
         } finally {
             synchronized(methodWatcherLoader) {
                 for (MethodWatcher watcher : methodWatcherLoader) {
-                    watcher.afterInvocation(target, method, thrown);
+                    watcher.afterInvocation(runner, target, method, thrown);
                 }
             }
         }
 
         if (thrown != null) {
-            getAtomicTestFor(method).setThrowable(thrown);
+            getAtomicTestFor(method).setException(thrown);
             throw UncheckedThrow.throwUnchecked(thrown);
         }
 
@@ -106,15 +108,14 @@ public class RunReflectiveCall {
     /**
      * Invoke to tell listeners that an atomic test is about to start.
      * 
-     * @param testClass {@link TestClass} object for the atomic test
      * @param runnable {@link Runnable} object that wraps the atomic test
      */
-    static void fireTestStarted(TestClass testClass, Runnable runnable) {
-        AtomicTest atomicTest = createAtomicTest(testClass, runnable);
+    static void fireTestStarted(Runnable runnable) {
+        AtomicTest atomicTest = createAtomicTest(runnable);
         if (atomicTest != null) {
             synchronized(runWatcherLoader) {
                 for (RunWatcher watcher : runWatcherLoader) {
-                    watcher.testStarted(atomicTest.getIdentity(), atomicTest.getTestClass());
+                    watcher.testStarted(atomicTest);
                 }
             }
         }
@@ -123,15 +124,15 @@ public class RunReflectiveCall {
     /**
      * Invoke to tell listeners that an atomic test has finished.
      * 
-     * @param testClass {@link TestClass} object for the atomic test
+     * @param runner JUnit test runner
      */
-    static void fireTestFinished(TestClass testClass) {
-        AtomicTest atomicTest = TESTCLASS_TO_ATOMICTEST.get(testClass);
+    static void fireTestFinished(Object runner) {
+        AtomicTest atomicTest = RUNNER_TO_ATOMICTEST.get(runner);
         if (atomicTest != null) {
             synchronized(runWatcherLoader) {
                 for (RunWatcher watcher : runWatcherLoader) {
                     notifyIfTestFailed(watcher, atomicTest);
-                    watcher.testFinished(atomicTest.getIdentity(), atomicTest.getTestClass());
+                    watcher.testFinished(atomicTest);
                 }
             }
         }
@@ -144,13 +145,12 @@ public class RunReflectiveCall {
      * @param atomicTest {@link AtomicTest} object
      */
     private static void notifyIfTestFailed(RunWatcher watcher, AtomicTest atomicTest) {
-        Throwable thrown = atomicTest.getThrowable();
+        Exception thrown = atomicTest.getException();
         if (thrown != null) {
             if (thrown instanceof AssumptionViolatedException) {
-                watcher.testAssumptionFailure(atomicTest.getIdentity(), atomicTest.getTestClass(),
-                                (AssumptionViolatedException) thrown);
+                watcher.testAssumptionFailure(atomicTest, (AssumptionViolatedException) thrown);
             } else {
-                watcher.testFailure(atomicTest.getIdentity(), atomicTest.getTestClass(), thrown);
+                watcher.testFailure(atomicTest, thrown);
             }
         }
     }
@@ -161,27 +161,13 @@ public class RunReflectiveCall {
      * @param runner JUnit test runner
      * @param method {@link FrameworkMethod} object
      */
-    static void fireTestIgnored(Object runner, FrameworkMethod method) {
-        TestClass testClass = getTestClassOf(runner);
+    static void fireTestIgnored(Object runner) {
+        AtomicTest atomicTest = RUNNER_TO_ATOMICTEST.get(runner);
         synchronized(runWatcherLoader) {
             for (RunWatcher watcher : runWatcherLoader) {
-                watcher.testIgnored(method, testClass);
+                watcher.testIgnored(atomicTest);
             }
         }
-    }
-    
-    /**
-     * Get the target test class instance for the specified method.
-     * 
-     * @param method {@link FrameworkMethod} object
-     * @return target test class instance for the specified method
-     */
-    public static Object getTargetFor(FrameworkMethod method) {
-        Object target = METHOD_TO_TARGET.get(method);
-        if (target != null) {
-            return target;
-        }
-        throw new IllegalArgumentException("No associated test class instance was found for the specified method");
     }
     
     /**
@@ -206,11 +192,10 @@ public class RunReflectiveCall {
     /**
      * Create an atomic test object from the specified runnable object.
      * 
-     * @param testClass {@link TestClass} object for the atomic test
      * @param runnable {@link Runnable} object that wraps the atomic test
      * @return {@link AtomicTest} object; {@code null} if the specified runnable is a suite
      */
-    static AtomicTest createAtomicTest(TestClass testClass, Runnable runnable) {
+    static AtomicTest createAtomicTest(Runnable runnable) {
         Object runner = null;
         Object child = null;
         AtomicTest atomicTest = null;
@@ -223,8 +208,8 @@ public class RunReflectiveCall {
         }
         
         if (child instanceof FrameworkMethod) {
-            atomicTest = new AtomicTest(runner, testClass, (FrameworkMethod) child);
-            TESTCLASS_TO_ATOMICTEST.put(testClass, atomicTest);
+            atomicTest = new AtomicTest(runner, (FrameworkMethod) child);
+            RUNNER_TO_ATOMICTEST.put(runner, atomicTest);
         }
         
         return atomicTest;
@@ -237,7 +222,7 @@ public class RunReflectiveCall {
      * @return {@link AtomicTest} object for the specified test class
      */
     public static AtomicTest getAtomicTestFor(TestClass testClass) {
-        AtomicTest atomicTest = TESTCLASS_TO_ATOMICTEST.get(testClass);
+        AtomicTest atomicTest = RUNNER_TO_ATOMICTEST.get(testClass);
         if (atomicTest != null) {
             return atomicTest;
         }
@@ -251,7 +236,7 @@ public class RunReflectiveCall {
      * @return {@link AtomicTest} object for the specified method
      */
     public static AtomicTest getAtomicTestFor(FrameworkMethod method) {
-        for (AtomicTest atomicTest : TESTCLASS_TO_ATOMICTEST.values()) {
+        for (AtomicTest atomicTest : RUNNER_TO_ATOMICTEST.values()) {
             if (atomicTest.includes(method)) {
                 return atomicTest;
             }

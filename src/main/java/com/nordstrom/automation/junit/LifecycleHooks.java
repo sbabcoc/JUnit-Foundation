@@ -197,6 +197,7 @@ public class LifecycleHooks {
         
         private static final ServiceLoader<TestObjectWatcher> objectWatcherLoader;
         private static final Map<Object, Object> TARGET_TO_RUNNER = new ConcurrentHashMap<>();
+        private static final Map<Object, Object> RUNNER_TO_TARGET = new ConcurrentHashMap<>();
         
         static {
             objectWatcherLoader = ServiceLoader.load(TestObjectWatcher.class);
@@ -215,6 +216,7 @@ public class LifecycleHooks {
                         @SuperCall final Callable<?> proxy) throws Exception {
             Object testObj = callProxy(proxy);
             TARGET_TO_RUNNER.put(testObj, runner);
+            RUNNER_TO_TARGET.put(runner, testObj);
             applyTimeout(testObj);
             
             synchronized(objectWatcherLoader) {
@@ -235,6 +237,16 @@ public class LifecycleHooks {
         static Object getRunnerForTarget(Object target) {
             return TARGET_TO_RUNNER.get(target);
         }
+        
+        /**
+         * Get the JUnit test class instance for the specified class runner.
+         * 
+         * @param runner JUnit class runner
+         * @return JUnit test class instance for specified runner
+         */
+        static Object getTargetForRunner(Object runner) {
+            return TARGET_TO_RUNNER.get(runner);
+        }
     }
     
     /**
@@ -248,13 +260,13 @@ public class LifecycleHooks {
     }
     
     /**
-     * Get the parent runner associated with the specified test class object.
+     * Get the JUnit test class instance for the specified class runner.
      * 
-     * @param testClass {@link TestClass} object
-     * @return {@link org.junit.runners.ParentRunner ParentRunner} that owns the specified test class object
+     * @param runner JUnit class runner
+     * @return JUnit test class instance for specified runner
      */
-    public static Object getRunnerFor(TestClass testClass) {
-        return CreateTestClass.getRunnerFor(testClass);
+    public static Object getTargetForRunner(Object runner) {
+        return CreateTest.getTargetForRunner(runner);
     }
     
     /**

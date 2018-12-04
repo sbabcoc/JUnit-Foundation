@@ -24,14 +24,11 @@ import net.bytebuddy.implementation.bind.annotation.This;
 @SuppressWarnings("squid:S1118")
 public class CreateTestClass {
     private static final ServiceLoader<TestClassWatcher> classWatcherLoader;
-    private static final ServiceLoader<TestClassWatcher2> classWatcher2Loader;
     private static final Logger LOGGER = LoggerFactory.getLogger(CreateTestClass.class);
-    private static final Map<TestClass, Object> TESTCLASS_TO_RUNNER = new ConcurrentHashMap<>();
     private static final Map<Object, TestClass> METHOD_TO_TESTCLASS = new ConcurrentHashMap<>();
     
     static {
         classWatcherLoader = ServiceLoader.load(TestClassWatcher.class);
-        classWatcher2Loader = ServiceLoader.load(TestClassWatcher2.class);
     }
     
       /**
@@ -46,7 +43,6 @@ public class CreateTestClass {
                     throws Exception {
         
         TestClass testClass = (TestClass) LifecycleHooks.callProxy(proxy);
-        TESTCLASS_TO_RUNNER.put(testClass, runner);
         
         for (Object method : testClass.getAnnotatedMethods()) {
             METHOD_TO_TESTCLASS.put(method, testClass);
@@ -54,11 +50,6 @@ public class CreateTestClass {
         
         synchronized(classWatcherLoader) {
             for (TestClassWatcher watcher : classWatcherLoader) {
-                watcher.testClassCreated(testClass, runner);
-            }
-        }
-        synchronized(classWatcher2Loader) {
-            for (TestClassWatcher2 watcher : classWatcher2Loader) {
                 watcher.testClassCreated(testClass, runner);
             }
         }
@@ -99,17 +90,12 @@ public class CreateTestClass {
                 if (scheduled.compareAndSet(false, true)) {
                     synchronized(classWatcherLoader) {
                         for (TestClassWatcher watcher : classWatcherLoader) {
-                            watcher.testClassStarted(testClass);
-                        }
-                    }
-                    synchronized(classWatcher2Loader) {
-                        for (TestClassWatcher2 watcher : classWatcher2Loader) {
                             watcher.testClassStarted(testClass, runner);
                         }
                     }
                 }
                 
-                RunReflectiveCall.fireTestStarted(testClass, childStatement);
+                RunReflectiveCall.fireTestStarted(childStatement);
                 
                 if (scheduler != null) {
                     scheduler.schedule(childStatement);
@@ -117,36 +103,17 @@ public class CreateTestClass {
                     childStatement.run();
                 }
                 
-                RunReflectiveCall.fireTestFinished(testClass);
+                RunReflectiveCall.fireTestFinished(runner);
             }
 
             public void finished() {
                 synchronized(classWatcherLoader) {
                     for (TestClassWatcher watcher : classWatcherLoader) {
-                        watcher.testClassFinished(testClass);
-                    }
-                }
-                synchronized(classWatcher2Loader) {
-                    for (TestClassWatcher2 watcher : classWatcher2Loader) {
                         watcher.testClassFinished(testClass, runner);
                     }
                 }
             }
         };
-    }
-    
-    /**
-     * Get the parent runner associate with the specified test class.
-     * 
-     * @param testClass {@link TestClass} object
-     * @return {@code ParentRunner} object associated with the specified test class
-     */
-    static Object getRunnerFor(TestClass testClass) {
-        Object runner = TESTCLASS_TO_RUNNER.get(testClass);
-        if (runner != null) {
-            return runner;
-        }
-        throw new IllegalArgumentException("No associated runner was found for specified test class");
     }
     
     /**
