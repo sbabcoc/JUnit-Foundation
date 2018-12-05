@@ -26,7 +26,7 @@ public class UnitTestWatcher implements MethodWatcher {
     private List<String> m_leaveAfterClass = Collections.synchronizedList(new ArrayList<>());
     
     @Override
-    public void beforeInvocation(Object target, FrameworkMethod method, Object... params) {
+    public void beforeInvocation(Object runner, Object target, FrameworkMethod method, Object... params) {
         if (null != method.getAnnotation(BeforeClass.class)) {
             m_enterBeforeClass.add(method.getName());
         } else if (null != method.getAnnotation(Before.class)) {
@@ -41,7 +41,7 @@ public class UnitTestWatcher implements MethodWatcher {
     }
 
     @Override
-    public void afterInvocation(Object target, FrameworkMethod method, Throwable thrown) {
+    public void afterInvocation(Object runner, Object target, FrameworkMethod method, Throwable thrown) {
         if (null != method.getAnnotation(BeforeClass.class)) {
             m_leaveBeforeClass.add(method.getName());
         } else if (null != method.getAnnotation(Before.class)) {

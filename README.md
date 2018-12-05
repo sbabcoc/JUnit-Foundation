@@ -24,14 +24,12 @@ Get the parent runner that owns the specified child runner.
 Get the parent runner that owns the specified method.
 * `LifecycleHooks.getRunnerForTarget(Object target)`  
 Get the parent runner that owns the specified instance.
-* `LifecycleHooks.getRunnerFor(TestClass testClass)`  
-Get the parent runner associated with the specified test class object.
+* `LifecycleHooks.getTargetForRunner(Object runner)`  
+Get the JUnit test class instance owned by the specified parent runner.
 * `LifecycleHooks.getTestClassWith(Object method)`  
 Get the test class associated with the specified framework method.
 * `LifecycleHooks.getTestClassOf(Object runner)`  
 Get the test class object associated with the specified parent runner.
-* `RunReflectiveCall.getTargetFor(FrameworkMethod method)`  
-Get the target test class instance for the specified method.
 * `RunReflectiveCall.getAtomicTestFor(TestClass testClass)`  
 Get the atomic test associated with the specified test class.
 * `RunReflectiveCall.getAtomicTestFor(FrameworkMethod method)`  

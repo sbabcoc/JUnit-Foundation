@@ -20,15 +20,15 @@ public interface TestClassWatcher {
      * Called when a runner (test class or suite) is about to be started.
      * 
      * @param testClass {@link TestClass} object for the parent runner
-     * @deprecated Use {@link TestClassWatcher2#testClassStarted(TestClass, Object)} instead
+     * @param runner JUnit test runner
      */
-    void testClassStarted(TestClass testClass);
+    void testClassStarted(TestClass testClass, Object runner);
     
     /**
      * Called when a runner (test class or suite) has finished.
      * 
      * @param testClass {@link TestClass} object for the parent runner
-     * @deprecated Use {@link TestClassWatcher2#testClassFinished(TestClass, Object)} instead
+     * @param runner JUnit test runner
      */
-    void testClassFinished(TestClass testClass);
+    void testClassFinished(TestClass testClass, Object runner);
 }

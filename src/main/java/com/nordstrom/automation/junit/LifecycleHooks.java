@@ -7,10 +7,12 @@ import java.lang.instrument.Instrumentation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.EmptyStackException;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.Stack;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -126,12 +128,20 @@ public class LifecycleHooks {
      */
     @SuppressWarnings("squid:S1118")
     public static class Run {
+        private static final ThreadLocal<Stack<Object>> runnerStack;
         private static final ServiceLoader<RunListener> runListenerLoader;
         private static final ServiceLoader<RunnerWatcher> runnerWatcherLoader;
         private static final Set<RunNotifier> NOTIFIERS = new CopyOnWriteArraySet<>();
         private static final Map<Object, Object> CHILD_TO_PARENT = new ConcurrentHashMap<>();
         
         static {
+            runnerStack = new ThreadLocal<Stack<Object>>() {
+                @Override
+                protected Stack<Object> initialValue() {
+                    return new Stack<>();
+                }
+            };
+            
             runListenerLoader = ServiceLoader.load(RunListener.class);
             runnerWatcherLoader = ServiceLoader.load(RunnerWatcher.class);
         }
@@ -168,7 +178,9 @@ public class LifecycleHooks {
                 }
             }
             
+            runnerStack.get().push(runner);
             callProxy(proxy);
+            runnerStack.get().pop();
             
             synchronized(runnerWatcherLoader) {
                 for (RunnerWatcher watcher : runnerWatcherLoader) {
@@ -186,6 +198,16 @@ public class LifecycleHooks {
         static Object getParentOf(Object child) {
             return CHILD_TO_PARENT.get(child);
         }
+        
+        /**
+         * Get the runner that owns the active thread context.
+         * 
+         * @return active {@code ParentRunner} object
+         * @throws EmptyStackException if called outside the scope of an active runner
+         */
+        static Object getThreadRunner() {
+            return runnerStack.get().peek();
+        }
     }
     
     /**
@@ -197,6 +219,7 @@ public class LifecycleHooks {
         
         private static final ServiceLoader<TestObjectWatcher> objectWatcherLoader;
         private static final Map<Object, Object> TARGET_TO_RUNNER = new ConcurrentHashMap<>();
+        private static final Map<Object, Object> RUNNER_TO_TARGET = new ConcurrentHashMap<>();
         
         static {
             objectWatcherLoader = ServiceLoader.load(TestObjectWatcher.class);
@@ -215,6 +238,7 @@ public class LifecycleHooks {
                         @SuperCall final Callable<?> proxy) throws Exception {
             Object testObj = callProxy(proxy);
             TARGET_TO_RUNNER.put(testObj, runner);
+            RUNNER_TO_TARGET.put(runner, testObj);
             applyTimeout(testObj);
             
             synchronized(objectWatcherLoader) {
@@ -235,6 +259,16 @@ public class LifecycleHooks {
         static Object getRunnerForTarget(Object target) {
             return TARGET_TO_RUNNER.get(target);
         }
+        
+        /**
+         * Get the JUnit test class instance for the specified class runner.
+         * 
+         * @param runner JUnit class runner
+         * @return JUnit test class instance for specified runner
+         */
+        static Object getTargetForRunner(Object runner) {
+            return RUNNER_TO_TARGET.get(runner);
+        }
     }
     
     /**
@@ -248,13 +282,13 @@ public class LifecycleHooks {
     }
     
     /**
-     * Get the parent runner associated with the specified test class object.
+     * Get the JUnit test class instance for the specified class runner.
      * 
-     * @param testClass {@link TestClass} object
-     * @return {@link org.junit.runners.ParentRunner ParentRunner} that owns the specified test class object
+     * @param runner JUnit class runner
+     * @return JUnit test class instance for specified runner
      */
-    public static Object getRunnerFor(TestClass testClass) {
-        return CreateTestClass.getRunnerFor(testClass);
+    public static Object getTargetForRunner(Object runner) {
+        return CreateTest.getTargetForRunner(runner);
     }
     
     /**
@@ -275,6 +309,16 @@ public class LifecycleHooks {
      */
     public static Object getParentOf(Object child) {
         return Run.getParentOf(child);
+    }
+    
+    /**
+     * Get the runner that owns the active thread context.
+     * 
+     * @return active {@code ParentRunner} object
+     * @throws EmptyStackException if called outside the scope of an active runner
+     */
+    public static Object getThreadRunner() {
+        return Run.getThreadRunner();
     }
     
     /**

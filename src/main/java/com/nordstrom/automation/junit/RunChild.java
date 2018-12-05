@@ -32,7 +32,7 @@ public class RunChild {
         boolean isIgnored = (null != method.getAnnotation(Ignore.class));
         
         if (isIgnored) {
-            RunReflectiveCall.fireTestIgnored(runner, method);
+            RunReflectiveCall.fireTestIgnored(runner);
         }
         
         if (count == 0) {
