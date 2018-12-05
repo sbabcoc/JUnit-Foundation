@@ -94,8 +94,8 @@ public class RunReflectiveCall {
 
         try {
             result = LifecycleHooks.callProxy(proxy);
-        } catch (Throwable e) {
-            thrown = e;
+        } catch (Throwable t) {
+            thrown = t;
         } finally {
             synchronized(methodWatcherLoader) {
                 for (MethodWatcher watcher : methodWatcherLoader) {
