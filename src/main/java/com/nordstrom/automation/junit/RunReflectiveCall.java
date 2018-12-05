@@ -18,6 +18,7 @@ import org.junit.internal.AssumptionViolatedException;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.TestClass;
 
+import com.nordstrom.automation.junit.LifecycleHooks.CreateTest;
 import com.nordstrom.automation.junit.LifecycleHooks.Run;
 import com.nordstrom.common.base.UncheckedThrow;
 
@@ -68,7 +69,11 @@ public class RunReflectiveCall {
                 params = getFieldValue(callable, "val$params");
                 
                 if (isParticleMethod(method)) {
-                    runner = Run.getThreadRunner();
+                    if (target != null) {
+                        runner = CreateTest.getRunnerForTarget(target);
+                    } else {
+                        runner = Run.getThreadRunner();
+                    }
                 }
             }
         } catch (IllegalAccessException | NoSuchFieldException | SecurityException | IllegalArgumentException e) {
@@ -80,7 +85,7 @@ public class RunReflectiveCall {
         }
         
         Object result = null;
-        Exception thrown = null;
+        Throwable thrown = null;
         synchronized(methodWatcherLoader) {
             for (MethodWatcher watcher : methodWatcherLoader) {
                 watcher.beforeInvocation(runner, target, method, params);
@@ -89,7 +94,7 @@ public class RunReflectiveCall {
 
         try {
             result = LifecycleHooks.callProxy(proxy);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             thrown = e;
         } finally {
             synchronized(methodWatcherLoader) {
@@ -100,7 +105,7 @@ public class RunReflectiveCall {
         }
 
         if (thrown != null) {
-            getAtomicTestFor(method).setException(thrown);
+            getAtomicTestFor(method).setThrowable(thrown);
             throw UncheckedThrow.throwUnchecked(thrown);
         }
 
@@ -147,7 +152,7 @@ public class RunReflectiveCall {
      * @param atomicTest {@link AtomicTest} object
      */
     private static void notifyIfTestFailed(RunWatcher watcher, AtomicTest atomicTest) {
-        Exception thrown = atomicTest.getException();
+        Throwable thrown = atomicTest.getThrowable();
         if (thrown != null) {
             if (thrown instanceof AssumptionViolatedException) {
                 watcher.testAssumptionFailure(atomicTest, (AssumptionViolatedException) thrown);

@@ -41,7 +41,7 @@ public class UnitTestWatcher implements MethodWatcher {
     }
 
     @Override
-    public void afterInvocation(Object runner, Object target, FrameworkMethod method, Exception thrown) {
+    public void afterInvocation(Object runner, Object target, FrameworkMethod method, Throwable thrown) {
         if (null != method.getAnnotation(BeforeClass.class)) {
             m_leaveBeforeClass.add(method.getName());
         } else if (null != method.getAnnotation(Before.class)) {

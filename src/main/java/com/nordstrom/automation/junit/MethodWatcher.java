@@ -25,5 +25,5 @@ public interface MethodWatcher {
      * @param method {@link FrameworkMethod} object for the invoked method
      * @param thrown exception thrown by method; {@code null} on normal completion
      */
-    void afterInvocation(Object runner, Object target, FrameworkMethod method, Exception thrown);
+    void afterInvocation(Object runner, Object target, FrameworkMethod method, Throwable thrown);
 }

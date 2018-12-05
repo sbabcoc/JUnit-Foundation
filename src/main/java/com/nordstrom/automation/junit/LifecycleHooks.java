@@ -135,7 +135,7 @@ public class LifecycleHooks {
         private static final Map<Object, Object> CHILD_TO_PARENT = new ConcurrentHashMap<>();
         
         static {
-            runnerStack = new InheritableThreadLocal<Stack<Object>>() {
+            runnerStack = new ThreadLocal<Stack<Object>>() {
                 @Override
                 protected Stack<Object> initialValue() {
                     return new Stack<>();

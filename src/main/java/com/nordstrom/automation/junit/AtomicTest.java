@@ -24,7 +24,7 @@ public class AtomicTest {
     private final Object runner;
     private final FrameworkMethod identity;
     private final List<FrameworkMethod> particles;
-    private Exception thrown;
+    private Throwable thrown;
 
     public AtomicTest(Object runner, FrameworkMethod testMethod) {
         this.runner = runner;
@@ -73,7 +73,7 @@ public class AtomicTest {
      * 
      * @param thrown exception for this atomic test
      */
-    void setException(Exception thrown) {
+    void setThrowable(Throwable thrown) {
         this.thrown = thrown;
     }
     
@@ -82,7 +82,7 @@ public class AtomicTest {
      * 
      * @return exception for this atomic test; {@code null} if test finished normally
      */
-    public Exception getException() {
+    public Throwable getThrowable() {
         return thrown;
     }
     

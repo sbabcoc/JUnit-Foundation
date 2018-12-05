@@ -27,7 +27,7 @@ public interface RunWatcher {
      * @param atomicTest {@link AtomicTest} object for this atomic test
      * @param thrown exception thrown by method
      */
-    public void testFailure(AtomicTest atomicTest, Exception thrown);
+    public void testFailure(AtomicTest atomicTest, Throwable thrown);
 
     /**
      * Called when an atomic test flags that it assumes a condition that is false
