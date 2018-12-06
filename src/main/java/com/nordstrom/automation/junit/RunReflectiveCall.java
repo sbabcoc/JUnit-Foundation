@@ -32,6 +32,17 @@ import net.bytebuddy.implementation.bind.annotation.This;
 @SuppressWarnings("squid:S1118")
 public class RunReflectiveCall {
     
+    private static final ThreadLocal<Boolean> BELOW = new InheritableThreadLocal<Boolean>() {
+        
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        protected Boolean initialValue() {
+            return Boolean.FALSE;
+        }
+    };
+    
     private static final ServiceLoader<MethodWatcher> methodWatcherLoader;
     private static final ServiceLoader<RunWatcher> runWatcherLoader;
     
@@ -55,6 +66,10 @@ public class RunReflectiveCall {
     public static Object intercept(@This final Object callable, @SuperCall final Callable<?> proxy)
                     throws Exception {
         
+        if (BELOW.get()) {
+            return LifecycleHooks.callProxy(proxy);
+        }
+        
         Object runner = null;
         Object target = null;
         FrameworkMethod method = null;
@@ -74,6 +89,8 @@ public class RunReflectiveCall {
                         runner = Run.getThreadRunner();
                     }
                 }
+            } else {
+                runner = owner;
             }
         } catch (IllegalAccessException | NoSuchFieldException | SecurityException | IllegalArgumentException e) {
             // handled below
@@ -82,6 +99,8 @@ public class RunReflectiveCall {
         if (method == null) {
             return LifecycleHooks.callProxy(proxy);
         }
+        
+        BELOW.set(Boolean.TRUE);
         
         Object result = null;
         Throwable thrown = null;
@@ -102,6 +121,8 @@ public class RunReflectiveCall {
                 }
             }
         }
+        
+        BELOW.set(Boolean.FALSE);
 
         if (thrown != null) {
             getAtomicTestFor(method).setThrowable(thrown);
