@@ -16,6 +16,17 @@ import net.bytebuddy.implementation.bind.annotation.This;
 @SuppressWarnings("squid:S1118")
 public class RunChild {
 
+    private static final ThreadLocal<Boolean> BELOW = new InheritableThreadLocal<Boolean>() {
+        
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        protected Boolean initialValue() {
+            return Boolean.FALSE;
+        }
+    };
+    
     /**
      * Interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#runChild runChild} method.
      * 
@@ -28,6 +39,12 @@ public class RunChild {
     public static void intercept(@This final Object runner, @SuperCall final Callable<?> proxy,
                     @Argument(0) final FrameworkMethod method,
                     @Argument(1) final RunNotifier notifier) throws Exception {
+        
+        if (BELOW.get()) {
+            LifecycleHooks.callProxy(proxy);
+            return;
+        }
+        
         int count = RetryHandler.getMaxRetry(runner, method);
         boolean isIgnored = (null != method.getAnnotation(Ignore.class));
         
@@ -36,7 +53,12 @@ public class RunChild {
         }
         
         if (count == 0) {
-            LifecycleHooks.callProxy(proxy);
+            try {
+                BELOW.set(Boolean.TRUE);
+                LifecycleHooks.callProxy(proxy);
+            } finally {
+                BELOW.set(Boolean.FALSE);
+            }
         } else if (!isIgnored) {
             RetryHandler.runChildWithRetry(runner, method, notifier, count);
         }

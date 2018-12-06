@@ -100,8 +100,6 @@ public class RunReflectiveCall {
             return LifecycleHooks.callProxy(proxy);
         }
         
-        BELOW.set(Boolean.TRUE);
-        
         Object result = null;
         Throwable thrown = null;
         synchronized(methodWatcherLoader) {
@@ -111,18 +109,18 @@ public class RunReflectiveCall {
         }
 
         try {
+            BELOW.set(Boolean.TRUE);
             result = LifecycleHooks.callProxy(proxy);
         } catch (Throwable t) {
             thrown = t;
         } finally {
+            BELOW.set(Boolean.FALSE);
             synchronized(methodWatcherLoader) {
                 for (MethodWatcher watcher : methodWatcherLoader) {
                     watcher.afterInvocation(runner, target, method, thrown);
                 }
             }
         }
-        
-        BELOW.set(Boolean.FALSE);
 
         if (thrown != null) {
             getAtomicTestFor(method).setThrowable(thrown);

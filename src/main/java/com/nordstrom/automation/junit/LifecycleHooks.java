@@ -217,6 +217,17 @@ public class LifecycleHooks {
     @SuppressWarnings("squid:S1118")
     public static class CreateTest {
         
+        private static final ThreadLocal<Boolean> BELOW = new InheritableThreadLocal<Boolean>() {
+            
+            /**
+             * {@inheritDoc}
+             */
+            @Override
+            protected Boolean initialValue() {
+                return Boolean.FALSE;
+            }
+        };
+        
         private static final ServiceLoader<TestObjectWatcher> objectWatcherLoader;
         private static final Map<Object, Object> TARGET_TO_RUNNER = new ConcurrentHashMap<>();
         private static final Map<Object, Object> RUNNER_TO_TARGET = new ConcurrentHashMap<>();
@@ -236,7 +247,20 @@ public class LifecycleHooks {
         @RuntimeType
         public static Object intercept(@This final Object runner,
                         @SuperCall final Callable<?> proxy) throws Exception {
-            Object testObj = callProxy(proxy);
+            
+            if (BELOW.get()) {
+                return callProxy(proxy);
+            }
+            
+            Object testObj = null;
+            
+            try {
+                BELOW.set(Boolean.TRUE);
+                testObj = callProxy(proxy);
+            } finally {
+                BELOW.set(Boolean.FALSE);
+            }
+            
             TARGET_TO_RUNNER.put(testObj, runner);
             RUNNER_TO_TARGET.put(runner, testObj);
             applyTimeout(testObj);
