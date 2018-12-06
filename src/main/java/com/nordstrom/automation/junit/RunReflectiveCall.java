@@ -168,11 +168,10 @@ public class RunReflectiveCall {
      * @param runner JUnit test runner
      * @param method {@link FrameworkMethod} object
      */
-    static void fireTestIgnored(Object runner) {
-        AtomicTest atomicTest = RUNNER_TO_ATOMICTEST.get(runner);
+    static void fireTestIgnored(Object runner, FrameworkMethod method) {
         synchronized(runWatcherLoader) {
             for (RunWatcher watcher : runWatcherLoader) {
-                watcher.testIgnored(atomicTest);
+                watcher.testIgnored(method, runner);
             }
         }
     }
