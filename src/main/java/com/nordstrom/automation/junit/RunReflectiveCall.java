@@ -16,7 +16,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.internal.AssumptionViolatedException;
 import org.junit.runners.model.FrameworkMethod;
-import org.junit.runners.model.TestClass;
 
 import com.nordstrom.automation.junit.LifecycleHooks.CreateTest;
 import com.nordstrom.automation.junit.LifecycleHooks.Run;
@@ -169,9 +168,10 @@ public class RunReflectiveCall {
      * @param method {@link FrameworkMethod} object
      */
     static void fireTestIgnored(Object runner, FrameworkMethod method) {
+        AtomicTest atomicTest = createAtomicTest(runner, method);
         synchronized(runWatcherLoader) {
             for (RunWatcher watcher : runWatcherLoader) {
-                watcher.testIgnored(method, runner);
+                watcher.testIgnored(atomicTest);
             }
         }
     }
@@ -214,25 +214,37 @@ public class RunReflectiveCall {
         }
         
         if (child instanceof FrameworkMethod) {
-            atomicTest = new AtomicTest(runner, (FrameworkMethod) child);
-            RUNNER_TO_ATOMICTEST.put(runner, atomicTest);
+            atomicTest = createAtomicTest(runner, (FrameworkMethod) child);
         }
         
         return atomicTest;
     }
     
     /**
-     * Get the atomic test associated with the specified test class.
+     * Create an atomic test object from the specified runner/method pair.
      * 
-     * @param testClass {@link TestClass} object
-     * @return {@link AtomicTest} object for the specified test class
+     * @param runner JUnit test runner
+     * @param method {@link FrameworkMethod} object
+     * @return {@link AtomicTest} object
      */
-    public static AtomicTest getAtomicTestFor(TestClass testClass) {
-        AtomicTest atomicTest = RUNNER_TO_ATOMICTEST.get(testClass);
+    static AtomicTest createAtomicTest(Object runner, FrameworkMethod method) {
+        AtomicTest atomicTest = new AtomicTest(runner, method);
+        RUNNER_TO_ATOMICTEST.put(runner, atomicTest);
+        return atomicTest;
+    }
+    
+    /**
+     * Get the atomic test associated with the specified test runner.
+     * 
+     * @param runner JUnit test runner
+     * @return {@link AtomicTest} object for the specified test runner
+     */
+    public static AtomicTest getAtomicTestFor(Object runner) {
+        AtomicTest atomicTest = RUNNER_TO_ATOMICTEST.get(runner);
         if (atomicTest != null) {
             return atomicTest;
         }
-        throw new IllegalArgumentException("No associated atomic test was found for the specified test class");
+        throw new IllegalArgumentException("No associated atomic test was found for the specified test runner");
     }
     
     /**

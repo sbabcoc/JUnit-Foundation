@@ -18,10 +18,8 @@ The notifications provided by **JUnit Foundation** include the context that owns
 
 The objects passed to your service provider implementation are members of a hierarchy that **JUnit** builds to represent the test collection being executed. **JUnit Foundation** provides a set of static methods that enable you walk this object hierarchy.
 
-* `LifecycleHooks.getParentOf(Object runner)`  
-Get the parent runner that owns the specified child runner.
-* `LifecycleHooks.getParentOf(FrameworkMethod method)`  
-Get the parent runner that owns the specified method.
+* `LifecycleHooks.getParentOf(Object child)`  
+Get the parent runner that owns specified child runner or framework method.
 * `LifecycleHooks.getRunnerForTarget(Object target)`  
 Get the parent runner that owns the specified instance.
 * `LifecycleHooks.getTargetForRunner(Object runner)`  
@@ -30,8 +28,8 @@ Get the JUnit test class instance owned by the specified parent runner.
 Get the test class associated with the specified framework method.
 * `LifecycleHooks.getTestClassOf(Object runner)`  
 Get the test class object associated with the specified parent runner.
-* `RunReflectiveCall.getAtomicTestFor(TestClass testClass)`  
-Get the atomic test associated with the specified test class.
+* `RunReflectiveCall.getAtomicTestFor(Object runner)`  
+Get the atomic test associated with the specified test runner.
 * `RunReflectiveCall.getAtomicTestFor(FrameworkMethod method)`  
 Get the atomic test associated with the specified method.
 
@@ -43,11 +41,11 @@ import com.nordstrom.automation.junit.AtomicTest;
 import com.nordstrom.automation.junit.LifecycleHooks;
 import com.nordstrom.automation.junit.MethodWatcher;
 import com.nordstrom.automation.junit.RunReflectiveCall;
-import com.nordstrom.automation.junit.TestClassWatcher2;
+import com.nordstrom.automation.junit.TestClassWatcher;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.TestClass;
 
-public class ExploringWatcher implements TestClassWatcher2, MethodWatcher {
+public class ExploringWatcher implements TestClassWatcher, MethodWatcher {
 
     ...
 
@@ -60,7 +58,7 @@ public class ExploringWatcher implements TestClassWatcher2, MethodWatcher {
             ...
         } else {
             // get the 'atomic test' for this runner
-            AtomicTest atomicTest = RunReflectiveCall.getAtomicTestFor(testClass);
+            AtomicTest atomicTest = RunReflectiveCall.getAtomicTestFor(runner);
             // get the 'particle' methods of this 'atomic test'
             List<FrameworkMethod> particles = atomicTest.getParticles();
             ...
@@ -99,8 +97,6 @@ Note that some associations are not available for specific context:
 
 * `LifecycleHooks.describeChild(Object target, Object child)`  
 Get a `Description` for the indicated child object from the runner for the specified test class instance.
-* `LifecycleHooks.hasConfiguration(TestClass testClass)`  
-Determine if the atomic test associated with the specified test class has configuration methods.
 * `LifecycleHooks.getInstanceClass(Object instance)`  
 Get class of specified test class instance.
 
@@ -251,8 +247,8 @@ The preceding **ServiceLoader** provider configuration files declare a **JUnit F
 **RunnerWatcher** provides callbacks for events in the lifecycle of **`ParentRunner`** objects. It receives the following notifications:
   * A **`ParentRunner`** object is about to run.
   * A **`ParentRunner`** object has finished running.
-* [TestClassWatcher2](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/TestClassWatcher2.java)  
-**TestClassWatcher2** provides callbacks for events in the lifecycle of **`TestClass`** objects. It receives the following notifications:
+* [TestClassWatcher](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/TestClassWatcher.java)  
+**TestClassWatcher** provides callbacks for events in the lifecycle of **`TestClass`** objects. It receives the following notifications:
   * A **`TestClass`** object has been created to represent a JUnit test class or suite. Each **`TestClass`** has a one-to-one relationship with the JUnit runner that created it. (see **NOTE**)
   * A **`TestClass`** object has been scheduled to run. This signals that the first child of the JUnit test class or suite is about start.
   * A **`TestClass`** object has finished running. This signals that the last child of the JUnit test class or suite is done.

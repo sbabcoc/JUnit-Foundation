@@ -1,7 +1,6 @@
 package com.nordstrom.automation.junit;
 
 import org.junit.internal.AssumptionViolatedException;
-import org.junit.runners.model.FrameworkMethod;
 
 /**
  * This interface defines the methods implemented by JUnit run watchers.
@@ -41,9 +40,8 @@ public interface RunWatcher {
     /**
      * Called when a test will not be run, generally because a test method is annotated with {@link org.junit.Ignore}.
      * 
-     * @param method {@link FrameworkMethod} object
-     * @param runner JUnit test runner
+     * @param atomicTest {@link AtomicTest} object for this atomic test
      */
-    public void testIgnored(FrameworkMethod method, Object runner);
+    public void testIgnored(AtomicTest atomicTest);
     
 }

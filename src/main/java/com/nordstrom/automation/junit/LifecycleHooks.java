@@ -190,7 +190,7 @@ public class LifecycleHooks {
         }
         
         /**
-         * Get the parent runner that owns specified child runner.
+         * Get the parent runner that owns specified child runner or framework method.
          * 
          * @param child {@code ParentRunner} or {@code FrameworkMethod} object
          * @return {@code ParentRunner} object that owns the specified child ({@code null} for root objects)
@@ -302,9 +302,9 @@ public class LifecycleHooks {
     }
     
     /**
-     * Get the parent runner that owns specified child runner.
+     * Get the parent runner that owns specified child runner or framework method.
      * 
-     * @param child {@link org.junit.runners.ParentRunner ParentRunner} object
+     * @param child {@code ParentRunner} or {@code FrameworkMethod} object
      * @return {@code ParentRunner} object that owns the specified child ({@code null} for root objects)
      */
     public static Object getParentOf(Object child) {
@@ -329,17 +329,6 @@ public class LifecycleHooks {
      */
     public static TestClass getTestClassOf(Object runner) {
         return invoke(runner, "getTestClass");
-    }
-    
-    /**
-     * Determine if the atomic test associated with the specified test class has configuration methods.
-     * 
-     * @param testClass {@link TestClass} object
-     * @return {@code true} if the atomic test has configuration; otherwise {@code false}
-     */
-    public static boolean hasConfiguration(TestClass testClass) {
-        AtomicTest atomicTest = RunReflectiveCall.getAtomicTestFor(testClass);
-        return atomicTest.hasConfiguration();
     }
     
     /**
