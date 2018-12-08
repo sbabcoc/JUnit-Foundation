@@ -33,7 +33,6 @@ Get the test class object associated with the specified parent runner.
 ```java
 package com.nordstrom.example;
 
-import com.nordstrom.automation.junit.AtomicTest;
 import com.nordstrom.automation.junit.LifecycleHooks;
 import com.nordstrom.automation.junit.MethodWatcher;
 import com.nordstrom.automation.junit.RunReflectiveCall;
