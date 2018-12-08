@@ -28,10 +28,6 @@ Get the JUnit test class instance owned by the specified parent runner.
 Get the test class associated with the specified framework method.
 * `LifecycleHooks.getTestClassOf(Object runner)`  
 Get the test class object associated with the specified parent runner.
-* `RunReflectiveCall.getAtomicTestFor(Object runner)`  
-Get the atomic test associated with the specified test runner.
-* `RunReflectiveCall.getAtomicTestFor(FrameworkMethod method)`  
-Get the atomic test associated with the specified method.
 
 ###### Exploring the Test Run Hierarchy
 ```java
@@ -56,20 +52,12 @@ public class ExploringWatcher implements TestClassWatcher, MethodWatcher {
             // get the parent of this runner
             Object parent = LifecycleHooks.getParentOf(runner);
             ...
-        } else {
-            // get the 'atomic test' for this runner
-            AtomicTest atomicTest = RunReflectiveCall.getAtomicTestFor(runner);
-            // get the 'particle' methods of this 'atomic test'
-            List<FrameworkMethod> particles = atomicTest.getParticles();
-            ...
         }
         ...
     }
 
     @Override
     public void beforeInvocation(Object target, FrameworkMethod method, Object... params) {
-        // get the 'atomic test' for this method
-        AtomicTest atomicTest = RunReflectiveCall.getAtomicTestFor(method);
         // if target defined
         if (target != null) {
             // get the runner that owns this target
