@@ -74,6 +74,7 @@ public class LifecycleHooks {
         TypeDescription reflectiveCallable = TypePool.Default.ofSystemLoader().describe("org.junit.internal.runners.model.ReflectiveCallable").resolve();
         TypeDescription parentRunner = TypePool.Default.ofSystemLoader().describe("org.junit.runners.ParentRunner").resolve();
         TypeDescription blockJUnit4ClassRunner = TypePool.Default.ofSystemLoader().describe("org.junit.runners.BlockJUnit4ClassRunner").resolve();
+        TypeDescription suite = TypePool.Default.ofSystemLoader().describe("org.junit.runners.Suite").resolve();
         
         return new AgentBuilder.Default()
                 .type(isSubTypeOf(reflectiveCallable))
@@ -81,6 +82,11 @@ public class LifecycleHooks {
                         builder.method(named("runReflectiveCall")).intercept(MethodDelegation.to(RunReflectiveCall.class))
                                .implement(Hooked.class))
                 .type(is(parentRunner))
+                .transform((builder, type, classLoader, module) -> 
+                        builder.method(named("createTestClass")).intercept(MethodDelegation.to(CreateTestClass.class))
+                               .method(named("run")).intercept(MethodDelegation.to(Run.class))
+                               .implement(Hooked.class))
+                .type(isSubTypeOf(suite))
                 .transform((builder, type, classLoader, module) -> 
                         builder.method(named("createTestClass")).intercept(MethodDelegation.to(CreateTestClass.class))
                                .method(named("run")).intercept(MethodDelegation.to(Run.class))
