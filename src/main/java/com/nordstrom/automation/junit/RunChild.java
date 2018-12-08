@@ -1,8 +1,13 @@
 package com.nordstrom.automation.junit;
 
+import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 import org.junit.Ignore;
+import org.junit.runner.Description;
+import org.junit.runner.notification.RunListener;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.FrameworkMethod;
 import net.bytebuddy.implementation.bind.annotation.Argument;
@@ -15,18 +20,18 @@ import net.bytebuddy.implementation.bind.annotation.This;
  */
 @SuppressWarnings("squid:S1118")
 public class RunChild {
-
-    private static final ThreadLocal<Boolean> BELOW = new InheritableThreadLocal<Boolean>() {
-        
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        protected Boolean initialValue() {
-            return Boolean.FALSE;
-        }
-    };
     
+    private static final ServiceLoader<RunListener> runListenerLoader;
+    private static final Set<RunNotifier> NOTIFIERS = new CopyOnWriteArraySet<>();
+    private static final ThreadLocal<Integer> COUNTER;
+    private static final DepthGauge DEPTH;
+    
+    static {
+        runListenerLoader = ServiceLoader.load(RunListener.class);
+        COUNTER = DepthGauge.getCounter();
+        DEPTH = new DepthGauge(COUNTER);
+    }
+
     /**
      * Interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#runChild runChild} method.
      * 
@@ -40,24 +45,25 @@ public class RunChild {
                     @Argument(0) final FrameworkMethod method,
                     @Argument(1) final RunNotifier notifier) throws Exception {
         
-        if (BELOW.get()) {
-            LifecycleHooks.callProxy(proxy);
-            return;
+        if (NOTIFIERS.add(notifier)) {
+            Description description = LifecycleHooks.invoke(runner, "getDescription");
+            synchronized(runListenerLoader) {
+                for (RunListener listener : runListenerLoader) {
+                    notifier.addListener(listener);
+                    listener.testRunStarted(description);
+                }
+            }
         }
         
         int count = RetryHandler.getMaxRetry(runner, method);
         boolean isIgnored = (null != method.getAnnotation(Ignore.class));
         
-        if (isIgnored) {
-            RunReflectiveCall.fireTestIgnored(runner, method);
-        }
-        
         if (count == 0) {
             try {
-                BELOW.set(Boolean.TRUE);
+                DEPTH.increaseDepth();
                 LifecycleHooks.callProxy(proxy);
             } finally {
-                BELOW.set(Boolean.FALSE);
+                DEPTH.decreaseDepth();
             }
         } else if (!isIgnored) {
             RetryHandler.runChildWithRetry(runner, method, notifier, count);

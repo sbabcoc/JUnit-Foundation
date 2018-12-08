@@ -10,6 +10,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.Description;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.TestClass;
 
@@ -22,14 +23,26 @@ import org.junit.runners.model.TestClass;
 @SuppressWarnings("all")
 public class AtomicTest {
     private final Object runner;
+    private final Description description;
     private final FrameworkMethod identity;
     private final List<FrameworkMethod> particles;
     private Throwable thrown;
 
-    public AtomicTest(Object runner, FrameworkMethod testMethod) {
+    public AtomicTest(Object runner, Description description) {
         this.runner = runner;
-        this.identity = testMethod;
+        this.description = description;
         this.particles = invoke(runner, "getChildren");
+        
+        FrameworkMethod identity = null;
+        String methodName = description.getMethodName().split("[^_$a-zA-Z0-9]")[0];
+        for (FrameworkMethod method : particles) {
+            if (methodName.equals(method.getName())) {
+                identity = method;
+                break;
+            }
+        }
+        
+        this.identity = identity;
     }
 
     /**
@@ -39,6 +52,15 @@ public class AtomicTest {
      */
     public Object getRunner() {
         return runner;
+    }
+
+    /**
+     * Get the description for this atomic test.
+     * 
+     * @return {@link Description} object
+     */
+    public Description getDescription() {
+        return description;
     }
 
     /**

@@ -11,15 +11,12 @@ import java.util.EmptyStackException;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
-import java.util.Set;
-import java.util.Stack;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
-
 import org.junit.Test;
 import org.junit.runner.Description;
-import org.junit.runner.notification.RunListener;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.TestClass;
 import com.nordstrom.automation.junit.JUnitConfig.JUnitSettings;
@@ -90,8 +87,10 @@ public class LifecycleHooks {
                                .implement(Hooked.class))
                 .type(isSubTypeOf(blockJUnit4ClassRunner))
                 .transform((builder, type, classLoader, module) -> 
-                        builder.method(named("createTest")).intercept(MethodDelegation.to(CreateTest.class))
+                        builder.method(named("createTestClass")).intercept(MethodDelegation.to(CreateTestClass.class))
+                               .method(named("createTest")).intercept(MethodDelegation.to(CreateTest.class))
                                .method(named("runChild")).intercept(MethodDelegation.to(RunChild.class))
+                               .method(named("run")).intercept(MethodDelegation.to(Run.class))
                                .implement(Hooked.class))
                 .installOn(instrumentation);
     }
@@ -128,21 +127,12 @@ public class LifecycleHooks {
      */
     @SuppressWarnings("squid:S1118")
     public static class Run {
-        private static final ThreadLocal<Stack<Object>> runnerStack;
-        private static final ServiceLoader<RunListener> runListenerLoader;
+        private static final ThreadLocal<Deque<Object>> runnerStack;
         private static final ServiceLoader<RunnerWatcher> runnerWatcherLoader;
-        private static final Set<RunNotifier> NOTIFIERS = new CopyOnWriteArraySet<>();
         private static final Map<Object, Object> CHILD_TO_PARENT = new ConcurrentHashMap<>();
         
         static {
-            runnerStack = new ThreadLocal<Stack<Object>>() {
-                @Override
-                protected Stack<Object> initialValue() {
-                    return new Stack<>();
-                }
-            };
-            
-            runListenerLoader = ServiceLoader.load(RunListener.class);
+            runnerStack = ThreadLocal.withInitial(ArrayDeque::new);
             runnerWatcherLoader = ServiceLoader.load(RunnerWatcher.class);
         }
         
@@ -157,34 +147,31 @@ public class LifecycleHooks {
         public static void intercept(@This final Object runner, @SuperCall final Callable<?> proxy,
                         @Argument(0) final RunNotifier notifier) throws Exception {
             
+            Deque<Object> stack = runnerStack.get();
+            boolean doNotify = (stack.isEmpty() || (stack.peek() != runner));
+            
             List<?> children = invoke(runner, "getChildren");
             for (Object child : children) {
                 CHILD_TO_PARENT.put(child, runner);
             }
             
-            if (NOTIFIERS.add(notifier)) {
-                Description description = invoke(runner, "getDescription");
-                synchronized(runListenerLoader) {
-                    for (RunListener listener : runListenerLoader) {
-                        notifier.addListener(listener);
-                        listener.testRunStarted(description);
+            if (doNotify) {
+                synchronized(runnerWatcherLoader) {
+                    for (RunnerWatcher watcher : runnerWatcherLoader) {
+                        watcher.runStarted(runner);
                     }
                 }
             }
             
-            synchronized(runnerWatcherLoader) {
-                for (RunnerWatcher watcher : runnerWatcherLoader) {
-                    watcher.runStarted(runner);
-                }
-            }
-            
-            runnerStack.get().push(runner);
+            stack.push(runner);
             callProxy(proxy);
-            runnerStack.get().pop();
+            stack.pop();
             
-            synchronized(runnerWatcherLoader) {
-                for (RunnerWatcher watcher : runnerWatcherLoader) {
-                    watcher.runFinished(runner);
+            if (doNotify) {
+                synchronized(runnerWatcherLoader) {
+                    for (RunnerWatcher watcher : runnerWatcherLoader) {
+                        watcher.runFinished(runner);
+                    }
                 }
             }
         }
@@ -217,23 +204,16 @@ public class LifecycleHooks {
     @SuppressWarnings("squid:S1118")
     public static class CreateTest {
         
-        private static final ThreadLocal<Boolean> BELOW = new InheritableThreadLocal<Boolean>() {
-            
-            /**
-             * {@inheritDoc}
-             */
-            @Override
-            protected Boolean initialValue() {
-                return Boolean.FALSE;
-            }
-        };
-        
         private static final ServiceLoader<TestObjectWatcher> objectWatcherLoader;
         private static final Map<Object, Object> TARGET_TO_RUNNER = new ConcurrentHashMap<>();
         private static final Map<Object, Object> RUNNER_TO_TARGET = new ConcurrentHashMap<>();
+        private static final ThreadLocal<Integer> COUNTER;
+        private static final DepthGauge DEPTH;
         
         static {
             objectWatcherLoader = ServiceLoader.load(TestObjectWatcher.class);
+            COUNTER = DepthGauge.getCounter();
+            DEPTH = new DepthGauge(COUNTER);
         }
         
         /**
@@ -248,26 +228,23 @@ public class LifecycleHooks {
         public static Object intercept(@This final Object runner,
                         @SuperCall final Callable<?> proxy) throws Exception {
             
-            if (BELOW.get()) {
-                return callProxy(proxy);
-            }
-            
-            Object testObj = null;
-            
+            Object testObj;
             try {
-                BELOW.set(Boolean.TRUE);
+                DEPTH.increaseDepth();
                 testObj = callProxy(proxy);
             } finally {
-                BELOW.set(Boolean.FALSE);
+                DEPTH.decreaseDepth();
             }
             
             TARGET_TO_RUNNER.put(testObj, runner);
             RUNNER_TO_TARGET.put(runner, testObj);
             applyTimeout(testObj);
             
-            synchronized(objectWatcherLoader) {
-                for (TestObjectWatcher watcher : objectWatcherLoader) {
-                    watcher.testObjectCreated(testObj, runner);
+            if (DEPTH.atGroundLevel()) {
+                synchronized(objectWatcherLoader) {
+                    for (TestObjectWatcher watcher : objectWatcherLoader) {
+                        watcher.testObjectCreated(testObj, runner);
+                    }
                 }
             }
             
