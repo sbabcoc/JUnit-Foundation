@@ -16,19 +16,4 @@ public interface TestClassWatcher {
      */
     void testClassCreated(TestClass testClass, Object runner);
     
-    /**
-     * Called when a runner (test class or suite) is about to be started.
-     * 
-     * @param testClass {@link TestClass} object for the parent runner
-     * @param runner JUnit test runner
-     */
-    void testClassStarted(TestClass testClass, Object runner);
-    
-    /**
-     * Called when a runner (test class or suite) has finished.
-     * 
-     * @param testClass {@link TestClass} object for the parent runner
-     * @param runner JUnit test runner
-     */
-    void testClassFinished(TestClass testClass, Object runner);
 }
