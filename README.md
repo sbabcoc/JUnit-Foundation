@@ -56,11 +56,11 @@ public class ExploringWatcher implements TestClassWatcher, MethodWatcher {
     }
 
     @Override
-    public void beforeInvocation(Object target, FrameworkMethod method, Object... params) {
+    public void beforeInvocation(Object runner, Object target, FrameworkMethod method, Object... params) {
         // if target defined
         if (target != null) {
-            // get the runner that owns this target
-            Object runner = LifecycleHooks.getRunnerForTarget(target);
+            // get the test class for the runner
+            TestClass testClass = LifecycleHooks.getTestClassOf(runner);
         }
         ...
     }
