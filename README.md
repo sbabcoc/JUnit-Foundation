@@ -236,10 +236,8 @@ The preceding **ServiceLoader** provider configuration files declare a **JUnit F
   * A **`ParentRunner`** object has finished running.
 * [TestClassWatcher](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/TestClassWatcher.java)  
 **TestClassWatcher** provides callbacks for events in the lifecycle of **`TestClass`** objects. It receives the following notifications:
-  * A **`TestClass`** object has been created to represent a JUnit test class or suite. Each **`TestClass`** has a one-to-one relationship with the JUnit runner that created it. (see **NOTE**)
-  * A **`TestClass`** object has been scheduled to run. This signals that the first child of the JUnit test class or suite is about start.
-  * A **`TestClass`** object has finished running. This signals that the last child of the JUnit test class or suite is done.
-  * **NOTE** - This interface supercedes a prior version, adding the runner object to start/finish notifications. Test executers like Maven Surefire create suite runners for their own purposes (e.g. - parallel execution context). This breaks the one-to-one relationship between **`TestClass`** objects and runners. Consequently, the **`TestClass`** object cannot be assumed to represent a unique context. 
+  * A **`TestClass`** object has been created to represent a JUnit test class or suite.
+  * **NOTE** - Test executers like Maven Surefire create suite runners for their own purposes (e.g. - parallel execution context). This breaks the one-to-one relationship between **`TestClass`** objects and runners. Consequently, the **`TestClass`** object cannot be assumed to represent a unique context. 
 * [TestObjectWatcher](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/TestObjectWatcher.java)  
 **TestObjectWatcher** provides callbacks for events in the lifecycle of Java test class instances. It receives the following notification:
   * An instance of a JUnit test class has been created for the execution of a single `atomic test`.
