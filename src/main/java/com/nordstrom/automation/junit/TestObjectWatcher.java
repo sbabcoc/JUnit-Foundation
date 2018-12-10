@@ -4,7 +4,7 @@ package com.nordstrom.automation.junit;
  * This interface defines the methods implemented by JUnit test object watchers. These watchers are registered via a
  * ServiceLoader provider configuration file.
  */
-public interface TestObjectWatcher {
+public interface TestObjectWatcher extends JUnitWatcher {
     
     /**
      * Invoked when a test class instance gets created.

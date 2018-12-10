@@ -5,7 +5,7 @@ import org.junit.runners.model.FrameworkMethod;
 /**
  * This interface defines the methods implemented by JUnit method watchers.
  */
-public interface MethodWatcher {
+public interface MethodWatcher extends JUnitWatcher {
 
     /**
      * Invoked before each test or configuration method is invoked

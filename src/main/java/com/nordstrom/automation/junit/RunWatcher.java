@@ -5,7 +5,7 @@ import org.junit.internal.AssumptionViolatedException;
 /**
  * This interface defines the methods implemented by JUnit run watchers.
  */
-public interface RunWatcher {
+public interface RunWatcher extends JUnitWatcher {
 
     /**
      * Called when an atomic test is about to be started.
