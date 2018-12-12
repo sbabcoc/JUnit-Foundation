@@ -5,7 +5,6 @@ import org.junit.internal.AssumptionViolatedException;
 import org.junit.runner.Description;
 import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
-import com.nordstrom.automation.junit.LifecycleHooks.Run;
 
 public class RunAnnouncer extends RunListener {
     

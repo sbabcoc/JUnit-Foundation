@@ -1,13 +1,9 @@
 package com.nordstrom.automation.junit;
 
-import java.util.ServiceLoader;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CopyOnWriteArraySet;
-
 import org.junit.Ignore;
-import org.junit.runner.Description;
-import org.junit.runner.notification.RunListener;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.FrameworkMethod;
 import net.bytebuddy.implementation.bind.annotation.Argument;
@@ -15,58 +11,61 @@ import net.bytebuddy.implementation.bind.annotation.SuperCall;
 import net.bytebuddy.implementation.bind.annotation.This;
 
 /**
- * This class declares the interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#runChild runChild}
- * method.
+ * This class declares the interceptor for the {@code runChild} method.
  */
 @SuppressWarnings("squid:S1118")
 public class RunChild {
     
-    private static final ServiceLoader<RunListener> runListenerLoader;
-    private static final Set<RunNotifier> NOTIFIERS = new CopyOnWriteArraySet<>();
-    private static final ThreadLocal<Integer> COUNTER;
-    private static final DepthGauge DEPTH;
+    private static final Map<String, Boolean> notifyMap = new HashMap<>();
     
-    static {
-        runListenerLoader = ServiceLoader.load(RunListener.class);
-        COUNTER = DepthGauge.getCounter();
-        DEPTH = new DepthGauge(COUNTER);
-    }
-
     /**
      * Interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#runChild runChild} method.
      * 
      * @param runner underlying test runner
      * @param proxy callable proxy for the intercepted method
-     * @param method test method to be run
+     * @param child {@code ParentRunner} or {@code FrameworkMethod} object
      * @param notifier run notifier through which events are published
      * @throws Exception {@code anything} (exception thrown by the intercepted method)
      */
     public static void intercept(@This final Object runner, @SuperCall final Callable<?> proxy,
-                    @Argument(0) final FrameworkMethod method,
+                    @Argument(0) final Object child,
                     @Argument(1) final RunNotifier notifier) throws Exception {
         
-        if (NOTIFIERS.add(notifier)) {
-            Description description = LifecycleHooks.invoke(runner, "getDescription");
-            synchronized(runListenerLoader) {
-                for (RunListener listener : runListenerLoader) {
-                    notifier.addListener(listener);
-                    listener.testRunStarted(description);
-                }
+        Run.addNotifier(runner, notifier);
+        
+        synchronized(notifyMap) {
+            String key = runner.toString();
+            if (!notifyMap.containsKey(key)) {
+                notifyMap.put(key, Run.fireRunStarted(runner));
             }
         }
         
-        int count = RetryHandler.getMaxRetry(runner, method);
-        boolean isIgnored = (null != method.getAnnotation(Ignore.class));
-        
-        if (count == 0) {
-            try {
-                DEPTH.increaseDepth();
+        try {
+            Run.pushThreadRunner(runner);
+            if (child instanceof FrameworkMethod) {
+                FrameworkMethod method = (FrameworkMethod) child;
+                int count = RetryHandler.getMaxRetry(runner, method);
+                boolean isIgnored = (null != method.getAnnotation(Ignore.class));
+                
+                if (count == 0) {
+                    LifecycleHooks.callProxy(proxy);
+                } else if (!isIgnored) {
+                    RetryHandler.runChildWithRetry(runner, method, notifier, count);
+                }
+            } else {
                 LifecycleHooks.callProxy(proxy);
-            } finally {
-                DEPTH.decreaseDepth();
             }
-        } else if (!isIgnored) {
-            RetryHandler.runChildWithRetry(runner, method, notifier, count);
+        } finally {
+            Run.popThreadRunner();
+        }
+    }
+    
+    static void finished() {
+        Object runner = Run.getThreadRunner();
+        synchronized(notifyMap) {
+            if (notifyMap.get(runner.toString())) {
+                Run.fireRunFinished(runner);
+            }
         }
     }
 }
