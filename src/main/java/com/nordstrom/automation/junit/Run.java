@@ -48,7 +48,7 @@ public class Run {
     public static void intercept(@This final Object runner, @SuperCall final Callable<?> proxy,
                     @Argument(0) final RunNotifier notifier) throws Exception {
         
-        addNotifier(runner, notifier);
+        attachRunListeners(runner, notifier);
         
         try {
             pushThreadRunner(runner);
@@ -71,12 +71,15 @@ public class Run {
     }
     
     /**
-     * 
-     * @param runner
-     * @param notifier
-     * @throws Exception
+     * Attach registered run listeners to the specified run notifier.
+     * <p>
+     * <b>NOTE</b>: If the specified run notifier has already been seen, do nothing.
+     *  
+     * @param runner JUnit test runner
+     * @param notifier JUnit {@link RunNotifier} object
+     * @throws Exception if {@code run-started} notification 
      */
-    static void addNotifier(Object runner, final RunNotifier notifier) throws Exception {
+    static void attachRunListeners(Object runner, final RunNotifier notifier) throws Exception {
         if (NOTIFIERS.add(notifier)) {
             Description description = LifecycleHooks.invoke(runner, "getDescription");
             synchronized(runListenerLoader) {
@@ -89,17 +92,19 @@ public class Run {
     }
     
     /**
+     * Push the specified JUnit test runner onto the stack for the current thread.
      * 
-     * @param runner
-     * @return
+     * @param runner JUnit test runner
      */
     static void pushThreadRunner(final Object runner) {
         runnerStack.get().push(runner);
     }
     
     /**
+     * Pop the top JUnit test runner onto the stack for the current thread.
      * 
-     * @return
+     * @return {@code ParentRunner} object
+     * @throws EmptyStackException if called outside the scope of an active runner
      */
     static Object popThreadRunner() {
         return runnerStack.get().pop();
@@ -109,16 +114,17 @@ public class Run {
      * Get the runner that owns the active thread context.
      * 
      * @return active {@code ParentRunner} object
-     * @throws EmptyStackException if called outside the scope of an active runner
      */
     static Object getThreadRunner() {
         return runnerStack.get().peek();
     }
     
     /**
-     * 
-     * @param runner
-     * @return
+     * Fire the {@link RunnerWatcher#runStarted(Object)} event for the specified runner.
+     * <p>
+     * <b>NOTE</b>: If {@code runStarted} for the specified runner has already been fired, do nothing.
+     * @param runner JUnit test runner
+     * @return {@code true} if event the {@code runStarted} was fired; otherwise {@code false}
      */
     static boolean fireRunStarted(Object runner) {
         if (startNotified.add(runner.toString())) {
@@ -137,9 +143,11 @@ public class Run {
     }
     
     /**
-     * 
-     * @param runner
-     * @return
+     * Fire the {@link RunnerWatcher#runFinished(Object)} event for the specified runner.
+     * <p>
+     * <b>NOTE</b>: If {@code runFinished} for the specified runner has already been fired, do nothing.
+     * @param runner JUnit test runner
+     * @return {@code true} if event the {@code runFinished} was fired; otherwise {@code false}
      */
     static boolean fireRunFinished(Object runner) {
         if (finishNotified.add(runner.toString())) {

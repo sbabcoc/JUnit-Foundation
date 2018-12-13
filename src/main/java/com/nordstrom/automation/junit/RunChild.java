@@ -20,6 +20,9 @@ public class RunChild {
     
     /**
      * Interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#runChild runChild} method.
+     * <p>
+     * <b>NOTE</b>: If the {@link RunnerWatcher#runStarted(Object)} event hasn't been fired yet for the specified
+     * JUnit test runner, the event will be fired by this interceptor.
      * 
      * @param runner underlying test runner
      * @param proxy callable proxy for the intercepted method
@@ -31,7 +34,7 @@ public class RunChild {
                     @Argument(0) final Object child,
                     @Argument(1) final RunNotifier notifier) throws Exception {
         
-        Run.addNotifier(runner, notifier);
+        Run.attachRunListeners(runner, notifier);
         
         synchronized(notifyMap) {
             String key = runner.toString();
@@ -60,6 +63,10 @@ public class RunChild {
         }
     }
     
+    /**
+     * If the {@link RunnerWatcher#runStarted(Object)} event was fired by the {@code runChild} interceptor, fire the 
+     * {@link RunnerWatcher#runFinished(Object)} event.
+     */
     static void finished() {
         Object runner = Run.getThreadRunner();
         synchronized(notifyMap) {

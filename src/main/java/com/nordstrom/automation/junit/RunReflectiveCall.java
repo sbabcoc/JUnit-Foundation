@@ -133,12 +133,15 @@ public class RunReflectiveCall {
     }
     
     /**
+     * Fire the {@link MethodWatcher#beforeInvocation(Object, Object, FrameworkMethod, Object...) event.
+     * <p>
+     * If the {@code beforeInvocation} event for the specified method has already been fired, do nothing.
      * 
-     * @param runner
-     * @param target
-     * @param method
-     * @param params
-     * @return
+     * @param runner JUnit test runner
+     * @param target "enhanced" object upon which the method was invoked
+     * @param method {@link FrameworkMethod} object for the invoked method
+     * @param params method invocation parameters
+     * @return {@code true} if event the {@code beforeInvocation} was fired; otherwise {@code false}
      */
     private static boolean fireBeforeInvocation(Object runner, Object target, FrameworkMethod method, Object... params) {
         if ((runner != null) && (method != null) && (beforeNotified.add(methodHash(runner, method)))) {
@@ -153,12 +156,15 @@ public class RunReflectiveCall {
     }
     
     /**
+     * Fire the {@link MethodWatcher#afterInvocation(Object, Object, FrameworkMethod, Throwable) event.
+     * <p>
+     * If the {@code afterInvocation} event for the specified method has already been fired, do nothing.
      * 
-     * @param runner
-     * @param target
-     * @param method
-     * @param thrown
-     * @return
+     * @param runner JUnit test runner
+     * @param target "enhanced" object upon which the method was invoked
+     * @param method {@link FrameworkMethod} object for the invoked method
+     * @param thrown exception thrown by method; null on normal completion
+     * @return {@code true} if event the {@code afterInvocation} was fired; otherwise {@code false}
      */
     private static boolean fireAfterInvocation(Object runner, Object target, FrameworkMethod method, Throwable thrown) {
         if ((runner != null) && (method != null) && (afterNotified.add(methodHash(runner, method)))) {
@@ -173,10 +179,11 @@ public class RunReflectiveCall {
     }
     
     /**
+     * Generate a hash code for the specified runner/method pair.
      * 
-     * @param runner
-     * @param method
-     * @return
+     * @param runner JUnit test runner
+     * @param method {@link FrameworkMethod} object
+     * @return hash code for the specified runner/method pair
      */
     private static int methodHash(Object runner, FrameworkMethod method) {
         return runner.toString().hashCode() * 31 + method.hashCode();
