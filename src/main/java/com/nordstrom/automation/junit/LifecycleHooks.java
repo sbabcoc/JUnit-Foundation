@@ -7,29 +7,22 @@ import java.lang.instrument.Instrumentation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.EmptyStackException;
-import java.util.List;
-import java.util.Map;
+import java.util.Arrays;
 import java.util.ServiceLoader;
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
+
 import org.junit.Test;
 import org.junit.runner.Description;
-import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.TestClass;
 import com.nordstrom.automation.junit.JUnitConfig.JUnitSettings;
 import com.nordstrom.common.base.UncheckedThrow;
 import com.nordstrom.common.file.PathUtils.ReportsDirectory;
 
 import net.bytebuddy.agent.builder.AgentBuilder;
+import net.bytebuddy.description.method.MethodDescription;
+import net.bytebuddy.description.method.MethodDescription.SignatureToken;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.implementation.MethodDelegation;
-import net.bytebuddy.implementation.bind.annotation.Argument;
-import net.bytebuddy.implementation.bind.annotation.RuntimeType;
-import net.bytebuddy.implementation.bind.annotation.SuperCall;
-import net.bytebuddy.implementation.bind.annotation.This;
 import net.bytebuddy.pool.TypePool;
 
 /**
@@ -71,33 +64,27 @@ public class LifecycleHooks {
      * @return The installed class file transformer
      */
     public static ClassFileTransformer installTransformer(Instrumentation instrumentation) {
-        TypeDescription reflectiveCallable = TypePool.Default.ofSystemLoader().describe("org.junit.internal.runners.model.ReflectiveCallable").resolve();
-        TypeDescription parentRunner = TypePool.Default.ofSystemLoader().describe("org.junit.runners.ParentRunner").resolve();
-        TypeDescription blockJUnit4ClassRunner = TypePool.Default.ofSystemLoader().describe("org.junit.runners.BlockJUnit4ClassRunner").resolve();
-        TypeDescription suite = TypePool.Default.ofSystemLoader().describe("org.junit.runners.Suite").resolve();
+        TypeDescription runReflectiveCall = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.RunReflectiveCall").resolve();
+        TypeDescription finished = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.Finished").resolve();
+        TypeDescription createTest = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.CreateTest").resolve();
+        TypeDescription runChild = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.RunChild").resolve();
+        TypeDescription run = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.Run").resolve();
+        
+        TypeDescription runNotifier = TypePool.Default.ofSystemLoader().describe("org.junit.runner.notification.RunNotifier").resolve();
+        SignatureToken runToken = new SignatureToken("run", TypeDescription.VOID, Arrays.asList(runNotifier));
         
         return new AgentBuilder.Default()
-                .type(isSubTypeOf(reflectiveCallable))
+                .type(hasSuperType(named("org.junit.internal.runners.model.ReflectiveCallable"))
+                  .or(hasSuperType(named("org.junit.runners.model.RunnerScheduler")))
+                  .or(hasSuperType(named("org.junit.runners.BlockJUnit4ClassRunner")))
+                  .or(hasSuperType(named("org.junit.runners.ParentRunner"))))
                 .transform((builder, type, classLoader, module) -> 
-                        builder.method(named("runReflectiveCall")).intercept(MethodDelegation.to(RunReflectiveCall.class))
-                               .implement(Hooked.class))
-                .type(is(parentRunner))
-                .transform((builder, type, classLoader, module) -> 
-                        builder.method(named("createTestClass")).intercept(MethodDelegation.to(CreateTestClass.class))
-                               .method(named("run")).intercept(MethodDelegation.to(Run.class))
-                               .implement(Hooked.class))
-                .type(isSubTypeOf(suite))
-                .transform((builder, type, classLoader, module) -> 
-                        builder.method(named("createTestClass")).intercept(MethodDelegation.to(CreateTestClass.class))
-                               .method(named("run")).intercept(MethodDelegation.to(Run.class))
-                               .implement(Hooked.class))
-                .type(isSubTypeOf(blockJUnit4ClassRunner))
-                .transform((builder, type, classLoader, module) -> 
-                        builder.method(named("createTestClass")).intercept(MethodDelegation.to(CreateTestClass.class))
-                               .method(named("createTest")).intercept(MethodDelegation.to(CreateTest.class))
-                               .method(named("runChild")).intercept(MethodDelegation.to(RunChild.class))
-                               .method(named("run")).intercept(MethodDelegation.to(Run.class))
-                               .implement(Hooked.class))
+                        builder.method(named("runReflectiveCall")).intercept(MethodDelegation.to(runReflectiveCall))
+                               .method(named("finished")).intercept(MethodDelegation.to(finished))
+                               .method(named("createTest")).intercept(MethodDelegation.to(createTest))
+                               .method(named("runChild")).intercept(MethodDelegation.to(runChild))
+                               .method(hasSignature(runToken)).intercept(MethodDelegation.to(run))
+                .implement(Hooked.class))
                 .installOn(instrumentation);
     }
     
@@ -129,156 +116,6 @@ public class LifecycleHooks {
     }
     
     /**
-     * This class declares the interceptor for the {@link org.junit.runners.ParentRunner#run run} method.
-     */
-    @SuppressWarnings("squid:S1118")
-    public static class Run {
-        private static final ThreadLocal<Deque<Object>> runnerStack;
-        private static final ServiceLoader<RunnerWatcher> runnerWatcherLoader;
-        private static final Map<Object, Object> CHILD_TO_PARENT = new ConcurrentHashMap<>();
-        
-        static {
-            runnerStack = ThreadLocal.withInitial(ArrayDeque::new);
-            runnerWatcherLoader = ServiceLoader.load(RunnerWatcher.class);
-        }
-        
-        /**
-         * Interceptor for the {@link org.junit.runners.ParentRunner#run run} method.
-         * 
-         * @param runner underlying test runner
-         * @param proxy callable proxy for the intercepted method
-         * @param notifier run notifier through which events are published
-         * @throws Exception {@code anything} (exception thrown by the intercepted method)
-         */
-        public static void intercept(@This final Object runner, @SuperCall final Callable<?> proxy,
-                        @Argument(0) final RunNotifier notifier) throws Exception {
-            
-            Deque<Object> stack = runnerStack.get();
-            boolean doNotify = (stack.isEmpty() || (stack.peek() != runner));
-            
-            List<?> children = invoke(runner, "getChildren");
-            for (Object child : children) {
-                CHILD_TO_PARENT.put(child, runner);
-            }
-            
-            if (doNotify) {
-                synchronized(runnerWatcherLoader) {
-                    for (RunnerWatcher watcher : runnerWatcherLoader) {
-                        watcher.runStarted(runner);
-                    }
-                }
-            }
-            
-            stack.push(runner);
-            callProxy(proxy);
-            stack.pop();
-            
-            if (doNotify) {
-                synchronized(runnerWatcherLoader) {
-                    for (RunnerWatcher watcher : runnerWatcherLoader) {
-                        watcher.runFinished(runner);
-                    }
-                }
-            }
-        }
-        
-        /**
-         * Get the parent runner that owns specified child runner or framework method.
-         * 
-         * @param child {@code ParentRunner} or {@code FrameworkMethod} object
-         * @return {@code ParentRunner} object that owns the specified child ({@code null} for root objects)
-         */
-        static Object getParentOf(Object child) {
-            return CHILD_TO_PARENT.get(child);
-        }
-        
-        /**
-         * Get the runner that owns the active thread context.
-         * 
-         * @return active {@code ParentRunner} object
-         * @throws EmptyStackException if called outside the scope of an active runner
-         */
-        static Object getThreadRunner() {
-            return runnerStack.get().peek();
-        }
-    }
-    
-    /**
-     * This class declares the interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#createTest
-     * createTest} method.
-     */
-    @SuppressWarnings("squid:S1118")
-    public static class CreateTest {
-        
-        private static final ServiceLoader<TestObjectWatcher> objectWatcherLoader;
-        private static final Map<Object, Object> TARGET_TO_RUNNER = new ConcurrentHashMap<>();
-        private static final Map<Object, Object> RUNNER_TO_TARGET = new ConcurrentHashMap<>();
-        private static final ThreadLocal<Integer> COUNTER;
-        private static final DepthGauge DEPTH;
-        
-        static {
-            objectWatcherLoader = ServiceLoader.load(TestObjectWatcher.class);
-            COUNTER = DepthGauge.getCounter();
-            DEPTH = new DepthGauge(COUNTER);
-        }
-        
-        /**
-         * Interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#createTest createTest} method.
-         * 
-         * @param runner target {@link org.junit.runners.BlockJUnit4ClassRunner BlockJUnit4ClassRunner} object
-         * @param proxy callable proxy for the intercepted method
-         * @return {@code anything} - JUnit test class instance
-         * @throws Exception {@code anything} (exception thrown by the intercepted method)
-         */
-        @RuntimeType
-        public static Object intercept(@This final Object runner,
-                        @SuperCall final Callable<?> proxy) throws Exception {
-            
-            Object testObj;
-            try {
-                DEPTH.increaseDepth();
-                testObj = callProxy(proxy);
-            } finally {
-                DEPTH.decreaseDepth();
-            }
-            
-            TARGET_TO_RUNNER.put(testObj, runner);
-            RUNNER_TO_TARGET.put(runner, testObj);
-            applyTimeout(testObj);
-            
-            if (DEPTH.atGroundLevel()) {
-                synchronized(objectWatcherLoader) {
-                    for (TestObjectWatcher watcher : objectWatcherLoader) {
-                        watcher.testObjectCreated(testObj, runner);
-                    }
-                }
-            }
-            
-            return testObj;
-        }
-        
-        /**
-         * Get the class runner associated with the specified instance.
-         * 
-         * @param target instance of JUnit test class
-         * @return {@link org.junit.runners.BlockJUnit4ClassRunner BlockJUnit4ClassRunner} for specified instance
-         */
-        static Object getRunnerForTarget(Object target) {
-            return TARGET_TO_RUNNER.get(target);
-        }
-        
-        /**
-         * Get the JUnit test class instance for the specified class runner.
-         * 
-         * @param runner JUnit class runner
-         * @return JUnit test class instance for specified runner
-         */
-        static Object getTargetForRunner(Object runner) {
-            return RUNNER_TO_TARGET.get(runner);
-        }
-    }
-    
-    /**
      * Get the class runner associated with the specified instance.
      * 
      * @param target instance of JUnit test class
@@ -299,30 +136,20 @@ public class LifecycleHooks {
     }
     
     /**
-     * Get the test class associated with the specified framework method.
-     * 
-     * @param method {@code FrameworkMethod} object
-     * @return {@link TestClass} object associated with the specified framework method
-     */
-    public static TestClass getTestClassWith(Object method) {
-        return CreateTestClass.getTestClassWith(method);
-    }
-    
-    /**
      * Get the parent runner that owns specified child runner or framework method.
      * 
      * @param child {@code ParentRunner} or {@code FrameworkMethod} object
-     * @return {@code ParentRunner} object that owns the specified child ({@code null} for root objects)
+     * @return {@code ParentRunner} object that owns the specified child ({@code null} for root
+     *         objects)
      */
     public static Object getParentOf(Object child) {
         return Run.getParentOf(child);
     }
-    
+
     /**
      * Get the runner that owns the active thread context.
      * 
-     * @return active {@code ParentRunner} object
-     * @throws EmptyStackException if called outside the scope of an active runner
+     * @return active {@code ParentRunner} object (may be ({@code null})
      */
     public static Object getThreadRunner() {
         return Run.getThreadRunner();

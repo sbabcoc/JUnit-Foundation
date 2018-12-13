@@ -5,7 +5,10 @@ import static com.nordstrom.automation.junit.LifecycleHooks.getFieldValue;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArraySet;
+
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -13,8 +16,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runners.model.FrameworkMethod;
 
-import com.nordstrom.automation.junit.LifecycleHooks.CreateTest;
-import com.nordstrom.automation.junit.LifecycleHooks.Run;
 import com.nordstrom.common.base.UncheckedThrow;
 
 import net.bytebuddy.implementation.bind.annotation.RuntimeType;
@@ -29,14 +30,11 @@ import net.bytebuddy.implementation.bind.annotation.This;
 public class RunReflectiveCall {
     
     private static final ServiceLoader<MethodWatcher> methodWatcherLoader;
+    private static final Set<Integer> beforeNotified = new CopyOnWriteArraySet<>();
+    private static final Set<Integer> afterNotified = new CopyOnWriteArraySet<>();
     
-    private static final ThreadLocal<Integer> COUNTER;
-    private static final DepthGauge DEPTH;
-  
     static {
         methodWatcherLoader = ServiceLoader.load(MethodWatcher.class);
-        COUNTER = DepthGauge.getCounter();
-        DEPTH = new DepthGauge(COUNTER);
     }
     
     /**
@@ -84,28 +82,14 @@ public class RunReflectiveCall {
         
         Object result = null;
         Throwable thrown = null;
-        
-        if (DEPTH.atGroundLevel()) {
-            synchronized(methodWatcherLoader) {
-                for (MethodWatcher watcher : methodWatcherLoader) {
-                    watcher.beforeInvocation(runner, target, method, params);
-                }
-            }
-        }
+        fireBeforeInvocation(runner, target, method, params);
 
         try {
-            DEPTH.increaseDepth();
             result = LifecycleHooks.callProxy(proxy);
         } catch (Throwable t) {
             thrown = t;
         } finally {
-            if (0 == DEPTH.decreaseDepth()) {
-                synchronized(methodWatcherLoader) {
-                    for (MethodWatcher watcher : methodWatcherLoader) {
-                        watcher.afterInvocation(runner, target, method, thrown);
-                    }
-                }
-            }
+            fireAfterInvocation(runner, target, method, thrown);
         }
 
         if (thrown != null) {
@@ -146,5 +130,62 @@ public class RunReflectiveCall {
                 (null != method.getAnnotation(After.class)) ||
                 (null != method.getAnnotation(BeforeClass.class)) ||
                 (null != method.getAnnotation(AfterClass.class)));
+    }
+    
+    /**
+     * Fire the {@link MethodWatcher#beforeInvocation(Object, Object, FrameworkMethod, Object...) event.
+     * <p>
+     * If the {@code beforeInvocation} event for the specified method has already been fired, do nothing.
+     * 
+     * @param runner JUnit test runner
+     * @param target "enhanced" object upon which the method was invoked
+     * @param method {@link FrameworkMethod} object for the invoked method
+     * @param params method invocation parameters
+     * @return {@code true} if event the {@code beforeInvocation} was fired; otherwise {@code false}
+     */
+    private static boolean fireBeforeInvocation(Object runner, Object target, FrameworkMethod method, Object... params) {
+        if ((runner != null) && (method != null) && (beforeNotified.add(methodHash(runner, method)))) {
+            synchronized(methodWatcherLoader) {
+                for (MethodWatcher watcher : methodWatcherLoader) {
+                    watcher.beforeInvocation(runner, target, method, params);
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+    
+    /**
+     * Fire the {@link MethodWatcher#afterInvocation(Object, Object, FrameworkMethod, Throwable) event.
+     * <p>
+     * If the {@code afterInvocation} event for the specified method has already been fired, do nothing.
+     * 
+     * @param runner JUnit test runner
+     * @param target "enhanced" object upon which the method was invoked
+     * @param method {@link FrameworkMethod} object for the invoked method
+     * @param thrown exception thrown by method; null on normal completion
+     * @return {@code true} if event the {@code afterInvocation} was fired; otherwise {@code false}
+     */
+    private static boolean fireAfterInvocation(Object runner, Object target, FrameworkMethod method, Throwable thrown) {
+        if ((runner != null) && (method != null) && (afterNotified.add(methodHash(runner, method)))) {
+            synchronized(methodWatcherLoader) {
+                for (MethodWatcher watcher : methodWatcherLoader) {
+                    watcher.afterInvocation(runner, target, method, thrown);
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+    
+    /**
+     * Generate a hash code for the specified runner/method pair.
+     * 
+     * @param runner JUnit test runner
+     * @param method {@link FrameworkMethod} object
+     * @return hash code for the specified runner/method pair
+     */
+    private static int methodHash(Object runner, FrameworkMethod method) {
+        return runner.toString().hashCode() * 31 + method.hashCode();
     }
 }
