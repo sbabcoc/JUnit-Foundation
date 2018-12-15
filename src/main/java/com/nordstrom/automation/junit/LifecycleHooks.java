@@ -19,7 +19,6 @@ import com.nordstrom.common.base.UncheckedThrow;
 import com.nordstrom.common.file.PathUtils.ReportsDirectory;
 
 import net.bytebuddy.agent.builder.AgentBuilder;
-import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.method.MethodDescription.SignatureToken;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.implementation.MethodDelegation;
@@ -74,17 +73,20 @@ public class LifecycleHooks {
         SignatureToken runToken = new SignatureToken("run", TypeDescription.VOID, Arrays.asList(runNotifier));
         
         return new AgentBuilder.Default()
-                .type(hasSuperType(named("org.junit.internal.runners.model.ReflectiveCallable"))
-                  .or(hasSuperType(named("org.junit.runners.model.RunnerScheduler")))
-                  .or(hasSuperType(named("org.junit.runners.BlockJUnit4ClassRunner")))
-                  .or(hasSuperType(named("org.junit.runners.ParentRunner"))))
+                .type(hasSuperType(named("org.junit.internal.runners.model.ReflectiveCallable")))
                 .transform((builder, type, classLoader, module) -> 
                         builder.method(named("runReflectiveCall")).intercept(MethodDelegation.to(runReflectiveCall))
-                               .method(named("finished")).intercept(MethodDelegation.to(finished))
-                               .method(named("createTest")).intercept(MethodDelegation.to(createTest))
+                               .implement(Hooked.class))
+                .type(hasSuperType(named("org.junit.runners.model.RunnerScheduler")))
+                .transform((builder, type, classLoader, module) -> 
+                        builder.method(named("finished")).intercept(MethodDelegation.to(finished))
+                               .implement(Hooked.class))
+                .type(hasSuperType(named("org.junit.runners.ParentRunner")))
+                .transform((builder, type, classLoader, module) -> 
+                        builder.method(named("createTest")).intercept(MethodDelegation.to(createTest))
                                .method(named("runChild")).intercept(MethodDelegation.to(runChild))
                                .method(hasSignature(runToken)).intercept(MethodDelegation.to(run))
-                .implement(Hooked.class))
+                               .implement(Hooked.class))
                 .installOn(instrumentation);
     }
     
