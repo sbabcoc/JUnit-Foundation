@@ -19,13 +19,10 @@ public class CreateTest {
     private static final ServiceLoader<TestObjectWatcher> objectWatcherLoader;
     private static final Map<Object, Object> TARGET_TO_RUNNER = new ConcurrentHashMap<>();
     private static final Map<Object, Object> RUNNER_TO_TARGET = new ConcurrentHashMap<>();
-    private static final ThreadLocal<Integer> COUNTER;
-    private static final DepthGauge DEPTH;
+    private static final ThreadLocal<DepthGauge> DEPTH = ThreadLocal.withInitial(DepthGauge::new);
     
     static {
         objectWatcherLoader = ServiceLoader.load(TestObjectWatcher.class);
-        COUNTER = DepthGauge.getCounter();
-        DEPTH = new DepthGauge(COUNTER);
     }
     
     /**
@@ -42,17 +39,17 @@ public class CreateTest {
         
         Object testObj;
         try {
-            DEPTH.increaseDepth();
+            DEPTH.get().increaseDepth();
             testObj = LifecycleHooks.callProxy(proxy);
         } finally {
-            DEPTH.decreaseDepth();
+            DEPTH.get().decreaseDepth();
         }
         
         TARGET_TO_RUNNER.put(testObj, runner);
         RUNNER_TO_TARGET.put(runner, testObj);
         LifecycleHooks.applyTimeout(testObj);
         
-        if (DEPTH.atGroundLevel()) {
+        if (DEPTH.get().atGroundLevel()) {
             synchronized(objectWatcherLoader) {
                 for (TestObjectWatcher watcher : objectWatcherLoader) {
                     watcher.testObjectCreated(testObj, runner);
