@@ -2,13 +2,12 @@ package com.nordstrom.automation.junit;
 
 import static com.nordstrom.automation.junit.LifecycleHooks.getFieldValue;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
-import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CopyOnWriteArraySet;
-
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -30,8 +29,7 @@ import net.bytebuddy.implementation.bind.annotation.This;
 public class RunReflectiveCall {
     
     private static final ServiceLoader<MethodWatcher> methodWatcherLoader;
-    private static final Set<Integer> beforeNotified = new CopyOnWriteArraySet<>();
-    private static final Set<Integer> afterNotified = new CopyOnWriteArraySet<>();
+    private static final ThreadLocal<Map<Integer, DepthGauge>> methodDepth = ThreadLocal.withInitial(HashMap::new);
     
     static {
         methodWatcherLoader = ServiceLoader.load(MethodWatcher.class);
@@ -82,9 +80,9 @@ public class RunReflectiveCall {
         
         Object result = null;
         Throwable thrown = null;
-        fireBeforeInvocation(runner, target, method, params);
 
         try {
+            fireBeforeInvocation(runner, target, method, params);
             result = LifecycleHooks.callProxy(proxy);
         } catch (Throwable t) {
             thrown = t;
@@ -144,13 +142,16 @@ public class RunReflectiveCall {
      * @return {@code true} if event the {@code beforeInvocation} was fired; otherwise {@code false}
      */
     private static boolean fireBeforeInvocation(Object runner, Object target, FrameworkMethod method, Object... params) {
-        if ((runner != null) && (method != null) && (beforeNotified.add(methodHash(runner, method)))) {
-            synchronized(methodWatcherLoader) {
-                for (MethodWatcher watcher : methodWatcherLoader) {
-                    watcher.beforeInvocation(runner, target, method, params);
+        if ((runner != null) && (method != null)) {
+            DepthGauge depthGauge = methodDepth.get().computeIfAbsent(methodHash(runner, method), k -> new DepthGauge());
+            if (0 == depthGauge.increaseDepth()) {
+                synchronized(methodWatcherLoader) {
+                    for (MethodWatcher watcher : methodWatcherLoader) {
+                        watcher.beforeInvocation(runner, target, method, params);
+                    }
                 }
+                return true;
             }
-            return true;
         }
         return false;
     }
@@ -167,13 +168,16 @@ public class RunReflectiveCall {
      * @return {@code true} if event the {@code afterInvocation} was fired; otherwise {@code false}
      */
     private static boolean fireAfterInvocation(Object runner, Object target, FrameworkMethod method, Throwable thrown) {
-        if ((runner != null) && (method != null) && (afterNotified.add(methodHash(runner, method)))) {
-            synchronized(methodWatcherLoader) {
-                for (MethodWatcher watcher : methodWatcherLoader) {
-                    watcher.afterInvocation(runner, target, method, thrown);
+        if ((runner != null) && (method != null)) {
+            DepthGauge depthGauge = methodDepth.get().computeIfAbsent(methodHash(runner, method), k -> new DepthGauge());
+            if (0 == depthGauge.decreaseDepth()) {
+                synchronized(methodWatcherLoader) {
+                    for (MethodWatcher watcher : methodWatcherLoader) {
+                        watcher.afterInvocation(runner, target, method, thrown);
+                    }
                 }
+                return true;
             }
-            return true;
         }
         return false;
     }
@@ -185,7 +189,7 @@ public class RunReflectiveCall {
      * @param method {@link FrameworkMethod} object
      * @return hash code for the specified runner/method pair
      */
-    private static int methodHash(Object runner, FrameworkMethod method) {
-        return runner.toString().hashCode() * 31 + method.hashCode();
+    public static int methodHash(Object runner, FrameworkMethod method) {
+        return ((Thread.currentThread().hashCode() * 31) + runner.hashCode()) * 31 + method.hashCode();
     }
 }
