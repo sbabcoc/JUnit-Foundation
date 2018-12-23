@@ -109,7 +109,7 @@ The hooks that enable **JUnit Foundation** test lifecycle notifications are inst
     <dependency>
       <groupId>com.nordstrom.tools</groupId>
       <artifactId>junit-foundation</artifactId>
-      <version>6.2.0</version>
+      <version>9.0.3</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -198,8 +198,8 @@ test {
 }
 dependencies {
     ...
-    compile 'com.nordstrom.tools:junit-foundation:6.2.0'
-    junitAgent 'com.nordstrom.tools:junit-foundation:6.2.0'
+    compile 'com.nordstrom.tools:junit-foundation:9.0.3'
+    junitAgent 'com.nordstrom.tools:junit-foundation:9.0.3'
 }
 ```
 
@@ -309,7 +309,7 @@ As indicated previously, **JUnit Foundation** will automatically attach standard
 
 ### Support for Parallel Execution
 
-The ability to run **JUnit** tests in parallel is provided by the JUnit 4 test runner of the [Maven Surefire plugin](https://maven.apache.org/surefire/maven-surefire-plugin/examples/fork-options-and-parallel-execution.html). This feature utilizes private **JUnit** interfaces and undocuments behaviors, which greatly complicated the task of adding event notification hooks. As of version [9.0.1](https://github.com/Nordstrom/JUnit-Foundation/releases/tag/junit-foundation-9.0.1), **JUnit Foundation** supports parallel execution of both classes and methods.
+The ability to run **JUnit** tests in parallel is provided by the JUnit 4 test runner of the [Maven Surefire plugin](https://maven.apache.org/surefire/maven-surefire-plugin/examples/fork-options-and-parallel-execution.html). This feature utilizes private **JUnit** interfaces and undocuments behaviors, which greatly complicated the task of adding event notification hooks. As of version [9.0.3](https://github.com/Nordstrom/JUnit-Foundation/releases/tag/junit-foundation-9.0.3), **JUnit Foundation** supports parallel execution of both classes and methods.
 
 ### Support for Parameterized Tests
 
