@@ -184,22 +184,20 @@ repositories {
     mavenCentral()
     ...
 }
-configurations {
+dependencies {
     ...
-    junitAgent
+    compile 'com.nordstrom.tools:junit-foundation:9.0.3'
+}
+ext {
+    junitFoundation = configurations.compile.resolvedConfiguration.resolvedArtifacts.find { it.name == 'junit-foundation' }
 }
 test.doFirst {
-    jvmArgs "-javaagent:${configurations.junitAgent.files.iterator().next()}"
+    jvmArgs "-javaagent:${junitFoundation.file}"
 }
 test {
 //  debug true
     // not required, but definitely useful
     testLogging.showStandardStreams = true
-}
-dependencies {
-    ...
-    compile 'com.nordstrom.tools:junit-foundation:9.0.3'
-    junitAgent 'com.nordstrom.tools:junit-foundation:9.0.3'
 }
 ```
 
