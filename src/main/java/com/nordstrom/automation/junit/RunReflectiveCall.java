@@ -4,7 +4,6 @@ import static com.nordstrom.automation.junit.LifecycleHooks.getFieldValue;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.concurrent.Callable;
@@ -100,16 +99,18 @@ public class RunReflectiveCall {
     /**
      * Get reference to an instance of the specified watcher type.
      * 
+     * @param <T> watcher type
      * @param watcherType watcher type
      * @return optional watcher instance
      */
-    public static Optional<MethodWatcher> getAttachedWatcher(
-                    Class<? extends MethodWatcher> watcherType) {
-        Objects.requireNonNull(watcherType, "[watcherType] must be non-null");
-        synchronized(methodWatcherLoader) {
-            for (MethodWatcher watcher : methodWatcherLoader) {
-                if (watcher.getClass() == watcherType) {
-                    return Optional.of(watcher);
+    @SuppressWarnings("unchecked")
+    static <T extends JUnitWatcher> Optional<T> getAttachedWatcher(Class<T> watcherType) {
+        if (MethodWatcher.class.isAssignableFrom(watcherType)) {
+            synchronized(methodWatcherLoader) {
+                for (MethodWatcher watcher : methodWatcherLoader) {
+                    if (watcher.getClass() == watcherType) {
+                        return Optional.of((T) watcher);
+                    }
                 }
             }
         }

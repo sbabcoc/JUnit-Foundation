@@ -1,6 +1,6 @@
 package com.nordstrom.automation.junit;
 
-public interface RunnerWatcher {
+public interface RunnerWatcher extends JUnitWatcher {
 
     /**
      * Called when a test runner is about to run.
