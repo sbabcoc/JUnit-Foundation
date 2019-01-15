@@ -109,7 +109,7 @@ The hooks that enable **JUnit Foundation** test lifecycle notifications are inst
     <dependency>
       <groupId>com.nordstrom.tools</groupId>
       <artifactId>junit-foundation</artifactId>
-      <version>6.2.0</version>
+      <version>9.0.4</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -184,22 +184,20 @@ repositories {
     mavenCentral()
     ...
 }
-configurations {
+dependencies {
     ...
-    junitAgent
+    compile 'com.nordstrom.tools:junit-foundation:9.0.4'
+}
+ext {
+    junitFoundation = configurations.compile.resolvedConfiguration.resolvedArtifacts.find { it.name == 'junit-foundation' }
 }
 test.doFirst {
-    jvmArgs "-javaagent:${configurations.junitAgent.files.iterator().next()}"
+    jvmArgs "-javaagent:${junitFoundation.file}"
 }
 test {
 //  debug true
     // not required, but definitely useful
     testLogging.showStandardStreams = true
-}
-dependencies {
-    ...
-    compile 'com.nordstrom.tools:junit-foundation:6.2.0'
-    junitAgent 'com.nordstrom.tools:junit-foundation:6.2.0'
 }
 ```
 
@@ -234,12 +232,6 @@ The preceding **ServiceLoader** provider configuration files declare a **JUnit F
 **RunnerWatcher** provides callbacks for events in the lifecycle of **`ParentRunner`** objects. It receives the following notifications:
   * A **`ParentRunner`** object is about to run.
   * A **`ParentRunner`** object has finished running.
-* [TestClassWatcher](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/TestClassWatcher.java)  
-**TestClassWatcher** provides callbacks for events in the lifecycle of **`TestClass`** objects. It receives the following notifications:
-  * A **`TestClass`** object has been created to represent a JUnit test class or suite. Each **`TestClass`** has a one-to-one relationship with the JUnit runner that created it. (see **NOTE**)
-  * A **`TestClass`** object has been scheduled to run. This signals that the first child of the JUnit test class or suite is about start.
-  * A **`TestClass`** object has finished running. This signals that the last child of the JUnit test class or suite is done.
-  * **NOTE** - This interface supercedes a prior version, adding the runner object to start/finish notifications. Test executers like Maven Surefire create suite runners for their own purposes (e.g. - parallel execution context). This breaks the one-to-one relationship between **`TestClass`** objects and runners. Consequently, the **`TestClass`** object cannot be assumed to represent a unique context. 
 * [TestObjectWatcher](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/TestObjectWatcher.java)  
 **TestObjectWatcher** provides callbacks for events in the lifecycle of Java test class instances. It receives the following notification:
   * An instance of a JUnit test class has been created for the execution of a single `atomic test`.
@@ -309,7 +301,13 @@ Note that the implementation in this method watcher uses the annotations attache
 
 ### Support for Standard JUnit RunListener Providers
 
-As indicated previously, **JUnit Foundation** will automatically attach standard JUnit **RunListener** providers that are declared in the associated **ServiceLoader** provider configuration file (i.e. - **_org.junit.runner.notification.RunListener_**). Declared run listeners are attached to the **RunNotifier** supplied to the `run()` method of JUnit runners. This feature eliminates behavioral differences between the various test execution environments like Maven, Gradle, and native IDE test runners.
+As indicated previously, **JUnit Foundation** will automatically attach standard JUnit **`RunListener`** providers that are declared in the associated **`ServiceLoader`** provider configuration file (i.e. - **_org.junit.runner.notification.RunListener_**). Declared run listeners are attached to the **`RunNotifier`** supplied to the `run()` method of JUnit runners. This feature eliminates behavioral differences between the various test execution environments like Maven, Gradle, and native IDE test runners.
+
+**JUnit Foundation** uses this feature internally; notifications sent to **`RunWatcher`** service providers are published by an auto-attached **`RunListener`**. This notification-enhancing run listener, named [RunAnnouncer](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/RunAnnouncer.java), is registered via the aforementioned [**ServiceLoader** provider configuration file](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/resources/META-INF/services/org.junit.runner.notification.RunListener).
+
+### Support for Parallel Execution
+
+The ability to run **JUnit** tests in parallel is provided by the JUnit 4 test runner of the [Maven Surefire plugin](https://maven.apache.org/surefire/maven-surefire-plugin/examples/fork-options-and-parallel-execution.html). This feature utilizes private **JUnit** interfaces and undocuments behaviors, which greatly complicated the task of adding event notification hooks. As of version [9.0.3](https://github.com/Nordstrom/JUnit-Foundation/releases/tag/junit-foundation-9.0.3), **JUnit Foundation** supports parallel execution of both classes and methods.
 
 ### Support for Parameterized Tests
 

@@ -2,11 +2,7 @@ package com.nordstrom.automation.junit;
 
 public class DepthGauge {
     
-    private final ThreadLocal<Integer> counter;
-    
-    public DepthGauge(ThreadLocal<Integer> counter) {
-        this.counter = counter;
-    }
+    private int counter = 0;
     
     /**
      * Determine if the depth is at ground level (i.e. - zero).
@@ -14,7 +10,7 @@ public class DepthGauge {
      * @return {@code true} if depth is 0; otherwise {@code false}
      */
     public boolean atGroundLevel() {
-        return (0 == currentDepth());
+        return (0 == counter);
     }
     
     /**
@@ -23,25 +19,25 @@ public class DepthGauge {
      * @return current depth count
      */
     public int currentDepth() {
-        return counter.get().intValue();
+        return counter;
     }
     
     /**
      * Increment intercept depth counter
      * 
-     * @return updated depth count
+     * @return depth count prior to update
      */
-    public int increaseDepth() {
-        return adjustDepth(1);
+    public synchronized int increaseDepth() {
+        return adjustDepth(1) - 1;
     }
     
     /**
      * Decrement intercept depth counter
      * 
-     * @return updated depth count
+     * @return depth count after update
      */
-    public int decreaseDepth() {
-        if (counter.get().intValue() > 0) {
+    public synchronized int decreaseDepth() {
+        if (counter > 0) {
             return adjustDepth(-1);
         }
         throw new IllegalStateException("Unbalanced depth management; negative depth is prohibited");
@@ -54,23 +50,7 @@ public class DepthGauge {
      * @return updated depth count
      */
     private int adjustDepth(final int delta) {
-        int i = counter.get().intValue() + delta;
-        counter.set(Integer.valueOf(i));
-        return i;
+        counter += delta;
+        return counter;
     }
-    
-    /**
-     * Get depth counter.
-     * 
-     * @return thread-local integer with initial value of 0
-     */
-    public static ThreadLocal<Integer> getCounter() {
-        return new InheritableThreadLocal<Integer>() {
-            @Override
-            protected Integer initialValue() {
-                return Integer.valueOf(0);
-            }
-        };
-    }
-    
 }

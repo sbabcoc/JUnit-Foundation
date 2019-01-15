@@ -2,6 +2,8 @@ package com.nordstrom.automation.junit;
 
 import static com.nordstrom.automation.junit.LifecycleHooks.getFieldValue;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
@@ -13,8 +15,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runners.model.FrameworkMethod;
 
-import com.nordstrom.automation.junit.LifecycleHooks.CreateTest;
-import com.nordstrom.automation.junit.LifecycleHooks.Run;
 import com.nordstrom.common.base.UncheckedThrow;
 
 import net.bytebuddy.implementation.bind.annotation.RuntimeType;
@@ -29,14 +29,10 @@ import net.bytebuddy.implementation.bind.annotation.This;
 public class RunReflectiveCall {
     
     private static final ServiceLoader<MethodWatcher> methodWatcherLoader;
+    private static final ThreadLocal<Map<Integer, DepthGauge>> methodDepth = ThreadLocal.withInitial(HashMap::new);
     
-    private static final ThreadLocal<Integer> COUNTER;
-    private static final DepthGauge DEPTH;
-  
     static {
         methodWatcherLoader = ServiceLoader.load(MethodWatcher.class);
-        COUNTER = DepthGauge.getCounter();
-        DEPTH = new DepthGauge(COUNTER);
     }
     
     /**
@@ -84,28 +80,14 @@ public class RunReflectiveCall {
         
         Object result = null;
         Throwable thrown = null;
-        
-        if (DEPTH.atGroundLevel()) {
-            synchronized(methodWatcherLoader) {
-                for (MethodWatcher watcher : methodWatcherLoader) {
-                    watcher.beforeInvocation(runner, target, method, params);
-                }
-            }
-        }
 
         try {
-            DEPTH.increaseDepth();
+            fireBeforeInvocation(runner, target, method, params);
             result = LifecycleHooks.callProxy(proxy);
         } catch (Throwable t) {
             thrown = t;
         } finally {
-            if (0 == DEPTH.decreaseDepth()) {
-                synchronized(methodWatcherLoader) {
-                    for (MethodWatcher watcher : methodWatcherLoader) {
-                        watcher.afterInvocation(runner, target, method, thrown);
-                    }
-                }
-            }
+            fireAfterInvocation(runner, target, method, thrown);
         }
 
         if (thrown != null) {
@@ -146,5 +128,68 @@ public class RunReflectiveCall {
                 (null != method.getAnnotation(After.class)) ||
                 (null != method.getAnnotation(BeforeClass.class)) ||
                 (null != method.getAnnotation(AfterClass.class)));
+    }
+    
+    /**
+     * Fire the {@link MethodWatcher#beforeInvocation(Object, Object, FrameworkMethod, Object...) event.
+     * <p>
+     * If the {@code beforeInvocation} event for the specified method has already been fired, do nothing.
+     * 
+     * @param runner JUnit test runner
+     * @param target "enhanced" object upon which the method was invoked
+     * @param method {@link FrameworkMethod} object for the invoked method
+     * @param params method invocation parameters
+     * @return {@code true} if event the {@code beforeInvocation} was fired; otherwise {@code false}
+     */
+    private static boolean fireBeforeInvocation(Object runner, Object target, FrameworkMethod method, Object... params) {
+        if ((runner != null) && (method != null)) {
+            DepthGauge depthGauge = methodDepth.get().computeIfAbsent(methodHash(runner, method), k -> new DepthGauge());
+            if (0 == depthGauge.increaseDepth()) {
+                synchronized(methodWatcherLoader) {
+                    for (MethodWatcher watcher : methodWatcherLoader) {
+                        watcher.beforeInvocation(runner, target, method, params);
+                    }
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    /**
+     * Fire the {@link MethodWatcher#afterInvocation(Object, Object, FrameworkMethod, Throwable) event.
+     * <p>
+     * If the {@code afterInvocation} event for the specified method has already been fired, do nothing.
+     * 
+     * @param runner JUnit test runner
+     * @param target "enhanced" object upon which the method was invoked
+     * @param method {@link FrameworkMethod} object for the invoked method
+     * @param thrown exception thrown by method; null on normal completion
+     * @return {@code true} if event the {@code afterInvocation} was fired; otherwise {@code false}
+     */
+    private static boolean fireAfterInvocation(Object runner, Object target, FrameworkMethod method, Throwable thrown) {
+        if ((runner != null) && (method != null)) {
+            DepthGauge depthGauge = methodDepth.get().computeIfAbsent(methodHash(runner, method), k -> new DepthGauge());
+            if (0 == depthGauge.decreaseDepth()) {
+                synchronized(methodWatcherLoader) {
+                    for (MethodWatcher watcher : methodWatcherLoader) {
+                        watcher.afterInvocation(runner, target, method, thrown);
+                    }
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    /**
+     * Generate a hash code for the specified runner/method pair.
+     * 
+     * @param runner JUnit test runner
+     * @param method {@link FrameworkMethod} object
+     * @return hash code for the specified runner/method pair
+     */
+    public static int methodHash(Object runner, FrameworkMethod method) {
+        return ((Thread.currentThread().hashCode() * 31) + runner.hashCode()) * 31 + method.hashCode();
     }
 }
