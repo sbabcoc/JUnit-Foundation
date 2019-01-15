@@ -1,6 +1,7 @@
 package com.nordstrom.automation.junit;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -78,5 +79,26 @@ public class CreateTest {
      */
     static Object getTargetForRunner(Object runner) {
         return RUNNER_TO_TARGET.get(runner);
+    }
+    
+    /**
+     * Get reference to an instance of the specified watcher type.
+     * 
+     * @param <T> watcher type
+     * @param watcherType watcher type
+     * @return optional watcher instance
+     */
+    @SuppressWarnings("unchecked")
+    static <T extends JUnitWatcher> Optional<T> getAttachedWatcher(Class<T> watcherType) {
+        if (TestObjectWatcher.class.isAssignableFrom(watcherType)) {
+            synchronized(objectWatcherLoader) {
+                for (TestObjectWatcher watcher : objectWatcherLoader) {
+                    if (watcher.getClass() == watcherType) {
+                        return Optional.of((T) watcher);
+                    }
+                }
+            }
+        }
+        return Optional.empty();
     }
 }

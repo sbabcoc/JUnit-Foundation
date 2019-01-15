@@ -4,6 +4,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -159,5 +160,45 @@ public class Run {
             return true;
         }
         return false;
+    }
+    
+    /**
+     * Get reference to an instance of the specified watcher type.
+     * 
+     * @param <T> watcher type
+     * @param watcherType watcher type
+     * @return optional watcher instance
+     */
+    @SuppressWarnings("unchecked")
+    static <T extends JUnitWatcher> Optional<T> getAttachedWatcher(Class<T> watcherType) {
+        if (RunnerWatcher.class.isAssignableFrom(watcherType)) {
+            synchronized(runnerWatcherLoader) {
+                for (RunnerWatcher watcher : runnerWatcherLoader) {
+                    if (watcher.getClass() == watcherType) {
+                        return Optional.of((T) watcher);
+                    }
+                }
+            }
+        }
+        return Optional.empty();
+    }
+    
+    /**
+     * Get reference to an instance of the specified listener type.
+     * 
+     * @param <T> listener type
+     * @param listenerType listener type
+     * @return optional listener instance
+     */
+    @SuppressWarnings("unchecked")
+    static <T extends RunListener> Optional<T> getAttachedListener(Class<T> listenerType) {
+        synchronized(runListenerLoader) {
+            for (RunListener listener : runListenerLoader) {
+                if (listener.getClass() == listenerType) {
+                    return Optional.of((T) listener);
+                }
+            }
+        }
+        return Optional.empty();
     }
 }

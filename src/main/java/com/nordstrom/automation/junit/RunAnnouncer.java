@@ -1,5 +1,6 @@
 package com.nordstrom.automation.junit;
 
+import java.util.Optional;
 import java.util.ServiceLoader;
 import org.junit.internal.AssumptionViolatedException;
 import org.junit.runner.Description;
@@ -93,5 +94,26 @@ public class RunAnnouncer extends RunListener {
         AtomicTest atomicTest = getAtomicTest(failure.getDescription());
         atomicTest.setThrowable(failure.getException());
         return atomicTest;
+    }
+    
+    /**
+     * Get reference to an instance of the specified watcher type.
+     * 
+     * @param <T> watcher type
+     * @param watcherType watcher type
+     * @return optional watcher instance
+     */
+    @SuppressWarnings("unchecked")
+    static <T extends JUnitWatcher> Optional<T> getAttachedWatcher(Class<T> watcherType) {
+        if (RunWatcher.class.isAssignableFrom(watcherType)) {
+            synchronized(runWatcherLoader) {
+                for (RunWatcher watcher : runWatcherLoader) {
+                    if (watcher.getClass() == watcherType) {
+                        return Optional.of((T) watcher);
+                    }
+                }
+            }
+        }
+        return Optional.empty();
     }
 }

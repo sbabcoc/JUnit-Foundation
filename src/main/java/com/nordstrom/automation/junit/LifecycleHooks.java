@@ -8,11 +8,13 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.concurrent.Callable;
 
 import org.junit.Test;
 import org.junit.runner.Description;
+import org.junit.runner.notification.RunListener;
 import org.junit.runners.model.TestClass;
 import com.nordstrom.automation.junit.JUnitConfig.JUnitSettings;
 import com.nordstrom.common.base.UncheckedThrow;
@@ -348,5 +350,39 @@ public class LifecycleHooks {
         } catch (InvocationTargetException e) {
             throw UncheckedThrow.throwUnchecked(e.getCause());
         }
+    }
+    
+    /**
+     * Get reference to an instance of the specified watcher type.
+     * 
+     * @param <T> watcher type
+     * @param watcherType watcher type
+     * @return optional watcher instance
+     */
+    public static <T extends JUnitWatcher> Optional<T> getAttachedWatcher(Class<T> watcherType) {
+        Optional<T> watcher = CreateTest.getAttachedWatcher(watcherType);
+        if (watcher.isPresent()) return watcher;
+        
+        watcher = Run.getAttachedWatcher(watcherType);
+        if (watcher.isPresent()) return watcher;
+        
+        watcher = RunAnnouncer.getAttachedWatcher(watcherType);
+        if (watcher.isPresent()) return watcher;
+        
+        watcher = RunAnnouncer.getAttachedWatcher(watcherType);
+        if (watcher.isPresent()) return watcher;
+        
+        return RunReflectiveCall.getAttachedWatcher(watcherType);
+    }
+    
+    /**
+     * Get reference to an instance of the specified listener type.
+     * 
+     * @param <T> listener type
+     * @param listenerType listener type
+     * @return optional listener instance
+     */
+    public static <T extends RunListener> Optional<T> getAttachedListener(Class<T> listenerType) {
+        return Run.getAttachedListener(listenerType);
     }
 }
