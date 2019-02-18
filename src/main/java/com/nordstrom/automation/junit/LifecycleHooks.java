@@ -170,6 +170,16 @@ public class LifecycleHooks {
     }
     
     /**
+     * Get the atomic test object for the specified class runner.
+     * 
+     * @param runner JUnit class runner
+     * @return {@link AtomicTest} object (may be {@code null})
+     */
+    public static AtomicTest getAtomicTestOf(Object runner) {
+        return RunAnnouncer.getAtomicTestOf(runner);
+    }
+    
+    /**
      * Get the description of the indicated child object from the runner for the specified test class instance.
      * 
      * @param target test class instance
@@ -364,9 +374,6 @@ public class LifecycleHooks {
         if (watcher.isPresent()) return watcher;
         
         watcher = Run.getAttachedWatcher(watcherType);
-        if (watcher.isPresent()) return watcher;
-        
-        watcher = RunAnnouncer.getAttachedWatcher(watcherType);
         if (watcher.isPresent()) return watcher;
         
         watcher = RunAnnouncer.getAttachedWatcher(watcherType);
