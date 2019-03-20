@@ -34,7 +34,7 @@ public class AtomicTest {
         this.particles = invoke(runner, "getChildren");
         
         FrameworkMethod identity = null;
-        String methodName = description.getMethodName().split("[^_$a-zA-Z0-9]")[0];
+        String methodName = description.getMethodName().split("[\\[\\(]")[0];
         for (FrameworkMethod method : particles) {
             if (methodName.equals(method.getName())) {
                 identity = method;
