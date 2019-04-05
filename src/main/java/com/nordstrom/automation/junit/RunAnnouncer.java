@@ -9,6 +9,7 @@ import org.junit.internal.AssumptionViolatedException;
 import org.junit.runner.Description;
 import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
+import org.junit.runners.model.FrameworkMethod;
 
 public class RunAnnouncer extends RunListener {
     
@@ -24,7 +25,7 @@ public class RunAnnouncer extends RunListener {
      */
     @Override
     public void testStarted(Description description) throws Exception {
-        AtomicTest atomicTest = newAtomicTest(description);
+        AtomicTest atomicTest = getAtomicTestOf(description);
         synchronized(runWatcherLoader) {
             for (RunWatcher watcher : runWatcherLoader) {
                 watcher.testStarted(atomicTest);
@@ -37,7 +38,7 @@ public class RunAnnouncer extends RunListener {
      */
     @Override
     public void testFinished(Description description) throws Exception {
-        AtomicTest atomicTest = getAtomicTestOf(Run.getThreadRunner());
+        AtomicTest atomicTest = getAtomicTestOf(description);
         synchronized(runWatcherLoader) {
             for (RunWatcher watcher : runWatcherLoader) {
                 watcher.testFinished(atomicTest);
@@ -76,7 +77,7 @@ public class RunAnnouncer extends RunListener {
      */
     @Override
     public void testIgnored(Description description) throws Exception {
-        AtomicTest atomicTest = newAtomicTest(description);
+        AtomicTest atomicTest = getAtomicTestOf(description);
         synchronized(runWatcherLoader) {
             for (RunWatcher watcher : runWatcherLoader) {
                 watcher.testIgnored(atomicTest);
@@ -90,21 +91,21 @@ public class RunAnnouncer extends RunListener {
      * @param description {@link Description} object
      * @return {@link AtomicTest} object
      */
-    private static AtomicTest newAtomicTest(Description description) {
-        Object runner = Run.getThreadRunner();
-        AtomicTest atomicTest = new AtomicTest(runner, description);
+    static AtomicTest newAtomicTest(Object runner, FrameworkMethod method) {
+        AtomicTest atomicTest = new AtomicTest(runner, method);
         RUNNER_TO_ATOMICTEST.put(runner, atomicTest);
+        RUNNER_TO_ATOMICTEST.put(atomicTest.getDescription(), atomicTest);
         return atomicTest;
     }
     
     /**
-     * Get the atomic test object for the specified class runner.
+     * Get the atomic test object for the specified class runner or method description.
      * 
-     * @param runner JUnit class runner
+     * @param testKey JUnit class runner or method description
      * @return {@link AtomicTest} object (may be {@code null})
      */
-    static AtomicTest getAtomicTestOf(Object runner) {
-        return RUNNER_TO_ATOMICTEST.get(runner);
+    static AtomicTest getAtomicTestOf(Object testKey) {
+        return RUNNER_TO_ATOMICTEST.get(testKey);
     }
     
     /**

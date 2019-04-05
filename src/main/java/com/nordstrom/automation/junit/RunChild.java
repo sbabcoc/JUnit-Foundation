@@ -50,6 +50,8 @@ public class RunChild {
                 int count = RetryHandler.getMaxRetry(runner, method);
                 boolean isIgnored = (null != method.getAnnotation(Ignore.class));
                 
+                RunAnnouncer.newAtomicTest(runner, method);
+                
                 if (count == 0) {
                     LifecycleHooks.callProxy(proxy);
                 } else if (!isIgnored) {

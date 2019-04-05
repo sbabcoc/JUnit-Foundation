@@ -102,7 +102,7 @@ public class Run {
     }
     
     /**
-     * Pop the top JUnit test runner onto the stack for the current thread.
+     * Pop the top JUnit test runner from the stack for the current thread.
      * 
      * @return {@code ParentRunner} object
      * @throws EmptyStackException if called outside the scope of an active runner
