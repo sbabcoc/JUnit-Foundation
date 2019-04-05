@@ -28,21 +28,11 @@ public class AtomicTest {
     private final List<FrameworkMethod> particles;
     private Throwable thrown;
 
-    public AtomicTest(Object runner, Description description) {
+    public AtomicTest(Object runner, FrameworkMethod identity) {
         this.runner = runner;
-        this.description = description;
-        this.particles = invoke(runner, "getChildren");
-        
-        FrameworkMethod identity = null;
-        String methodName = description.getMethodName().split("[\\[\\(]")[0];
-        for (FrameworkMethod method : particles) {
-            if (methodName.equals(method.getName())) {
-                identity = method;
-                break;
-            }
-        }
-        
         this.identity = identity;
+        this.description = invoke(runner, "describeChild", identity);
+        this.particles = invoke(runner, "getChildren");
     }
 
     /**
