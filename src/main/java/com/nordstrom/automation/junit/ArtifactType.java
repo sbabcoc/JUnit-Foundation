@@ -3,8 +3,6 @@ package com.nordstrom.automation.junit;
 import java.nio.file.Path;
 import org.slf4j.Logger;
 
-import com.nordstrom.common.file.PathUtils;
-
 /**
  * This interface defines the contract fulfilled by artifact capture providers. Instances of this interface supply the
  * scenario-specific implementation for artifact capture through the {@link ArtifactCollector} listener.
@@ -75,9 +73,7 @@ public interface ArtifactType {
      * 
      * @return logger for this artifact (may be {@code null})
      */
-    default Logger getLogger() {
-        return null;
-    }
+    Logger getLogger();
     
     /**
      * Determine if artifact capture is available in the specified context.
@@ -102,12 +98,9 @@ public interface ArtifactType {
      * <b>NOTE</b>: The returned path can be either relative or absolute.
      * 
      * @param instance JUnit test class instance
-     * @return artifact storage path
+     * @return artifact storage path; {@code null} to accept default path
      */
-    default Path getArtifactPath(Object instance) {
-        return PathUtils.ReportsDirectory.getPathForObject(instance);
-    }
-    
+    Path getArtifactPath(Object instance);
     
     /**
      * Get the extension for artifact files of this type.

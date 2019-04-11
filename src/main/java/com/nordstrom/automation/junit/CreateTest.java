@@ -1,10 +1,11 @@
 package com.nordstrom.automation.junit;
 
 import java.util.Map;
-import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+
+import com.google.common.base.Optional;
 
 import net.bytebuddy.implementation.bind.annotation.RuntimeType;
 import net.bytebuddy.implementation.bind.annotation.SuperCall;
@@ -20,10 +21,16 @@ public class CreateTest {
     private static final ServiceLoader<TestObjectWatcher> objectWatcherLoader;
     private static final Map<Object, Object> TARGET_TO_RUNNER = new ConcurrentHashMap<>();
     private static final Map<Object, Object> RUNNER_TO_TARGET = new ConcurrentHashMap<>();
-    private static final ThreadLocal<DepthGauge> DEPTH = ThreadLocal.withInitial(DepthGauge::new);
+    private static final ThreadLocal<DepthGauge> DEPTH;
     
     static {
         objectWatcherLoader = ServiceLoader.load(TestObjectWatcher.class);
+        DEPTH = new ThreadLocal<DepthGauge>() {
+            @Override
+            protected DepthGauge initialValue() {
+                return new DepthGauge();
+            }
+        };
     }
     
     /**
@@ -99,6 +106,6 @@ public class CreateTest {
                 }
             }
         }
-        return Optional.empty();
+        return Optional.absent();
     }
 }

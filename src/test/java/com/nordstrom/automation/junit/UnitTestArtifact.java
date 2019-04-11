@@ -1,5 +1,6 @@
 package com.nordstrom.automation.junit;
 
+import java.nio.file.Path;
 import java.util.Map.Entry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,6 +51,11 @@ public class UnitTestArtifact implements ArtifactType {
             setCaptureState(CaptureState.CAPTURE_FAILED);
             return new byte[0];
         }
+    }
+
+    @Override
+    public Path getArtifactPath(Object instance) {
+        return null;
     }
 
     @Override

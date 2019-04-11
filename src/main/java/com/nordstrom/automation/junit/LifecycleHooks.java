@@ -8,23 +8,29 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentMap;
 
 import org.junit.Test;
 import org.junit.runner.Description;
 import org.junit.runner.notification.RunListener;
 import org.junit.runners.model.TestClass;
+
+import com.google.common.base.Function;
+import com.google.common.base.Optional;
 import com.nordstrom.automation.junit.JUnitConfig.JUnitSettings;
 import com.nordstrom.common.base.UncheckedThrow;
 import com.nordstrom.common.file.PathUtils.ReportsDirectory;
 
 import net.bytebuddy.agent.builder.AgentBuilder;
+import net.bytebuddy.agent.builder.AgentBuilder.Transformer;
 import net.bytebuddy.description.method.MethodDescription.SignatureToken;
 import net.bytebuddy.description.type.TypeDescription;
+import net.bytebuddy.dynamic.DynamicType.Builder;
 import net.bytebuddy.implementation.MethodDelegation;
 import net.bytebuddy.pool.TypePool;
+import net.bytebuddy.utility.JavaModule;
 
 /**
  * This class implements the hooks and utility methods that activate the core functionality of <b>JUnit Foundation</b>.
@@ -65,30 +71,45 @@ public class LifecycleHooks {
      * @return The installed class file transformer
      */
     public static ClassFileTransformer installTransformer(Instrumentation instrumentation) {
-        TypeDescription runReflectiveCall = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.RunReflectiveCall").resolve();
-        TypeDescription finished = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.Finished").resolve();
-        TypeDescription createTest = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.CreateTest").resolve();
-        TypeDescription runChild = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.RunChild").resolve();
-        TypeDescription run = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.Run").resolve();
+        final TypeDescription runReflectiveCall = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.RunReflectiveCall").resolve();
+        final TypeDescription finished = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.Finished").resolve();
+        final TypeDescription createTest = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.CreateTest").resolve();
+        final TypeDescription runChild = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.RunChild").resolve();
+        final TypeDescription run = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.Run").resolve();
         
-        TypeDescription runNotifier = TypePool.Default.ofSystemLoader().describe("org.junit.runner.notification.RunNotifier").resolve();
-        SignatureToken runToken = new SignatureToken("run", TypeDescription.VOID, Arrays.asList(runNotifier));
+        final TypeDescription runNotifier = TypePool.Default.ofSystemLoader().describe("org.junit.runner.notification.RunNotifier").resolve();
+        final SignatureToken runToken = new SignatureToken("run", TypeDescription.VOID, Arrays.asList(runNotifier));
         
         return new AgentBuilder.Default()
                 .type(hasSuperType(named("org.junit.internal.runners.model.ReflectiveCallable")))
-                .transform((builder, type, classLoader, module) -> 
-                        builder.method(named("runReflectiveCall")).intercept(MethodDelegation.to(runReflectiveCall))
-                               .implement(Hooked.class))
+                .transform(new Transformer() {
+                    @Override
+                    public Builder<?> transform(Builder<?> builder, TypeDescription type,
+                                    ClassLoader classloader, JavaModule module) {
+                        return builder.method(named("runReflectiveCall")).intercept(MethodDelegation.to(runReflectiveCall))
+                                      .implement(Hooked.class);
+                    }
+                })
                 .type(hasSuperType(named("org.junit.runners.model.RunnerScheduler")))
-                .transform((builder, type, classLoader, module) -> 
-                        builder.method(named("finished")).intercept(MethodDelegation.to(finished))
-                               .implement(Hooked.class))
+                .transform(new Transformer() {
+                    @Override
+                    public Builder<?> transform(Builder<?> builder, TypeDescription type,
+                                    ClassLoader classloader, JavaModule module) {
+                        return builder.method(named("finished")).intercept(MethodDelegation.to(finished))
+                                      .implement(Hooked.class);
+                    }
+                })
                 .type(hasSuperType(named("org.junit.runners.ParentRunner")))
-                .transform((builder, type, classLoader, module) -> 
-                        builder.method(named("createTest")).intercept(MethodDelegation.to(createTest))
-                               .method(named("runChild")).intercept(MethodDelegation.to(runChild))
-                               .method(hasSignature(runToken)).intercept(MethodDelegation.to(run))
-                               .implement(Hooked.class))
+                .transform(new Transformer() {
+                    @Override
+                    public Builder<?> transform(Builder<?> builder, TypeDescription type,
+                                    ClassLoader classloader, JavaModule module) {
+                        return builder.method(named("createTest")).intercept(MethodDelegation.to(createTest))
+                                      .method(named("runChild")).intercept(MethodDelegation.to(runChild))
+                                      .method(hasSignature(runToken)).intercept(MethodDelegation.to(run))
+                                      .implement(Hooked.class);
+                    }
+                })
                 .installOn(instrumentation);
     }
     
@@ -205,7 +226,7 @@ public class LifecycleHooks {
             // iterate over test object methods
             for (Method method : testObj.getClass().getDeclaredMethods()) {
                 // get @Test annotation
-                Test annotation = method.getDeclaredAnnotation(Test.class);
+                Test annotation = method.getAnnotation(Test.class);
                 // if annotation declared and current timeout is less than default
                 if ((annotation != null) && (annotation.timeout() < defaultTimeout)) {
                     // set test timeout interval
@@ -391,5 +412,14 @@ public class LifecycleHooks {
      */
     public static <T extends RunListener> Optional<T> getAttachedListener(Class<T> listenerType) {
         return Run.getAttachedListener(listenerType);
+    }
+    
+    static <K, T> T computeIfAbsent(ConcurrentMap<K, T> map, K key, Function<K, T> fun) {
+        T val = map.get(key);
+        if (val == null) {
+            T obj = fun.apply(key);
+            val = (val = map.putIfAbsent(key, obj)) == null ? obj : val;
+        }
+        return val;
     }
 }

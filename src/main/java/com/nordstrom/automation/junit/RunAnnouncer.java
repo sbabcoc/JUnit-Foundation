@@ -1,7 +1,6 @@
 package com.nordstrom.automation.junit;
 
 import java.util.Map;
-import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -10,6 +9,8 @@ import org.junit.runner.Description;
 import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
 import org.junit.runners.model.FrameworkMethod;
+
+import com.google.common.base.Optional;
 
 public class RunAnnouncer extends RunListener {
     
@@ -138,6 +139,6 @@ public class RunAnnouncer extends RunListener {
                 }
             }
         }
-        return Optional.empty();
+        return Optional.absent();
     }
 }

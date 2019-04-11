@@ -13,14 +13,14 @@ import org.junit.runner.notification.RunListener;
  */
 public class RunListenerAdapter extends RunListener {
     
-    private List<Description> m_allTestMethods = Collections.synchronizedList(new ArrayList<>());
-    private List<Failure> m_testFailures = Collections.synchronizedList(new ArrayList<>());
-    private List<Description> m_failedTests = Collections.synchronizedList(new ArrayList<>());
-    private List<Failure> m_assumptionFailures = Collections.synchronizedList(new ArrayList<>());
-    private List<Description> m_failedAssumptions = Collections.synchronizedList(new ArrayList<>());
-    private List<Description> m_ignoredTests = Collections.synchronizedList(new ArrayList<>());
-    private List<Description> m_retriedTests = Collections.synchronizedList(new ArrayList<>());
-    private List<Description> m_passedTests = Collections.synchronizedList(new ArrayList<>());
+    private List<Description> m_allTestMethods = Collections.synchronizedList(new ArrayList<Description>());
+    private List<Failure> m_testFailures = Collections.synchronizedList(new ArrayList<Failure>());
+    private List<Description> m_failedTests = Collections.synchronizedList(new ArrayList<Description>());
+    private List<Failure> m_assumptionFailures = Collections.synchronizedList(new ArrayList<Failure>());
+    private List<Description> m_failedAssumptions = Collections.synchronizedList(new ArrayList<Description>());
+    private List<Description> m_ignoredTests = Collections.synchronizedList(new ArrayList<Description>());
+    private List<Description> m_retriedTests = Collections.synchronizedList(new ArrayList<Description>());
+    private List<Description> m_passedTests = Collections.synchronizedList(new ArrayList<Description>());
                 
     /**
      * Called when an atomic test is about to be started.
@@ -90,10 +90,10 @@ public class RunListenerAdapter extends RunListener {
     public List<Description> getPassedTests() {
         m_passedTests.clear();
         m_passedTests.addAll(m_allTestMethods);
-        m_failedTests.forEach(m_passedTests::remove);
-        m_failedAssumptions.forEach(m_passedTests::remove);
-        m_ignoredTests.forEach(m_passedTests::remove);
-        m_retriedTests.forEach(m_passedTests::remove);
+        for (Description description : m_failedTests) { m_passedTests.remove(description); } 
+        for (Description description : m_failedAssumptions) { m_passedTests.remove(description); } 
+        for (Description description : m_ignoredTests) { m_passedTests.remove(description); } 
+        for (Description description : m_retriedTests) { m_passedTests.remove(description); } 
         return m_passedTests;
     }
     

@@ -1,15 +1,15 @@
 package com.nordstrom.automation.junit;
 
 import static org.junit.Assert.assertEquals;
-import static com.nordstrom.automation.junit.ArtifactParams.param;
 
 import java.util.Map;
-import java.util.Optional;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
+
+import com.google.common.base.Optional;
 
 @RunWith(Parameterized.class)
 public class ArtifactCollectorParameterized extends TestBase {
@@ -27,7 +27,7 @@ public class ArtifactCollectorParameterized extends TestBase {
     
     @Override
     public Optional<Map<String, Object>> getParameters() {
-        return ArtifactParams.mapOf(param("input", input));
+        return Param.mapOf(Param.param("input", input));
     }
     
     @Test

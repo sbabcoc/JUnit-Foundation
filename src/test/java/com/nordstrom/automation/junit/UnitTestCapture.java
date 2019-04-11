@@ -1,7 +1,8 @@
 package com.nordstrom.automation.junit;
 
 import java.nio.file.Path;
-import java.util.Optional;
+
+import com.google.common.base.Optional;
 
 public class UnitTestCapture extends ArtifactCollector<UnitTestArtifact> {
     
