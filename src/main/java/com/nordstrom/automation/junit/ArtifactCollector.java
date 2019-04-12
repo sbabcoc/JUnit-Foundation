@@ -125,7 +125,11 @@ public class ArtifactCollector<T extends ArtifactType> extends AtomIdentity {
      */
     private Path getCollectionPath() {
         Path collectionPath = PathUtils.ReportsDirectory.getPathForObject(getInstance());
-        return collectionPath.resolve(getArtifactPath(getInstance()));
+        Path artifactPath = provider.getArtifactPath(getInstance());
+        if (artifactPath == null) {
+            artifactPath = getArtifactPath(getInstance());
+        }
+        return collectionPath.resolve(artifactPath);
     }
     
     /**
@@ -136,12 +140,8 @@ public class ArtifactCollector<T extends ArtifactType> extends AtomIdentity {
      * @param instance JUnit test class instance
      * @return artifact storage path
      */
-    private Path getArtifactPath(Object instance) {
-        Path artifactPath = provider.getArtifactPath(instance);
-        if (artifactPath == null) {
-            artifactPath = PathUtils.ReportsDirectory.getPathForObject(instance);
-        }
-        return artifactPath;
+    public static Path getArtifactPath(Object instance) {
+        return PathUtils.ReportsDirectory.getPathForObject(instance);
     }
     
     /**
