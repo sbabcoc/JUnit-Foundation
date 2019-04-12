@@ -98,7 +98,7 @@ public class MutableTest implements Test {
      * @return mutable proxy for {@code @Test} annotation
      */
     public static MutableTest proxyFor(Method testMethod) {
-        Test declared = testMethod.getDeclaredAnnotation(Test.class);
+        Test declared = testMethod.getAnnotation(Test.class);
         if (declared instanceof MutableTest) {
             return (MutableTest) declared;
         }

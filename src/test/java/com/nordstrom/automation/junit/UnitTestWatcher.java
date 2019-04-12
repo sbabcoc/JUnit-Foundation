@@ -13,17 +13,17 @@ import org.junit.runners.model.FrameworkMethod;
 
 public class UnitTestWatcher implements MethodWatcher {
 
-    private List<String> m_enterBeforeClass = Collections.synchronizedList(new ArrayList<>());
-    private List<String> m_enterBeforeMethod = Collections.synchronizedList(new ArrayList<>());
-    private List<String> m_enterTest = Collections.synchronizedList(new ArrayList<>());
-    private List<String> m_enterAfterMethod = Collections.synchronizedList(new ArrayList<>());
-    private List<String> m_enterAfterClass = Collections.synchronizedList(new ArrayList<>());
+    private List<String> m_enterBeforeClass = Collections.synchronizedList(new ArrayList<String>());
+    private List<String> m_enterBeforeMethod = Collections.synchronizedList(new ArrayList<String>());
+    private List<String> m_enterTest = Collections.synchronizedList(new ArrayList<String>());
+    private List<String> m_enterAfterMethod = Collections.synchronizedList(new ArrayList<String>());
+    private List<String> m_enterAfterClass = Collections.synchronizedList(new ArrayList<String>());
     
-    private List<String> m_leaveBeforeClass = Collections.synchronizedList(new ArrayList<>());
-    private List<String> m_leaveBeforeMethod = Collections.synchronizedList(new ArrayList<>());
-    private List<String> m_leaveTest = Collections.synchronizedList(new ArrayList<>());
-    private List<String> m_leaveAfterMethod = Collections.synchronizedList(new ArrayList<>());
-    private List<String> m_leaveAfterClass = Collections.synchronizedList(new ArrayList<>());
+    private List<String> m_leaveBeforeClass = Collections.synchronizedList(new ArrayList<String>());
+    private List<String> m_leaveBeforeMethod = Collections.synchronizedList(new ArrayList<String>());
+    private List<String> m_leaveTest = Collections.synchronizedList(new ArrayList<String>());
+    private List<String> m_leaveAfterMethod = Collections.synchronizedList(new ArrayList<String>());
+    private List<String> m_leaveAfterClass = Collections.synchronizedList(new ArrayList<String>());
     
     @Override
     public void beforeInvocation(Object runner, Object target, FrameworkMethod method, Object... params) {

@@ -4,7 +4,6 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -14,6 +13,8 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import org.junit.runner.Description;
 import org.junit.runner.notification.RunListener;
 import org.junit.runner.notification.RunNotifier;
+
+import com.google.common.base.Optional;
 
 import net.bytebuddy.implementation.bind.annotation.Argument;
 import net.bytebuddy.implementation.bind.annotation.SuperCall;
@@ -33,7 +34,12 @@ public class Run {
     private static final Set<RunNotifier> NOTIFIERS = new CopyOnWriteArraySet<>();
     
     static {
-        runnerStack = ThreadLocal.withInitial(ArrayDeque::new);
+        runnerStack = new ThreadLocal<Deque<Object>>() {
+            @Override
+            protected Deque<Object> initialValue() {
+                return new ArrayDeque<>();
+            }
+        };
         runListenerLoader = ServiceLoader.load(RunListener.class);
         runnerWatcherLoader = ServiceLoader.load(RunnerWatcher.class);
     }
@@ -180,7 +186,7 @@ public class Run {
                 }
             }
         }
-        return Optional.empty();
+        return Optional.absent();
     }
     
     /**
@@ -199,6 +205,6 @@ public class Run {
                 }
             }
         }
-        return Optional.empty();
+        return Optional.absent();
     }
 }

@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.nordstrom.tools</groupId>
   <artifactId>junit-foundation</artifactId>
-  <version>9.2.1-SNAPSHOT</version>
+  <version>9.3.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   
   <name>JUnit Foundation</name>
@@ -27,17 +27,18 @@
   
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.source>1.8</maven.compiler.source>
-    <maven.compiler.target>1.8</maven.compiler.target>
-    <java-utils.version>1.8.0</java-utils.version>
+    <maven.compiler.source>1.7</maven.compiler.source>
+    <maven.compiler.target>1.7</maven.compiler.target>
+    <java-utils.version>1.9.0</java-utils.version>
     <surefire-plugin.version>2.22.0</surefire-plugin.version>
     <source-plugin.version>3.0.1</source-plugin.version>
     <javadoc-plugin.version>2.10.4</javadoc-plugin.version>
-    <settings.version>2.2.2</settings.version>
+    <settings.version>2.3.0</settings.version>
     <junit.version>4.12</junit.version>
     <testng.version>6.10</testng.version>
     <bytebuddy.version>1.9.5</bytebuddy.version>
     <logback.version>1.2.2</logback.version>
+    <guava.version>23.5-jre</guava.version>
     <gpg-plugin.version>1.6</gpg-plugin.version>
     <staging-plugin.version>1.6.7</staging-plugin.version>
     <release-plugin.version>2.5.3</release-plugin.version>
@@ -100,6 +101,11 @@
         <artifactId>logback-classic</artifactId>
         <version>${logback.version}</version>
       </dependency>
+      <dependency>
+        <groupId>com.google.guava</groupId>
+        <artifactId>guava</artifactId>
+        <version>${guava.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
   
@@ -133,6 +139,10 @@
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
     </dependency>
   </dependencies>
 

@@ -1,10 +1,11 @@
 package com.nordstrom.automation.junit;
 
 import java.util.Map;
-import java.util.Optional;
 
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
+
+import com.google.common.base.Optional;
 
 /**
  * This is the base class for test watchers that need access to the test class instance for the current atomic test.
@@ -54,7 +55,7 @@ public class AtomIdentity extends TestWatcher implements ArtifactParams {
         if (instance instanceof ArtifactParams) {
             return ((ArtifactParams) instance).getParameters();
         }
-        return Optional.empty();
+        return Optional.absent();
     }
     
 }

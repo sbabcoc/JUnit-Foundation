@@ -5,11 +5,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.junit.runner.Description;
+
+import com.google.common.base.Function;
+import com.google.common.base.Optional;
 import com.nordstrom.common.file.PathUtils;
 
 /**
@@ -19,8 +20,18 @@ import com.nordstrom.common.file.PathUtils;
  */
 public class ArtifactCollector<T extends ArtifactType> extends AtomIdentity {
     
-    private static final Map<Description, List<ArtifactCollector<? extends ArtifactType>>> watcherMap =
-                    new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<Description, List<ArtifactCollector<? extends ArtifactType>>> watcherMap;
+    private static final Function<Description, List<ArtifactCollector<? extends ArtifactType>>> newInstance;
+    
+    static {
+        watcherMap = new ConcurrentHashMap<>();
+        newInstance = new Function<Description, List<ArtifactCollector<? extends ArtifactType>>>() {
+            @Override
+            public List<ArtifactCollector<? extends ArtifactType>> apply(Description input) {
+                return new ArrayList<>();
+            }
+        };
+    }
     
     private final T provider;
     private final List<Path> artifactPaths = new ArrayList<>();
@@ -37,7 +48,7 @@ public class ArtifactCollector<T extends ArtifactType> extends AtomIdentity {
     public void starting(Description description) {
         super.starting(description);
         List<ArtifactCollector<? extends ArtifactType>> watcherList =
-                        watcherMap.computeIfAbsent(description, k -> new ArrayList<>());
+                        LifecycleHooks.computeIfAbsent(watcherMap, description, newInstance);
         watcherList.add(this);
     }
     
@@ -57,12 +68,12 @@ public class ArtifactCollector<T extends ArtifactType> extends AtomIdentity {
      */
     public Optional<Path> captureArtifact(Throwable reason) {
         if (! provider.canGetArtifact(getInstance())) {
-            return Optional.empty();
+            return Optional.absent();
         }
         
         byte[] artifact = provider.getArtifact(getInstance(), reason);
         if ((artifact == null) || (artifact.length == 0)) {
-            return Optional.empty();
+            return Optional.absent();
         }
         
         Path collectionPath = getCollectionPath();
@@ -70,9 +81,11 @@ public class ArtifactCollector<T extends ArtifactType> extends AtomIdentity {
             try {
                 Files.createDirectories(collectionPath);
             } catch (IOException e) {
-                String messageTemplate = "Unable to create collection directory ({}); no artifact was captured";
-                Optional.ofNullable(provider.getLogger()).ifPresent(l -> l.warn(messageTemplate, collectionPath, e));
-                return Optional.empty();
+                if (provider.getLogger() != null) {
+                    String messageTemplate = "Unable to create collection directory ({}); no artifact was captured";
+                    provider.getLogger().warn(messageTemplate, collectionPath, e);
+                }
+                return Optional.absent();
             }
         }
         
@@ -83,19 +96,22 @@ public class ArtifactCollector<T extends ArtifactType> extends AtomIdentity {
                             getArtifactBaseName(), 
                             provider.getArtifactExtension());
         } catch (IOException e) {
-            Optional.ofNullable(provider.getLogger()).ifPresent(
-                            l -> l.warn("Unable to get output path; no artifact was captured", e));
-            return Optional.empty();
+            if (provider.getLogger() != null) {
+                provider.getLogger().warn("Unable to get output path; no artifact was captured", e);
+            }
+            return Optional.absent();
         }
         
         try {
-            Optional.ofNullable(provider.getLogger()).ifPresent(
-                            l -> l.info("Saving captured artifact to ({}).", artifactPath));
+            if (provider.getLogger() != null) {
+                provider.getLogger().info("Saving captured artifact to ({}).", artifactPath);
+            }
             Files.write(artifactPath, artifact);
         } catch (IOException e) {
-            Optional.ofNullable(provider.getLogger()).ifPresent(
-                            l -> l.warn("I/O error saving to ({}); no artifact was captured", artifactPath, e));
-            return Optional.empty();
+            if (provider.getLogger() != null) {
+                provider.getLogger().warn("I/O error saving to ({}); no artifact was captured", artifactPath, e);
+            }
+            return Optional.absent();
         }
         
         recordArtifactPath(artifactPath);
@@ -109,7 +125,23 @@ public class ArtifactCollector<T extends ArtifactType> extends AtomIdentity {
      */
     private Path getCollectionPath() {
         Path collectionPath = PathUtils.ReportsDirectory.getPathForObject(getInstance());
-        return collectionPath.resolve(provider.getArtifactPath(getInstance()));
+        return collectionPath.resolve(getArtifactPath(getInstance()));
+    }
+    
+    /**
+     * Get the path at which to store artifacts.
+     * <p>
+     * <b>NOTE</b>: The returned path can be either relative or absolute.
+     * 
+     * @param instance JUnit test class instance
+     * @return artifact storage path
+     */
+    private Path getArtifactPath(Object instance) {
+        Path artifactPath = provider.getArtifactPath(instance);
+        if (artifactPath == null) {
+            artifactPath = PathUtils.ReportsDirectory.getPathForObject(instance);
+        }
+        return artifactPath;
     }
     
     /**
@@ -147,7 +179,7 @@ public class ArtifactCollector<T extends ArtifactType> extends AtomIdentity {
      */
     public Optional<List<Path>> retrieveArtifactPaths() {
         if (artifactPaths.isEmpty()) {
-            return Optional.empty();
+            return Optional.absent();
         } else {
             return Optional.of(artifactPaths);
         }
@@ -181,7 +213,7 @@ public class ArtifactCollector<T extends ArtifactType> extends AtomIdentity {
                 }
             }
         }
-        return Optional.empty();
+        return Optional.absent();
     }
 
 }

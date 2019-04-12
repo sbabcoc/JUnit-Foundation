@@ -1,7 +1,11 @@
 package com.nordstrom.automation.junit;
 
+import java.util.Map;
+
 import org.junit.Rule;
 import org.junit.runner.Description;
+
+import com.google.common.base.Optional;
 
 public abstract class TestBase implements ArtifactParams {
 
@@ -12,5 +16,9 @@ public abstract class TestBase implements ArtifactParams {
     public Description getDescription() {
         return watcher.getDescription();
     }
-    
+
+    @Override
+    public Optional<Map<String, Object>> getParameters() {
+        return Optional.absent();
+    }
 }

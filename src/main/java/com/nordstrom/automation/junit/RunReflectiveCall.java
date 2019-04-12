@@ -2,11 +2,11 @@ package com.nordstrom.automation.junit;
 
 import static com.nordstrom.automation.junit.LifecycleHooks.getFieldValue;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -14,6 +14,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runners.model.FrameworkMethod;
 
+import com.google.common.base.Function;
+import com.google.common.base.Optional;
 import com.nordstrom.common.base.UncheckedThrow;
 
 import net.bytebuddy.implementation.bind.annotation.RuntimeType;
@@ -28,10 +30,23 @@ import net.bytebuddy.implementation.bind.annotation.This;
 public class RunReflectiveCall {
     
     private static final ServiceLoader<MethodWatcher> methodWatcherLoader;
-    private static final ThreadLocal<Map<Integer, DepthGauge>> methodDepth = ThreadLocal.withInitial(HashMap::new);
+    private static final ThreadLocal<ConcurrentMap<Integer, DepthGauge>> methodDepth;
+    private static final Function<Integer, DepthGauge> newInstance;
     
     static {
         methodWatcherLoader = ServiceLoader.load(MethodWatcher.class);
+        methodDepth = new ThreadLocal<ConcurrentMap<Integer, DepthGauge>>() {
+            @Override
+            protected ConcurrentMap<Integer, DepthGauge> initialValue() {
+                return new ConcurrentHashMap<>();
+            }
+        };
+        newInstance = new Function<Integer, DepthGauge>() {
+            @Override
+            public DepthGauge apply(Integer input) {
+                return new DepthGauge();
+            }
+        };
     }
     
     /**
@@ -114,7 +129,7 @@ public class RunReflectiveCall {
                 }
             }
         }
-        return Optional.empty();
+        return Optional.absent();
     }
     
     /**
@@ -144,7 +159,7 @@ public class RunReflectiveCall {
      */
     private static boolean fireBeforeInvocation(Object runner, Object target, FrameworkMethod method, Object... params) {
         if ((runner != null) && (method != null)) {
-            DepthGauge depthGauge = methodDepth.get().computeIfAbsent(methodHash(runner, method), k -> new DepthGauge());
+            DepthGauge depthGauge = LifecycleHooks.computeIfAbsent(methodDepth.get(), methodHash(runner, method), newInstance);
             if (0 == depthGauge.increaseDepth()) {
                 synchronized(methodWatcherLoader) {
                     for (MethodWatcher watcher : methodWatcherLoader) {
@@ -170,7 +185,7 @@ public class RunReflectiveCall {
      */
     private static boolean fireAfterInvocation(Object runner, Object target, FrameworkMethod method, Throwable thrown) {
         if ((runner != null) && (method != null)) {
-            DepthGauge depthGauge = methodDepth.get().computeIfAbsent(methodHash(runner, method), k -> new DepthGauge());
+            DepthGauge depthGauge = LifecycleHooks.computeIfAbsent(methodDepth.get(), methodHash(runner, method), newInstance);
             if (0 == depthGauge.decreaseDepth()) {
                 synchronized(methodWatcherLoader) {
                     for (MethodWatcher watcher : methodWatcherLoader) {
