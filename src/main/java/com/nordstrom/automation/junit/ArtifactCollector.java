@@ -47,7 +47,8 @@ public class ArtifactCollector<T extends ArtifactType> extends AtomIdentity {
     @Override
     public void starting(Description description) {
         super.starting(description);
-        List<ArtifactCollector<? extends ArtifactType>> watcherList = LifecycleHooks.computeIfAbsent(watcherMap, description, newInstance);
+        List<ArtifactCollector<? extends ArtifactType>> watcherList =
+                        LifecycleHooks.computeIfAbsent(watcherMap, description, newInstance);
         watcherList.add(this);
     }
     

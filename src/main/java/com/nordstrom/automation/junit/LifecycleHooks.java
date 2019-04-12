@@ -414,6 +414,18 @@ public class LifecycleHooks {
         return Run.getAttachedListener(listenerType);
     }
     
+    /**
+     * If the specified key is not already associated with a value (or is mapped to {@code null}), attempts
+     * to compute its value using the given mapping function and enters it into this map unless {@code null}.
+     * 
+     * @param <K> data type of map keys
+     * @param <T> data type of map values
+     * @param map concurrent map to be manipulated
+     * @param key key with which the specified value is to be associated
+     * @param fun the function to compute a value
+     * @return the current (existing or computed) value associated with the specified key;
+     *         {@code null} if the computed value is {@code null}
+     */
     static <K, T> T computeIfAbsent(ConcurrentMap<K, T> map, K key, Function<K, T> fun) {
         T val = map.get(key);
         if (val == null) {
