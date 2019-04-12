@@ -441,9 +441,9 @@ import org.slf4j.LoggerFactory;
 
 import com.nordstrom.automation.junit.ArtifactType;
 
-public class MyArtifactType implements ArtifactType {
+public class MyArtifactType extends ArtifactType {
     
-    private static final Path ARTIFACT_PATH = Paths.get("artifacts");
+    private static final String ARTIFACT_PATH = "artifacts";
     private static final String EXTENSION = "txt";
     private static final String ARTIFACT = "This text artifact was captured for '%s'";
     private static final Logger LOGGER = LoggerFactory.getLogger(MyArtifactType.class);
@@ -465,7 +465,7 @@ public class MyArtifactType implements ArtifactType {
 
     @Override
     public Path getArtifactPath() {
-        return ARTIFACT_PATH;
+        return super.getArtifactPath(instance).resolve(ARTIFACT_PATH);
     }
     
     @Override
