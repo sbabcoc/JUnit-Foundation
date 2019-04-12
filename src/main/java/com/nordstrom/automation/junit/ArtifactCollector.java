@@ -125,23 +125,7 @@ public class ArtifactCollector<T extends ArtifactType> extends AtomIdentity {
      */
     private Path getCollectionPath() {
         Path collectionPath = PathUtils.ReportsDirectory.getPathForObject(getInstance());
-        Path artifactPath = provider.getArtifactPath(getInstance());
-        if (artifactPath == null) {
-            artifactPath = getArtifactPath(getInstance());
-        }
-        return collectionPath.resolve(artifactPath);
-    }
-    
-    /**
-     * Get the path at which to store artifacts.
-     * <p>
-     * <b>NOTE</b>: The returned path can be either relative or absolute.
-     * 
-     * @param instance JUnit test class instance
-     * @return artifact storage path
-     */
-    public static Path getArtifactPath(Object instance) {
-        return PathUtils.ReportsDirectory.getPathForObject(instance);
+        return collectionPath.resolve(provider.getArtifactPath(getInstance()));
     }
     
     /**

@@ -3,6 +3,8 @@ package com.nordstrom.automation.junit;
 import java.nio.file.Path;
 import org.slf4j.Logger;
 
+import com.nordstrom.common.file.PathUtils;
+
 /**
  * This interface defines the contract fulfilled by artifact capture providers. Instances of this interface supply the
  * scenario-specific implementation for artifact capture through the {@link ArtifactCollector} listener.
@@ -19,7 +21,7 @@ import org.slf4j.Logger;
  * 
  * import com.nordstrom.automation.junit.ArtifactType;
  * 
- * public class MyArtifactType implements ArtifactType {
+ * public class MyArtifactType extends ArtifactType {
  *     
  *     private static final String ARTIFACT_PATH = "artifacts";
  *     private static final String EXTENSION = "txt";
@@ -37,8 +39,8 @@ import org.slf4j.Logger;
  *     }
  *     
  *     &#64;Override
- *     public Page getArtifactPath(Object instance) {
- *         return ArtifactType.super.getArtifactPath(instance).resolve(ARTIFACT_PATH);
+ *     public Path getArtifactPath(Object instance) {
+ *         return super.getArtifactPath(instance).resolve(ARTIFACT_PATH);
  *     }
  * 
  *     &#64;Override
@@ -66,14 +68,16 @@ import org.slf4j.Logger;
  * }
  * </code></pre>
  */
-public interface ArtifactType {
+public abstract class ArtifactType {
 
     /**
      * Get the SLF4J {@link Logger} for this artifact type.
      * 
      * @return logger for this artifact (may be {@code null})
      */
-    Logger getLogger();
+    public Logger getLogger() {
+        return null;
+    }
     
     /**
      * Determine if artifact capture is available in the specified context.
@@ -81,7 +85,7 @@ public interface ArtifactType {
      * @param instance JUnit test class instance
      * @return 'true' if capture is available; otherwise 'false'
      */
-    boolean canGetArtifact(Object instance);
+    public abstract boolean canGetArtifact(Object instance);
     
     /**
      * Capture an artifact from the specified context.
@@ -90,7 +94,7 @@ public interface ArtifactType {
      * @param reason impetus for capture request; may be 'null'
      * @return byte array containing the captured artifact; if capture fails, an empty array is returned
      */
-    byte[] getArtifact(Object instance, Throwable reason);
+    public abstract byte[] getArtifact(Object instance, Throwable reason);
     
     /**
      * Get the path at which to store artifacts.
@@ -98,15 +102,17 @@ public interface ArtifactType {
      * <b>NOTE</b>: The returned path can be either relative or absolute.
      * 
      * @param instance JUnit test class instance
-     * @return artifact storage path; {@code null} to accept default path
+     * @return artifact storage path
      */
-    Path getArtifactPath(Object instance);
+    public Path getArtifactPath(Object instance) {
+        return PathUtils.ReportsDirectory.getPathForObject(instance);
+    }
     
     /**
      * Get the extension for artifact files of this type.
      * 
      * @return artifact file extension
      */
-    String getArtifactExtension();
+    public abstract String getArtifactExtension();
     
 }
