@@ -97,7 +97,7 @@ public class MutableTest implements Test {
         }
         if (declared != null) {
             try {
-                Field field = Method.class.getDeclaredField(DECLARED_ANNOTATIONS);
+                Field field = LifecycleHooks.getDeclaredField(testMethod, DECLARED_ANNOTATIONS);
                 field.setAccessible(true);
                 try {
                     @SuppressWarnings("unchecked")
