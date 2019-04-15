@@ -2,11 +2,9 @@ package com.nordstrom.automation.junit;
 
 import org.junit.Ignore;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.junit.runners.model.TestTimedOutException;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Map;
@@ -104,7 +102,7 @@ public class MutableTest implements Test {
         }
         if (declared != null) {
             try {
-                Field field = Executable.class.getDeclaredField(DECLARED_ANNOTATIONS);
+                Field field = Method.class.getDeclaredField(DECLARED_ANNOTATIONS);
                 field.setAccessible(true);
                 try {
                     @SuppressWarnings("unchecked")

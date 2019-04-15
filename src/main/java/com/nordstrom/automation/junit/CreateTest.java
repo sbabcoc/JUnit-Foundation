@@ -55,7 +55,6 @@ public class CreateTest {
         
         TARGET_TO_RUNNER.put(testObj, runner);
         RUNNER_TO_TARGET.put(runner, testObj);
-        LifecycleHooks.applyTimeout(testObj);
         
         if (DEPTH.get().atGroundLevel()) {
             synchronized(objectWatcherLoader) {

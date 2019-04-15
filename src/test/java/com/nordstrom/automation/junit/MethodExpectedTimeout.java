@@ -5,13 +5,8 @@ import static org.junit.Assert.assertTrue;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
-import com.nordstrom.automation.junit.JUnitConfig.JUnitSettings;
 
 public class MethodExpectedTimeout {
-    
-    static {
-        System.setProperty(JUnitSettings.TEST_TIMEOUT.key(), "500");
-    }
     
     @Test
     public void testTimeout() throws InterruptedException {
