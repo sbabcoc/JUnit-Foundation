@@ -10,7 +10,11 @@ import org.junit.runner.JUnitCore;
 import org.junit.runner.Result;
 import org.junit.runner.notification.Failure;
 import org.junit.runners.model.TestTimedOutException;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+
+import com.nordstrom.automation.junit.JUnitConfig.JUnitSettings;
 
 public class MethodTimeoutTest {
     
@@ -21,6 +25,11 @@ public class MethodTimeoutTest {
         MESSAGE_MAP.put("testTimeout", "test timed out after 500 milliseconds");
         MESSAGE_MAP.put("testTimeoutWithShorterInterval", "test timed out after 500 milliseconds");
         MESSAGE_MAP.put("testTimeoutWithLongerInterval", "test timed out after 600 milliseconds");
+    }
+    
+    @BeforeClass
+    public static void before() {
+        System.setProperty(JUnitSettings.TEST_TIMEOUT.key(), "500");
     }
 
     @Test
@@ -50,6 +59,11 @@ public class MethodTimeoutTest {
         assertEquals(rla.getIgnoredTests().size(), 0, "Incorrect ignored test count");
         
         verifyFailureMessages(result);
+    }
+    
+    @AfterClass
+    public static void after() {
+        System.clearProperty(JUnitSettings.TEST_TIMEOUT.key());
     }
     
     private static void verifyFailureMessages(Result result) {

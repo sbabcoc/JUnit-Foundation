@@ -213,30 +213,6 @@ public class LifecycleHooks {
     }
     
     /**
-     * If configured for default test timeout, apply this value to every test that doesn't already specify a longer
-     * timeout interval.
-     * 
-     * @param testObj test class object
-     */
-    static void applyTimeout(Object testObj) {
-        // if default test timeout is defined
-        if (getConfig().containsKey(JUnitSettings.TEST_TIMEOUT.key())) {
-            // get default test timeout
-            long defaultTimeout = getConfig().getLong(JUnitSettings.TEST_TIMEOUT.key());
-            // iterate over test object methods
-            for (Method method : testObj.getClass().getDeclaredMethods()) {
-                // get @Test annotation
-                Test annotation = method.getAnnotation(Test.class);
-                // if annotation declared and current timeout is less than default
-                if ((annotation != null) && (annotation.timeout() < defaultTimeout)) {
-                    // set test timeout interval
-                    MutableTest.proxyFor(method).setTimeout(defaultTimeout);
-                }
-            }
-        }
-    }
-    
-    /**
      * Get class of specified test class instance.
      * 
      * @param instance test class instance
