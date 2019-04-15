@@ -2,6 +2,7 @@ package com.nordstrom.automation.junit;
 
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runners.model.TestTimedOutException;
 
 import java.lang.annotation.Annotation;
@@ -42,9 +43,6 @@ public class MutableTest implements Test {
         return MutableTest.class;
     }
     
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Class<? extends Throwable> expected() {
         return expected;
@@ -62,9 +60,6 @@ public class MutableTest implements Test {
         return this;
     }
     
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public long timeout() {
         return timeout;
