@@ -292,7 +292,7 @@ public class LifecycleHooks {
      * @throws NoSuchFieldException if a field with the specified name is not found
      * @throws SecurityException if the request is denied
      */
-    static Field getDeclaredField(Object target, String name) throws NoSuchFieldException, SecurityException {
+    static Field getDeclaredField(Object target, String name) throws NoSuchFieldException {
         Throwable thrown = null;
         for (Class<?> current = target.getClass(); current != null; current = current.getSuperclass()) {
             try {
