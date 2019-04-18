@@ -116,15 +116,15 @@ The hooks that enable **JUnit Foundation** test lifecycle notifications are inst
   
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.target>1.8</maven.compiler.target>
-    <maven.compiler.source>1.8</maven.compiler.source>  	
+    <maven.compiler.target>1.7</maven.compiler.target>
+    <maven.compiler.source>1.7</maven.compiler.source>  	
   </properties>
   
   <dependencies>
     <dependency>
       <groupId>com.nordstrom.tools</groupId>
       <artifactId>junit-foundation</artifactId>
-      <version>9.1.1</version>
+      <version>9.4.2</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -192,8 +192,8 @@ The hooks that enable **JUnit Foundation** test lifecycle notifications are inst
 // build.gradle
 ...
 apply plugin: 'maven'
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+sourceCompatibility = 1.7
+targetCompatibility = 1.7
 repositories {
     mavenLocal()
     mavenCentral()
@@ -201,7 +201,7 @@ repositories {
 }
 dependencies {
     ...
-    compile 'com.nordstrom.tools:junit-foundation:9.1.1'
+    compile 'com.nordstrom.tools:junit-foundation:9.4.2'
 }
 ext {
     junitFoundation = configurations.compile.resolvedConfiguration.resolvedArtifacts.find { it.name == 'junit-foundation' }
