@@ -5,6 +5,9 @@ import java.util.ServiceLoader;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.base.Optional;
 
 import net.bytebuddy.implementation.bind.annotation.RuntimeType;
@@ -22,6 +25,7 @@ public class CreateTest {
     private static final Map<Object, Object> TARGET_TO_RUNNER = new ConcurrentHashMap<>();
     private static final Map<Object, Object> RUNNER_TO_TARGET = new ConcurrentHashMap<>();
     private static final ThreadLocal<DepthGauge> DEPTH;
+    private static final Logger LOGGER = LoggerFactory.getLogger(CreateTest.class);
     
     static {
         objectWatcherLoader = ServiceLoader.load(TestObjectWatcher.class);
@@ -57,6 +61,7 @@ public class CreateTest {
         RUNNER_TO_TARGET.put(runner, testObj);
         
         if (DEPTH.get().atGroundLevel()) {
+            LOGGER.debug("testObjectCreated: {}", testObj);
             synchronized(objectWatcherLoader) {
                 for (TestObjectWatcher watcher : objectWatcherLoader) {
                     watcher.testObjectCreated(testObj, runner);

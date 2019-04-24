@@ -13,6 +13,8 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runners.model.FrameworkMethod;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
@@ -32,6 +34,7 @@ public class RunReflectiveCall {
     private static final ServiceLoader<MethodWatcher> methodWatcherLoader;
     private static final ThreadLocal<ConcurrentMap<Integer, DepthGauge>> methodDepth;
     private static final Function<Integer, DepthGauge> newInstance;
+    private static final Logger LOGGER = LoggerFactory.getLogger(RunReflectiveCall.class);
     
     static {
         methodWatcherLoader = ServiceLoader.load(MethodWatcher.class);
@@ -161,6 +164,10 @@ public class RunReflectiveCall {
         if ((runner != null) && (method != null)) {
             DepthGauge depthGauge = LifecycleHooks.computeIfAbsent(methodDepth.get(), methodHash(runner, method), newInstance);
             if (0 == depthGauge.increaseDepth()) {
+                if (LOGGER.isDebugEnabled()) {
+                    Class<?> clazz = (target != null) ? target.getClass() : method.getDeclaringClass();
+                    LOGGER.debug("beforeInvocation: {}.{}", clazz.getSimpleName(), method.getName());
+                }
                 synchronized(methodWatcherLoader) {
                     for (MethodWatcher watcher : methodWatcherLoader) {
                         watcher.beforeInvocation(runner, target, method, params);
@@ -187,6 +194,10 @@ public class RunReflectiveCall {
         if ((runner != null) && (method != null)) {
             DepthGauge depthGauge = LifecycleHooks.computeIfAbsent(methodDepth.get(), methodHash(runner, method), newInstance);
             if (0 == depthGauge.decreaseDepth()) {
+                if (LOGGER.isDebugEnabled()) {
+                    Class<?> clazz = (target != null) ? target.getClass() : method.getDeclaringClass();
+                    LOGGER.debug("afterInvocation: {}.{}", clazz.getSimpleName(), method.getName());
+                }
                 synchronized(methodWatcherLoader) {
                     for (MethodWatcher watcher : methodWatcherLoader) {
                         watcher.afterInvocation(runner, target, method, thrown);

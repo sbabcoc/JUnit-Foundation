@@ -9,6 +9,8 @@ import org.junit.runner.Description;
 import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
 import org.junit.runners.model.FrameworkMethod;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Optional;
 
@@ -16,6 +18,7 @@ public class RunAnnouncer extends RunListener {
     
     private static final ServiceLoader<RunWatcher> runWatcherLoader;
     private static final Map<Object, AtomicTest> RUNNER_TO_ATOMICTEST = new ConcurrentHashMap<>();
+    private static final Logger LOGGER = LoggerFactory.getLogger(RunAnnouncer.class);
     
     static {
         runWatcherLoader = ServiceLoader.load(RunWatcher.class);
@@ -27,6 +30,7 @@ public class RunAnnouncer extends RunListener {
     @Override
     public void testStarted(Description description) throws Exception {
         AtomicTest atomicTest = getAtomicTestOf(description);
+        LOGGER.debug("testStarted: {}", atomicTest);
         synchronized(runWatcherLoader) {
             for (RunWatcher watcher : runWatcherLoader) {
                 watcher.testStarted(atomicTest);
@@ -40,6 +44,7 @@ public class RunAnnouncer extends RunListener {
     @Override
     public void testFinished(Description description) throws Exception {
         AtomicTest atomicTest = getAtomicTestOf(description);
+        LOGGER.debug("testFinished: {}", atomicTest);
         synchronized(runWatcherLoader) {
             for (RunWatcher watcher : runWatcherLoader) {
                 watcher.testFinished(atomicTest);
@@ -53,6 +58,7 @@ public class RunAnnouncer extends RunListener {
     @Override
     public void testFailure(Failure failure) throws Exception {
         AtomicTest atomicTest = setTestFailure(failure);
+        LOGGER.debug("testFailure: {}", failure);
         synchronized(runWatcherLoader) {
             for (RunWatcher watcher : runWatcherLoader) {
                 watcher.testFailure(atomicTest, failure.getException());
@@ -66,6 +72,7 @@ public class RunAnnouncer extends RunListener {
     @Override
     public void testAssumptionFailure(Failure failure) {
         AtomicTest atomicTest = setTestFailure(failure);
+        LOGGER.debug("testAssumptionFailure: {}", failure);
         synchronized(runWatcherLoader) {
             for (RunWatcher watcher : runWatcherLoader) {
                 watcher.testAssumptionFailure(atomicTest, (AssumptionViolatedException) failure.getException());
@@ -79,6 +86,7 @@ public class RunAnnouncer extends RunListener {
     @Override
     public void testIgnored(Description description) throws Exception {
         AtomicTest atomicTest = getAtomicTestOf(description);
+        LOGGER.debug("testIgnored: {}", atomicTest);
         synchronized(runWatcherLoader) {
             for (RunWatcher watcher : runWatcherLoader) {
                 watcher.testIgnored(atomicTest);

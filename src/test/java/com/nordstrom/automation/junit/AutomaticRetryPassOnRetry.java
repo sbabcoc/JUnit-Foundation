@@ -11,7 +11,7 @@ public class AutomaticRetryPassOnRetry {
     @Test
     public void testPassOnRetry() {
         System.out.println("testPassOnRetry: " + count);
-        assertTrue(count++ > 0);
+        assertTrue("testPassOnRetry: " + count, count++ > 0);
     }
     
 }

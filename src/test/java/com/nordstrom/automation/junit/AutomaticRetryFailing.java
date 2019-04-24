@@ -9,7 +9,7 @@ public class AutomaticRetryFailing {
     @Test
     public void testFailed() {
         System.out.println("testFailed");
-        assertTrue(false);
+        assertTrue("testFailed", false);
     }
     
 }

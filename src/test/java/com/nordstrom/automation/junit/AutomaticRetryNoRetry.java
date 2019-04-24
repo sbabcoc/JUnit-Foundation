@@ -12,7 +12,7 @@ public class AutomaticRetryNoRetry {
     @NoRetry
     public void testNoRetry() {
         System.out.println("testNoRetry: " + count);
-        assertTrue(count++ > 0);
+        assertTrue("testNoRetry: " + count, count++ > 0);
     }
     
 }

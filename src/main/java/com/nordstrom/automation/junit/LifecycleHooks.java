@@ -12,14 +12,12 @@ import java.util.ServiceLoader;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentMap;
 
-import org.junit.Test;
 import org.junit.runner.Description;
 import org.junit.runner.notification.RunListener;
 import org.junit.runners.model.TestClass;
 
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
-import com.nordstrom.automation.junit.JUnitConfig.JUnitSettings;
 import com.nordstrom.common.base.UncheckedThrow;
 import com.nordstrom.common.file.PathUtils.ReportsDirectory;
 
