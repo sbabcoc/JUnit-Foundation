@@ -13,6 +13,8 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import org.junit.runner.Description;
 import org.junit.runner.notification.RunListener;
 import org.junit.runner.notification.RunNotifier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Optional;
 
@@ -32,6 +34,7 @@ public class Run {
     private static final ServiceLoader<RunnerWatcher> runnerWatcherLoader;
     private static final Map<Object, Object> CHILD_TO_PARENT = new ConcurrentHashMap<>();
     private static final Set<RunNotifier> NOTIFIERS = new CopyOnWriteArraySet<>();
+    private static final Logger LOGGER = LoggerFactory.getLogger(Run.class);
     
     static {
         runnerStack = new ThreadLocal<Deque<Object>>() {
@@ -139,6 +142,7 @@ public class Run {
             for (Object grandchild : grandchildren) {
                 CHILD_TO_PARENT.put(grandchild, runner);
             }
+            LOGGER.debug("runStarted: {}", runner);
             synchronized(runnerWatcherLoader) {
                 for (RunnerWatcher watcher : runnerWatcherLoader) {
                     watcher.runStarted(runner);
@@ -158,6 +162,7 @@ public class Run {
      */
     static boolean fireRunFinished(Object runner) {
         if (finishNotified.add(runner.toString())) {
+            LOGGER.debug("runFinished: {}", runner);
             synchronized(runnerWatcherLoader) {
                 for (RunnerWatcher watcher : runnerWatcherLoader) {
                     watcher.runFinished(runner);

@@ -107,4 +107,12 @@ public class AtomicTest {
     public boolean includes(FrameworkMethod method) {
         return particles.contains(method);
     }
+    
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return description.toString();
+    }
 }
