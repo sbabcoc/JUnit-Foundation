@@ -165,8 +165,7 @@ public class RunReflectiveCall {
             DepthGauge depthGauge = LifecycleHooks.computeIfAbsent(methodDepth.get(), methodHash(runner, method), newInstance);
             if (0 == depthGauge.increaseDepth()) {
                 if (LOGGER.isDebugEnabled()) {
-                    Class<?> clazz = (target != null) ? target.getClass() : method.getDeclaringClass();
-                    LOGGER.debug("beforeInvocation: {}.{}", clazz.getSimpleName(), method.getName());
+                    LOGGER.debug("beforeInvocation: {}", LifecycleHooks.invoke(runner, "describeChild", method));
                 }
                 synchronized(methodWatcherLoader) {
                     for (MethodWatcher watcher : methodWatcherLoader) {
@@ -195,8 +194,7 @@ public class RunReflectiveCall {
             DepthGauge depthGauge = LifecycleHooks.computeIfAbsent(methodDepth.get(), methodHash(runner, method), newInstance);
             if (0 == depthGauge.decreaseDepth()) {
                 if (LOGGER.isDebugEnabled()) {
-                    Class<?> clazz = (target != null) ? target.getClass() : method.getDeclaringClass();
-                    LOGGER.debug("afterInvocation: {}.{}", clazz.getSimpleName(), method.getName());
+                    LOGGER.debug("afterInvocation: {}", LifecycleHooks.invoke(runner, "describeChild", method));
                 }
                 synchronized(methodWatcherLoader) {
                     for (MethodWatcher watcher : methodWatcherLoader) {
