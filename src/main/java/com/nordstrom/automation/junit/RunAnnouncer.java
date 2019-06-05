@@ -134,17 +134,17 @@ public class RunAnnouncer<T> extends RunListener {
     /**
      * Get reference to an instance of the specified watcher type.
      * 
-     * @param <T> watcher type
+     * @param <W> watcher type
      * @param watcherType watcher type
      * @return optional watcher instance
      */
     @SuppressWarnings("unchecked")
-    static <T extends JUnitWatcher> Optional<T> getAttachedWatcher(Class<T> watcherType) {
+    static <W extends JUnitWatcher> Optional<W> getAttachedWatcher(Class<W> watcherType) {
         if (RunWatcher.class.isAssignableFrom(watcherType)) {
             synchronized(runWatcherLoader) {
                 for (RunWatcher watcher : runWatcherLoader) {
                     if (watcher.getClass() == watcherType) {
-                        return Optional.of((T) watcher);
+                        return Optional.of((W) watcher);
                     }
                 }
             }
