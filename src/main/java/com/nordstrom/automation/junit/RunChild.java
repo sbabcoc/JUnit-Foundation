@@ -67,7 +67,7 @@ public class RunChild {
                 LifecycleHooks.callProxy(proxy);
             }
         } catch (NoSuchMethodException e) {
-            
+            LifecycleHooks.callProxy(proxy);
         } finally {
             Run.popThreadRunner();
         }
