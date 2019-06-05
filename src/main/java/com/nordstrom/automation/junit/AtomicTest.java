@@ -21,14 +21,14 @@ import org.junit.runners.model.TestClass;
  */
 @Ignore
 @SuppressWarnings("all")
-public class AtomicTest {
+public class AtomicTest<T> {
     private final Object runner;
     private final Description description;
-    private final FrameworkMethod identity;
-    private final List<FrameworkMethod> particles;
+    private final T identity;
+    private final List<T> particles;
     private Throwable thrown;
 
-    public AtomicTest(Object runner, FrameworkMethod identity) {
+    public AtomicTest(Object runner, T identity) {
         this.runner = runner;
         this.identity = identity;
         this.description = invoke(runner, "describeChild", identity);
@@ -58,7 +58,7 @@ public class AtomicTest {
      * 
      * @return core method associated with this atomic test
      */
-    public FrameworkMethod getIdentity() {
+    public T getIdentity() {
         return identity;
     }
     
@@ -67,7 +67,7 @@ public class AtomicTest {
      * 
      * @return list of methods that compose this atomic test
      */
-    public List<FrameworkMethod> getParticles() {
+    public List<T> getParticles() {
         return particles;
     }
 
