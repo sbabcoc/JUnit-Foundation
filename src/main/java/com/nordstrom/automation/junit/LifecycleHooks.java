@@ -194,7 +194,7 @@ public class LifecycleHooks {
      * @param runner JUnit class runner
      * @return {@link AtomicTest} object (may be {@code null})
      */
-    public static AtomicTest getAtomicTestOf(Object runner) {
+    public static AtomicTest<?> getAtomicTestOf(Object runner) {
         return RunAnnouncer.getAtomicTestOf(runner);
     }
     

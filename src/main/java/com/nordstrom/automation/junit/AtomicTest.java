@@ -11,7 +11,6 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.Description;
-import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.TestClass;
 
 /**
@@ -101,10 +100,10 @@ public class AtomicTest<T> {
     /**
      * Determine if this atomic test includes the specified method.
      * 
-     * @param method {@link FrameworkMethod} object
+     * @param method method object
      * @return {@code true} if this atomic test includes the specified method; otherwise {@code false}
      */
-    public boolean includes(FrameworkMethod method) {
+    public boolean includes(T method) {
         return particles.contains(method);
     }
     
