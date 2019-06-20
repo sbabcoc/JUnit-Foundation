@@ -6,12 +6,12 @@ import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.Instrumentation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.ServiceLoader;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentMap;
 
+import org.apache.commons.lang3.reflect.MethodUtils;
 import org.junit.runner.Description;
 import org.junit.runner.notification.RunListener;
 import org.junit.runners.model.TestClass;
@@ -258,27 +258,11 @@ public class LifecycleHooks {
      */
     @SuppressWarnings("unchecked")
     static <T> T invoke(Object target, String methodName, Object... parameters) {
-        Class<?>[] parameterTypes = new Class<?>[parameters.length];
-        for (int i = 0; i < parameters.length; i++) {
-            parameterTypes[i] = parameters[i].getClass();
+        try {
+            return (T) MethodUtils.invokeMethod(target, true, methodName, parameters);
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            throw UncheckedThrow.throwUnchecked(e);
         }
-        
-        Throwable thrown = null;
-        for (Class<?> current = target.getClass(); current != null; current = current.getSuperclass()) {
-            try {
-                Method method = current.getDeclaredMethod(methodName, parameterTypes);
-                method.setAccessible(true);
-                return (T) method.invoke(target, parameters);
-            } catch (NoSuchMethodException e) {
-                thrown = e;
-            } catch (SecurityException | IllegalAccessException | IllegalArgumentException
-                            | InvocationTargetException e) {
-                thrown = e;
-                break;
-            }
-        }
-        
-        throw UncheckedThrow.throwUnchecked(thrown);
     }
     
     /**
