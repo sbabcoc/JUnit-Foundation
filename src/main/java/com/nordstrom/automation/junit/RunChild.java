@@ -49,14 +49,14 @@ public class RunChild {
         
         try {
             Run.pushThreadRunner(runner);
+            RunAnnouncer.newAtomicTest(runner, child);
+            
             if (child instanceof FrameworkMethod) {
                 FrameworkMethod method = (FrameworkMethod) child;
                 
                 applyTimeout(method);
                 int count = RetryHandler.getMaxRetry(runner, method);
                 boolean isIgnored = (null != method.getAnnotation(Ignore.class));
-                
-                RunAnnouncer.newAtomicTest(runner, method);
                 
                 if (count == 0) {
                     LifecycleHooks.callProxy(proxy);
@@ -66,6 +66,8 @@ public class RunChild {
             } else {
                 LifecycleHooks.callProxy(proxy);
             }
+        } catch (NoSuchMethodException e) {
+            LifecycleHooks.callProxy(proxy);
         } finally {
             Run.popThreadRunner();
         }
