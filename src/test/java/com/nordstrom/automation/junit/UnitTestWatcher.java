@@ -11,7 +11,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runners.model.FrameworkMethod;
 
-public class UnitTestWatcher implements MethodWatcher {
+public class UnitTestWatcher implements MethodWatcher<FrameworkMethod> {
 
     private List<String> m_enterBeforeClass = Collections.synchronizedList(new ArrayList<String>());
     private List<String> m_enterBeforeMethod = Collections.synchronizedList(new ArrayList<String>());
