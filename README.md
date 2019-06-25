@@ -332,7 +332,13 @@ public class LoggingWatcher implements MethodWatcher {
 
 Note that the implementation in this method watcher uses the annotations attached to the method objects to determine the type of method they're intercepting. Because each test method can have multiple configuration methods (both before and after), you may need to define additional conditions to control when your implementation runs. Examples of additional conditions include method name, method annotation, or an execution flag.
 
-#### Getting Attached Watchers and Listeners
+### Support for Standard JUnit RunListener Providers
+
+As indicated previously, **JUnit Foundation** will automatically attach standard JUnit **`RunListener`** providers that are declared in the associated **`ServiceLoader`** provider configuration file (i.e. - **_org.junit.runner.notification.RunListener_**). Declared run listeners are attached to the **`RunNotifier`** supplied to the `run()` method of JUnit runners. This feature eliminates behavioral differences between the various test execution environments like Maven, Gradle, and native IDE test runners.
+
+**JUnit Foundation** uses this feature internally; notifications sent to **`RunWatcher`** service providers are published by an auto-attached **`RunListener`**. This notification-enhancing run listener, named [RunAnnouncer](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/RunAnnouncer.java), is registered via the aforementioned [**ServiceLoader** provider configuration file](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/resources/META-INF/services/org.junit.runner.notification.RunListener).
+
+### Getting Attached Watchers and Listeners
 
 **JUnit Foundation** attaches service providers that handle published event notifications via the standard **ServiceLoader** facility. You can acquire references to these service providers through the following methods:
 
@@ -340,12 +346,6 @@ Note that the implementation in this method watcher uses the annotations attache
 Get reference to an instance of the specified watcher type.
 * `LifecycleHooks.getAttachedListener(Class<T> listenerType)`  
 Get reference to an instance of the specified listener type.
-
-### Support for Standard JUnit RunListener Providers
-
-As indicated previously, **JUnit Foundation** will automatically attach standard JUnit **`RunListener`** providers that are declared in the associated **`ServiceLoader`** provider configuration file (i.e. - **_org.junit.runner.notification.RunListener_**). Declared run listeners are attached to the **`RunNotifier`** supplied to the `run()` method of JUnit runners. This feature eliminates behavioral differences between the various test execution environments like Maven, Gradle, and native IDE test runners.
-
-**JUnit Foundation** uses this feature internally; notifications sent to **`RunWatcher`** service providers are published by an auto-attached **`RunListener`**. This notification-enhancing run listener, named [RunAnnouncer](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/RunAnnouncer.java), is registered via the aforementioned [**ServiceLoader** provider configuration file](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/resources/META-INF/services/org.junit.runner.notification.RunListener).
 
 ### Support for Parallel Execution
 
