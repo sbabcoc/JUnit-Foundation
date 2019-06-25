@@ -199,6 +199,28 @@ public class LifecycleHooks {
     }
     
     /**
+     * Determine if the specified method is a test or configuration method.
+     * 
+     * @param method method whose type is in question
+     * @return {@code true} if specified method is a particle; otherwise {@code false}
+     */
+    public static boolean isParticleMethod(Object child) {
+        return RunReflectiveCall.isParticleMethod(child);
+    }
+    
+    /**
+     * Returns this element's annotation for the specified type if such an annotation is present, else null.
+     * 
+     * @param <T> the type of the annotation to query for and return if present
+     * @param annotationClass the Class object corresponding to the annotation
+     * @return this element's annotation for the specified type if present; otherwise {@code null}
+     * @throws NullPointerException - if the given annotation class is null
+     */
+    public static <T> T getAnnotation(Object object, Class<T> annotationType) {
+        return RunReflectiveCall.getAnnotation(object, annotationType);
+    }
+    
+    /**
      * Get the description of the indicated child object from the runner for the specified test class instance.
      * 
      * @param target test class instance
@@ -302,28 +324,12 @@ public class LifecycleHooks {
      * @throws SecurityException if the request is denied
      */
     @SuppressWarnings("unchecked")
-    static <T> T getFieldValue(Object target, String name) throws IllegalAccessException, NoSuchFieldException, SecurityException {
+    public static <T> T getFieldValue(Object target, String name) throws IllegalAccessException, NoSuchFieldException, SecurityException {
         Field field = getDeclaredField(target, name);
         field.setAccessible(true);
         return (T) field.get(target);
     }
 
-    /**
-     * Set the value of the specified field of the supplied object.
-     * 
-     * @param target target object
-     * @param name field name
-     * @param value value to set in the specified field of the supplied object
-     * @throws IllegalAccessException if the {@code Field} object is enforcing access control for an inaccessible field
-     * @throws NoSuchFieldException if a field with the specified name is not found
-     * @throws SecurityException if the request is denied
-     */
-    static void setFieldValue(Object target, String name, Object value) throws IllegalAccessException, NoSuchFieldException, SecurityException {
-        Field field = getDeclaredField(target, name);
-        field.setAccessible(true);
-        field.set(target, value);
-    }
-    
     /**
      * Invoke an intercepted method through its callable proxy.
      * <p>

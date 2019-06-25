@@ -75,7 +75,7 @@ public class RetriedTest extends MutableTest {
             }
         } catch (NoSuchFieldException | SecurityException e) {
             throw new UnsupportedOperationException("Failed acquiring [" + ANNOTATIONS
-                            + "] field of Executable class", e);
+                            + "] field of test method class", e);
         }
         throw new IllegalArgumentException("Specified method is not a JUnit @Test: " + description);
     }

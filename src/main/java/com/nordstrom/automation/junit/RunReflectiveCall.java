@@ -6,13 +6,16 @@ import java.util.ServiceLoader;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.lang.IllegalAccessException;
+import java.lang.reflect.InvocationTargetException;
 
+import org.apache.commons.lang3.reflect.MethodUtils;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runners.model.FrameworkMethod;
+import org.junit.internal.runners.model.ReflectiveCallable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,55 +59,42 @@ public class RunReflectiveCall {
      * Interceptor for the {@link org.junit.internal.runners.model.ReflectiveCallable#runReflectiveCall
      * runReflectiveCall} method.
      * 
-     * @param callable {@code ReflectiveCallable} object being intercepted 
+     * @param callable {@code ReflectiveCallable} object being intercepted
      * @param proxy callable proxy for the intercepted method
      * @return {@code anything} - value returned by the intercepted method
      * @throws Exception {@code anything} (exception thrown by the intercepted method)
      */
     @RuntimeType
-    public static Object intercept(@This final Object callable, @SuperCall final Callable<?> proxy)
+    public static Object intercept(@This final ReflectiveCallable callable, @SuperCall final Callable<?> proxy)
                     throws Exception {
         
-        Object runner = null;
-        Object target = null;
-        FrameworkMethod method = null;
-        Object[] params = null;
+        Object child = null;
 
         try {
-            Object owner = getFieldValue(callable, "this$0");
-            if (owner instanceof FrameworkMethod) {
-                method = (FrameworkMethod) owner;
-                target = getFieldValue(callable, "val$target");
-                params = getFieldValue(callable, "val$params");
-                
-                if (isParticleMethod(method)) {
-                    if (target != null) {
-                        runner = CreateTest.getRunnerForTarget(target);
-                    } else {
-                        runner = Run.getThreadRunner();
-                    }
-                }
-            } else {
-                runner = owner;
-            }
+            child = getFieldValue(callable, "this$0");
         } catch (IllegalAccessException | NoSuchFieldException | SecurityException | IllegalArgumentException e) {
             // handled below
         }
         
-        if (method == null) {
+        if (!isParticleMethod(child)) {
             return LifecycleHooks.callProxy(proxy);
+        }
+        
+        Object runner = Run.getParentOf(child);
+        if (runner == null) {
+            runner = Run.getThreadRunner();
         }
         
         Object result = null;
         Throwable thrown = null;
 
         try {
-            fireBeforeInvocation(runner, target, method, params);
+            fireBeforeInvocation(runner, child, callable);
             result = LifecycleHooks.callProxy(proxy);
         } catch (Throwable t) {
             thrown = t;
         } finally {
-            fireAfterInvocation(runner, target, method, thrown);
+            fireAfterInvocation(runner, child, callable, thrown);
         }
 
         if (thrown != null) {
@@ -117,17 +107,17 @@ public class RunReflectiveCall {
     /**
      * Get reference to an instance of the specified watcher type.
      * 
-     * @param <T> watcher type
+     * @param <W> watcher type
      * @param watcherType watcher type
      * @return optional watcher instance
      */
     @SuppressWarnings("unchecked")
-    static <T extends JUnitWatcher> Optional<T> getAttachedWatcher(Class<T> watcherType) {
+    static <W extends JUnitWatcher> Optional<W> getAttachedWatcher(Class<W> watcherType) {
         if (MethodWatcher.class.isAssignableFrom(watcherType)) {
             synchronized(methodWatcherLoader) {
                 for (MethodWatcher watcher : methodWatcherLoader) {
                     if (watcher.getClass() == watcherType) {
-                        return Optional.of((T) watcher);
+                        return Optional.of((W) watcher);
                     }
                 }
             }
@@ -141,35 +131,51 @@ public class RunReflectiveCall {
      * @param method method whose type is in question
      * @return {@code true} if specified method is a particle; otherwise {@code false}
      */
-    public static boolean isParticleMethod(FrameworkMethod method) {
-        return ((null != method.getAnnotation(Test.class)) ||
-                (null != method.getAnnotation(Before.class)) ||
-                (null != method.getAnnotation(After.class)) ||
-                (null != method.getAnnotation(BeforeClass.class)) ||
-                (null != method.getAnnotation(AfterClass.class)));
+    static boolean isParticleMethod(Object child) {
+        return ((null != getAnnotation(child, Test.class)) ||
+                (null != getAnnotation(child, Before.class)) ||
+                (null != getAnnotation(child, After.class)) ||
+                (null != getAnnotation(child, BeforeClass.class)) ||
+                (null != getAnnotation(child, AfterClass.class)));
     }
     
     /**
-     * Fire the {@link MethodWatcher#beforeInvocation(Object, Object, FrameworkMethod, Object...) event.
+     * Returns this element's annotation for the specified type if such an annotation is present, else null.
+     * 
+     * @param <T> the type of the annotation to query for and return if present
+     * @param annotationClass the Class object corresponding to the annotation
+     * @return this element's annotation for the specified type if present; otherwise {@code null}
+     * @throws NullPointerException - if the given annotation class is null
+     */
+    @SuppressWarnings("unchecked")
+    static <T> T getAnnotation(Object object, Class<T> annotationType) {
+        try {
+            return (T) MethodUtils.invokeMethod(object, "getAnnotation", annotationType);
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            return null;
+        }
+    }
+    
+    /**
+     * Fire the {@link MethodWatcher#beforeInvocation(Object, Object, ReflectiveCallable) event.
      * <p>
      * If the {@code beforeInvocation} event for the specified method has already been fired, do nothing.
      * 
      * @param runner JUnit test runner
-     * @param target "enhanced" object upon which the method was invoked
-     * @param method {@link FrameworkMethod} object for the invoked method
-     * @param params method invocation parameters
+     * @param child child of {@code runner} that is being invoked
+     * @param callable {@link ReflectiveCallable} object being intercepted
      * @return {@code true} if event the {@code beforeInvocation} was fired; otherwise {@code false}
      */
-    private static boolean fireBeforeInvocation(Object runner, Object target, FrameworkMethod method, Object... params) {
-        if ((runner != null) && (method != null)) {
-            DepthGauge depthGauge = LifecycleHooks.computeIfAbsent(methodDepth.get(), methodHash(runner, method), newInstance);
+    private static boolean fireBeforeInvocation(Object runner, Object child, ReflectiveCallable callable) {
+        if ((runner != null) && (child != null)) {
+            DepthGauge depthGauge = LifecycleHooks.computeIfAbsent(methodDepth.get(), callable.hashCode(), newInstance);
             if (0 == depthGauge.increaseDepth()) {
                 if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("beforeInvocation: {}", LifecycleHooks.invoke(runner, "describeChild", method));
+                    LOGGER.debug("beforeInvocation: {}", LifecycleHooks.invoke(runner, "describeChild", child));
                 }
                 synchronized(methodWatcherLoader) {
                     for (MethodWatcher watcher : methodWatcherLoader) {
-                        watcher.beforeInvocation(runner, target, method, params);
+                        watcher.beforeInvocation(runner, child, callable);
                     }
                 }
                 return true;
@@ -179,42 +185,31 @@ public class RunReflectiveCall {
     }
     
     /**
-     * Fire the {@link MethodWatcher#afterInvocation(Object, Object, FrameworkMethod, Throwable) event.
+     * Fire the {@link MethodWatcher#afterInvocation(Object, Object, ReflectiveCallable) event.
      * <p>
      * If the {@code afterInvocation} event for the specified method has already been fired, do nothing.
      * 
      * @param runner JUnit test runner
-     * @param target "enhanced" object upon which the method was invoked
-     * @param method {@link FrameworkMethod} object for the invoked method
+     * @param child child of {@code runner} that was just invoked
+     * @param callable {@link ReflectiveCallable} object being intercepted
      * @param thrown exception thrown by method; null on normal completion
      * @return {@code true} if event the {@code afterInvocation} was fired; otherwise {@code false}
      */
-    private static boolean fireAfterInvocation(Object runner, Object target, FrameworkMethod method, Throwable thrown) {
-        if ((runner != null) && (method != null)) {
-            DepthGauge depthGauge = LifecycleHooks.computeIfAbsent(methodDepth.get(), methodHash(runner, method), newInstance);
+    private static boolean fireAfterInvocation(Object runner, Object child, ReflectiveCallable callable, Throwable thrown) {
+        if ((runner != null) && (child != null)) {
+            DepthGauge depthGauge = LifecycleHooks.computeIfAbsent(methodDepth.get(), callable.hashCode(), newInstance);
             if (0 == depthGauge.decreaseDepth()) {
                 if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("afterInvocation: {}", LifecycleHooks.invoke(runner, "describeChild", method));
+                    LOGGER.debug("afterInvocation: {}", LifecycleHooks.invoke(runner, "describeChild", child));
                 }
                 synchronized(methodWatcherLoader) {
                     for (MethodWatcher watcher : methodWatcherLoader) {
-                        watcher.afterInvocation(runner, target, method, thrown);
+                        watcher.afterInvocation(runner, child, callable, thrown);
                     }
                 }
                 return true;
             }
         }
         return false;
-    }
-    
-    /**
-     * Generate a hash code for the specified runner/method pair.
-     * 
-     * @param runner JUnit test runner
-     * @param method {@link FrameworkMethod} object
-     * @return hash code for the specified runner/method pair
-     */
-    public static int methodHash(Object runner, FrameworkMethod method) {
-        return ((Thread.currentThread().hashCode() * 31) + runner.hashCode()) * 31 + method.hashCode();
     }
 }

@@ -9,9 +9,10 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.internal.runners.model.ReflectiveCallable;
 import org.junit.runners.model.FrameworkMethod;
 
-public class UnitTestWatcher implements MethodWatcher<FrameworkMethod> {
+public class UnitTestWatcher implements MethodWatcher {
 
     private List<String> m_enterBeforeClass = Collections.synchronizedList(new ArrayList<String>());
     private List<String> m_enterBeforeMethod = Collections.synchronizedList(new ArrayList<String>());
@@ -26,7 +27,8 @@ public class UnitTestWatcher implements MethodWatcher<FrameworkMethod> {
     private List<String> m_leaveAfterClass = Collections.synchronizedList(new ArrayList<String>());
     
     @Override
-    public void beforeInvocation(Object runner, Object target, FrameworkMethod method, Object... params) {
+    public void beforeInvocation(Object runner, Object child, ReflectiveCallable callable) {
+        FrameworkMethod method = (FrameworkMethod) child;
         if (null != method.getAnnotation(BeforeClass.class)) {
             m_enterBeforeClass.add(method.getName());
         } else if (null != method.getAnnotation(Before.class)) {
@@ -41,7 +43,8 @@ public class UnitTestWatcher implements MethodWatcher<FrameworkMethod> {
     }
 
     @Override
-    public void afterInvocation(Object runner, Object target, FrameworkMethod method, Throwable thrown) {
+    public void afterInvocation(Object runner, Object child, ReflectiveCallable callable, Throwable thrown) {
+        FrameworkMethod method = (FrameworkMethod) child;
         if (null != method.getAnnotation(BeforeClass.class)) {
             m_leaveBeforeClass.add(method.getName());
         } else if (null != method.getAnnotation(Before.class)) {
