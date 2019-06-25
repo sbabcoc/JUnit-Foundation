@@ -58,24 +58,33 @@ public class ExploringWatcher implements TestClassWatcher, MethodWatcher {
     }
 
     @Override
-    public void beforeInvocation(Object runner, Object target, FrameworkMethod method, Object... params) {
-        // if target defined
-        if (target != null) {
-            // get the test class of the runner
-            TestClass testClass = LifecycleHooks.getTestClassOf(runner);
+    public void beforeInvocation(Object runner, Object child, ReflectiveCallable callable) {
+        // if child is a FrameworkMethod
+        if (child instanceof FrameworkMethod) {
+            Object target = LifecycleHooks.getFieldValue(callable, "val$target");
+            // if target defined
+            if (target != null) {
+                // get the test class of the runner
+                TestClass testClass = LifecycleHooks.getTestClassOf(runner);
+            }
         }
+
         ...
     }
     
     @Override
-    public void afterInvocation(Object runner, Object target, FrameworkMethod method, Throwable thrown) {
-        // if target defined
-        if (target != null) {
-            // get the atomic test of the runner
-            AtomicTest atomicTest = LifecycleHooks.getAtomicTestOf(runner);
-            // get the "identity" method
-            FrameworkMethod identity = atomicTest.getIdentity();
-            ...
+    public void afterInvocation(Object runner, Object child, ReflectiveCallable callable, Throwable thrown) {
+        // if child is a FrameworkMethod
+        if (child instanceof FrameworkMethod) {
+            FrameworkMethod method = (FrameworkMethod) child;
+            // if child is a 'before' configuration method
+            if (null != method.getAnnotation(Before.class)) {
+                // get the atomic test of the runner
+                AtomicTest<FrameworkMethod> atomicTest = LifecycleHooks.getAtomicTestOf(runner);
+                // get the "identity" method
+                FrameworkMethod identity = atomicTest.getIdentity();
+                ...
+            }
         }
         ...
     }
@@ -90,17 +99,23 @@ public class ExploringWatcher implements TestClassWatcher, MethodWatcher {
 Note that some associations are not available for specific context:
 
 * `TestClass` objects for `Suite` runners have no associated atomic tests.
-* `FrameworkMethod` objects for static configuration methods (**`@BeforeClass`**/**`@AfterClass`**) have no associated atomic tests.
-* `FrameworkMethod` objects for ignored test methods (**`@Ignore`**) have no associated target test class instances.
+* Method objects for static configuration methods (**`@BeforeClass`**/**`@AfterClass`**) have no associated atomic tests.
+* Method objects for ignored test methods (**`@Ignore`**) have no associated target test class instances.
 
 #### Useful Utility Methods
 
 **JUnit Foundation** provides several static utility methods that can be useful in your service provider implementation.
 
+* `LifecycleHooks.isParticleMethod(Object child)`  
+Determines if the specified child is a test or configuration method.
+* `LifecycleHooks.getAnnotation(Object object, Class<T> annotationType)`  
+Returns the annotation of the specified type if the object is tagged with such an annotation.
 * `LifecycleHooks.describeChild(Object target, Object child)`  
 Get a `Description` for the indicated child object from the runner for the specified test class instance.
 * `LifecycleHooks.getInstanceClass(Object instance)`  
 Get class of specified test class instance.
+* `LifecycleHooks.getFieldValue(Object target, String name)`  
+Get the value of the specified field from the supplied object.
 
 ### How to Enable Notifications
 
@@ -124,7 +139,7 @@ The hooks that enable **JUnit Foundation** test lifecycle notifications are inst
     <dependency>
       <groupId>com.nordstrom.tools</groupId>
       <artifactId>junit-foundation</artifactId>
-      <version>9.4.3</version>
+      <version>11.0.0</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -201,7 +216,7 @@ repositories {
 }
 dependencies {
     ...
-    compile 'com.nordstrom.tools:junit-foundation:9.4.3
+    compile 'com.nordstrom.tools:junit-foundation:11.0.0
     '
 }
 ext {
@@ -281,7 +296,8 @@ public class LoggingWatcher implements MethodWatcher {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggingWatcher.class);
 
     @Override
-    public void beforeInvocation(Object target, FrameworkMethod method, Object... params) {
+    public void beforeInvocation(Object runner, Object child, ReflectiveCallable callable) {
+        FrameworkMethod method = (FrameworkMethod) child;
         if (null != method.getAnnotation(Test.class)) {
             LOGGER.info(">>>>> ENTER 'test' method {}", method.getName());
         } else if (null != method.getAnnotation(Before.class)) {
@@ -296,7 +312,8 @@ public class LoggingWatcher implements MethodWatcher {
     }
 
     @Override
-    public void afterInvocation(Object obj, FrameworkMethod method, Object... params) {
+    public void afterInvocation(Object runner, Object child, ReflectiveCallable callable, Throwable thrown) {
+        FrameworkMethod method = (FrameworkMethod) child;
         if (null != method.getAnnotation(Test.class)) {
             LOGGER.info("<<<<< LEAVE 'test' method {}", method.getName());
         } else if (null != method.getAnnotation(Before.class)) {
@@ -314,6 +331,15 @@ public class LoggingWatcher implements MethodWatcher {
 ```
 
 Note that the implementation in this method watcher uses the annotations attached to the method objects to determine the type of method they're intercepting. Because each test method can have multiple configuration methods (both before and after), you may need to define additional conditions to control when your implementation runs. Examples of additional conditions include method name, method annotation, or an execution flag.
+
+#### Getting Attached Watchers and Listeners
+
+**JUnit Foundation** attaches service providers that handle published event notifications via the standard **ServiceLoader** facility. You can acquire references to these service providers through the following methods:
+
+* `LifecycleHooks.getAttachedWatcher(Class<T> watcherType)`  
+Get reference to an instance of the specified watcher type.
+* `LifecycleHooks.getAttachedListener(Class<T> listenerType)`  
+Get reference to an instance of the specified listener type.
 
 ### Support for Standard JUnit RunListener Providers
 
