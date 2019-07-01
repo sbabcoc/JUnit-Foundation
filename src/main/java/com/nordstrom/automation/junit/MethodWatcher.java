@@ -5,7 +5,7 @@ import org.junit.internal.runners.model.ReflectiveCallable;
 /**
  * This interface defines the methods implemented by JUnit method watchers.
  */
-public interface MethodWatcher<T> extends JUnitWatcher {
+public interface MethodWatcher<T> extends TypeDiscloser<T>, JUnitWatcher {
 
     /**
      * Invoked before each test or configuration method is invoked.
@@ -25,11 +25,4 @@ public interface MethodWatcher<T> extends JUnitWatcher {
      * @param thrown exception thrown by method; {@code null} on normal completion
      */
     void afterInvocation(Object runner, T child, ReflectiveCallable callable, Throwable thrown);
-    
-    /**
-     * Publish the child object type supported by this watcher.
-     * 
-     * @return supported child object type
-     */
-    Class<T> supportedType();
 }
