@@ -42,7 +42,7 @@ import com.nordstrom.automation.junit.TestClassWatcher;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.TestClass;
 
-public class ExploringWatcher implements TestClassWatcher, MethodWatcher {
+public class ExploringWatcher implements TestClassWatcher, MethodWatcher<FrameworkMethod> {
 
     ...
 
@@ -58,33 +58,26 @@ public class ExploringWatcher implements TestClassWatcher, MethodWatcher {
     }
 
     @Override
-    public void beforeInvocation(Object runner, Object child, ReflectiveCallable callable) {
-        // if child is a FrameworkMethod
-        if (child instanceof FrameworkMethod) {
-            Object target = LifecycleHooks.getFieldValue(callable, "val$target");
-            // if target defined
-            if (target != null) {
-                // get the test class of the runner
-                TestClass testClass = LifecycleHooks.getTestClassOf(runner);
-            }
+    public void beforeInvocation(Object runner, FrameworkMethod method, ReflectiveCallable callable) {
+        Object target = LifecycleHooks.getFieldValue(callable, "val$target");
+        // if target defined
+        if (target != null) {
+            // get the test class of the runner
+            TestClass testClass = LifecycleHooks.getTestClassOf(runner);
+            ...
         }
-
         ...
     }
     
     @Override
-    public void afterInvocation(Object runner, Object child, ReflectiveCallable callable, Throwable thrown) {
-        // if child is a FrameworkMethod
-        if (child instanceof FrameworkMethod) {
-            FrameworkMethod method = (FrameworkMethod) child;
-            // if child is a 'before' configuration method
-            if (null != method.getAnnotation(Before.class)) {
-                // get the atomic test of the runner
-                AtomicTest<FrameworkMethod> atomicTest = LifecycleHooks.getAtomicTestOf(runner);
-                // get the "identity" method
-                FrameworkMethod identity = atomicTest.getIdentity();
-                ...
-            }
+    public void afterInvocation(Object runner, FrameworkMethod method, ReflectiveCallable callable, Throwable thrown) {
+        // if child is a 'before' configuration method
+        if (null != method.getAnnotation(Before.class)) {
+            // get the atomic test of the runner
+            AtomicTest<FrameworkMethod> atomicTest = LifecycleHooks.getAtomicTestOf(runner);
+            // get the "identity" method
+            FrameworkMethod identity = atomicTest.getIdentity();
+            ...
         }
         ...
     }
@@ -291,13 +284,12 @@ import org.junit.runners.model.FrameworkMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class LoggingWatcher implements MethodWatcher {
+public class LoggingWatcher implements MethodWatcher<FrameworkMethod> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggingWatcher.class);
 
     @Override
-    public void beforeInvocation(Object runner, Object child, ReflectiveCallable callable) {
-        FrameworkMethod method = (FrameworkMethod) child;
+    public void beforeInvocation(Object runner, FrameworkMethod method, ReflectiveCallable callable) {
         if (null != method.getAnnotation(Test.class)) {
             LOGGER.info(">>>>> ENTER 'test' method {}", method.getName());
         } else if (null != method.getAnnotation(Before.class)) {
@@ -312,8 +304,7 @@ public class LoggingWatcher implements MethodWatcher {
     }
 
     @Override
-    public void afterInvocation(Object runner, Object child, ReflectiveCallable callable, Throwable thrown) {
-        FrameworkMethod method = (FrameworkMethod) child;
+    public void afterInvocation(Object runner, FrameworkMethod method, ReflectiveCallable callable, Throwable thrown) {
         if (null != method.getAnnotation(Test.class)) {
             LOGGER.info("<<<<< LEAVE 'test' method {}", method.getName());
         } else if (null != method.getAnnotation(Before.class)) {
