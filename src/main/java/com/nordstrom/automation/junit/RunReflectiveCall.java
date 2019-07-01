@@ -7,14 +7,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.lang.IllegalAccessException;
-import java.lang.reflect.InvocationTargetException;
-
-import org.apache.commons.lang3.reflect.MethodUtils;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
 import org.junit.internal.runners.model.ReflectiveCallable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,10 +68,6 @@ public class RunReflectiveCall {
             // handled below
         }
         
-        if (!isParticleMethod(child)) {
-            return LifecycleHooks.callProxy(proxy);
-        }
-        
         Object runner = Run.getParentOf(child);
         if (runner == null) {
             runner = Run.getThreadRunner();
@@ -126,37 +114,6 @@ public class RunReflectiveCall {
     }
     
     /**
-     * Determine if the specified method is a test or configuration method.
-     * 
-     * @param method method whose type is in question
-     * @return {@code true} if specified method is a particle; otherwise {@code false}
-     */
-    static boolean isParticleMethod(Object child) {
-        return ((null != getAnnotation(child, Test.class)) ||
-                (null != getAnnotation(child, Before.class)) ||
-                (null != getAnnotation(child, After.class)) ||
-                (null != getAnnotation(child, BeforeClass.class)) ||
-                (null != getAnnotation(child, AfterClass.class)));
-    }
-    
-    /**
-     * Returns this element's annotation for the specified type if such an annotation is present, else null.
-     * 
-     * @param <T> the type of the annotation to query for and return if present
-     * @param annotationClass the Class object corresponding to the annotation
-     * @return this element's annotation for the specified type if present; otherwise {@code null}
-     * @throws NullPointerException - if the given annotation class is null
-     */
-    @SuppressWarnings("unchecked")
-    static <T> T getAnnotation(Object object, Class<T> annotationType) {
-        try {
-            return (T) MethodUtils.invokeMethod(object, "getAnnotation", annotationType);
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-            return null;
-        }
-    }
-    
-    /**
      * Fire the {@link MethodWatcher#beforeInvocation(Object, Object, ReflectiveCallable) event.
      * <p>
      * If the {@code beforeInvocation} event for the specified method has already been fired, do nothing.
@@ -171,7 +128,11 @@ public class RunReflectiveCall {
             DepthGauge depthGauge = LifecycleHooks.computeIfAbsent(methodDepth.get(), callable.hashCode(), newInstance);
             if (0 == depthGauge.increaseDepth()) {
                 if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("beforeInvocation: {}", LifecycleHooks.invoke(runner, "describeChild", child));
+                    try {
+                        LOGGER.debug("beforeInvocation: {}", LifecycleHooks.invoke(runner, "describeChild", child));
+                    } catch (Throwable t) {
+                        // nothing to do here
+                    }
                 }
                 synchronized(methodWatcherLoader) {
                     for (MethodWatcher watcher : methodWatcherLoader) {
@@ -200,7 +161,11 @@ public class RunReflectiveCall {
             DepthGauge depthGauge = LifecycleHooks.computeIfAbsent(methodDepth.get(), callable.hashCode(), newInstance);
             if (0 == depthGauge.decreaseDepth()) {
                 if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("afterInvocation: {}", LifecycleHooks.invoke(runner, "describeChild", child));
+                    try {
+                        LOGGER.debug("afterInvocation: {}", LifecycleHooks.invoke(runner, "describeChild", child));
+                    } catch (Throwable t) {
+                        // nothing to do here
+                    }
                 }
                 synchronized(methodWatcherLoader) {
                     for (MethodWatcher watcher : methodWatcherLoader) {

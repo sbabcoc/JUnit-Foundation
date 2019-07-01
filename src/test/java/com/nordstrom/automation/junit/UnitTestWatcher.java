@@ -28,33 +28,37 @@ public class UnitTestWatcher implements MethodWatcher {
     
     @Override
     public void beforeInvocation(Object runner, Object child, ReflectiveCallable callable) {
-        FrameworkMethod method = (FrameworkMethod) child;
-        if (null != method.getAnnotation(BeforeClass.class)) {
-            m_enterBeforeClass.add(method.getName());
-        } else if (null != method.getAnnotation(Before.class)) {
-            m_enterBeforeMethod.add(method.getName());
-        } else if (null != method.getAnnotation(Test.class)) {
-            m_enterTest.add(method.getName());
-        } else if (null != method.getAnnotation(After.class)) {
-            m_enterAfterMethod.add(method.getName());
-        } else if (null != method.getAnnotation(AfterClass.class)) {
-            m_enterAfterClass.add(method.getName());
+        if (child instanceof FrameworkMethod) {
+            FrameworkMethod method = (FrameworkMethod) child;
+            if (null != method.getAnnotation(BeforeClass.class)) {
+                m_enterBeforeClass.add(method.getName());
+            } else if (null != method.getAnnotation(Before.class)) {
+                m_enterBeforeMethod.add(method.getName());
+            } else if (null != method.getAnnotation(Test.class)) {
+                m_enterTest.add(method.getName());
+            } else if (null != method.getAnnotation(After.class)) {
+                m_enterAfterMethod.add(method.getName());
+            } else if (null != method.getAnnotation(AfterClass.class)) {
+                m_enterAfterClass.add(method.getName());
+            }
         }
     }
 
     @Override
     public void afterInvocation(Object runner, Object child, ReflectiveCallable callable, Throwable thrown) {
-        FrameworkMethod method = (FrameworkMethod) child;
-        if (null != method.getAnnotation(BeforeClass.class)) {
-            m_leaveBeforeClass.add(method.getName());
-        } else if (null != method.getAnnotation(Before.class)) {
-            m_leaveBeforeMethod.add(method.getName());
-        } else if (null != method.getAnnotation(Test.class)) {
-            m_leaveTest.add(method.getName());
-        } else if (null != method.getAnnotation(After.class)) {
-            m_leaveAfterMethod.add(method.getName());
-        } else if (null != method.getAnnotation(AfterClass.class)) {
-            m_leaveAfterClass.add(method.getName());
+        if (child instanceof FrameworkMethod) {
+            FrameworkMethod method = (FrameworkMethod) child;
+            if (null != method.getAnnotation(BeforeClass.class)) {
+                m_leaveBeforeClass.add(method.getName());
+            } else if (null != method.getAnnotation(Before.class)) {
+                m_leaveBeforeMethod.add(method.getName());
+            } else if (null != method.getAnnotation(Test.class)) {
+                m_leaveTest.add(method.getName());
+            } else if (null != method.getAnnotation(After.class)) {
+                m_leaveAfterMethod.add(method.getName());
+            } else if (null != method.getAnnotation(AfterClass.class)) {
+                m_leaveAfterClass.add(method.getName());
+            }
         }
     }
     
