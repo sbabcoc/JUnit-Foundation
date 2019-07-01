@@ -44,4 +44,10 @@ public interface RunWatcher<T> extends JUnitWatcher {
      */
     public void testIgnored(AtomicTest<T> atomicTest);
     
+    /**
+     * Publish the child object type supported by this watcher.
+     * 
+     * @return supported child object type
+     */
+    Class<T> supportedType();
 }

@@ -12,7 +12,7 @@ import org.junit.Test;
 import org.junit.internal.runners.model.ReflectiveCallable;
 import org.junit.runners.model.FrameworkMethod;
 
-public class UnitTestWatcher implements MethodWatcher {
+public class UnitTestWatcher implements MethodWatcher<FrameworkMethod> {
 
     private List<String> m_enterBeforeClass = Collections.synchronizedList(new ArrayList<String>());
     private List<String> m_enterBeforeMethod = Collections.synchronizedList(new ArrayList<String>());
@@ -27,39 +27,38 @@ public class UnitTestWatcher implements MethodWatcher {
     private List<String> m_leaveAfterClass = Collections.synchronizedList(new ArrayList<String>());
     
     @Override
-    public void beforeInvocation(Object runner, Object child, ReflectiveCallable callable) {
-        if (child instanceof FrameworkMethod) {
-            FrameworkMethod method = (FrameworkMethod) child;
-            if (null != method.getAnnotation(BeforeClass.class)) {
-                m_enterBeforeClass.add(method.getName());
-            } else if (null != method.getAnnotation(Before.class)) {
-                m_enterBeforeMethod.add(method.getName());
-            } else if (null != method.getAnnotation(Test.class)) {
-                m_enterTest.add(method.getName());
-            } else if (null != method.getAnnotation(After.class)) {
-                m_enterAfterMethod.add(method.getName());
-            } else if (null != method.getAnnotation(AfterClass.class)) {
-                m_enterAfterClass.add(method.getName());
-            }
+    public void beforeInvocation(Object runner, FrameworkMethod method, ReflectiveCallable callable) {
+        if (null != method.getAnnotation(BeforeClass.class)) {
+            m_enterBeforeClass.add(method.getName());
+        } else if (null != method.getAnnotation(Before.class)) {
+            m_enterBeforeMethod.add(method.getName());
+        } else if (null != method.getAnnotation(Test.class)) {
+            m_enterTest.add(method.getName());
+        } else if (null != method.getAnnotation(After.class)) {
+            m_enterAfterMethod.add(method.getName());
+        } else if (null != method.getAnnotation(AfterClass.class)) {
+            m_enterAfterClass.add(method.getName());
         }
     }
 
     @Override
-    public void afterInvocation(Object runner, Object child, ReflectiveCallable callable, Throwable thrown) {
-        if (child instanceof FrameworkMethod) {
-            FrameworkMethod method = (FrameworkMethod) child;
-            if (null != method.getAnnotation(BeforeClass.class)) {
-                m_leaveBeforeClass.add(method.getName());
-            } else if (null != method.getAnnotation(Before.class)) {
-                m_leaveBeforeMethod.add(method.getName());
-            } else if (null != method.getAnnotation(Test.class)) {
-                m_leaveTest.add(method.getName());
-            } else if (null != method.getAnnotation(After.class)) {
-                m_leaveAfterMethod.add(method.getName());
-            } else if (null != method.getAnnotation(AfterClass.class)) {
-                m_leaveAfterClass.add(method.getName());
-            }
+    public void afterInvocation(Object runner, FrameworkMethod method, ReflectiveCallable callable, Throwable thrown) {
+        if (null != method.getAnnotation(BeforeClass.class)) {
+            m_leaveBeforeClass.add(method.getName());
+        } else if (null != method.getAnnotation(Before.class)) {
+            m_leaveBeforeMethod.add(method.getName());
+        } else if (null != method.getAnnotation(Test.class)) {
+            m_leaveTest.add(method.getName());
+        } else if (null != method.getAnnotation(After.class)) {
+            m_leaveAfterMethod.add(method.getName());
+        } else if (null != method.getAnnotation(AfterClass.class)) {
+            m_leaveAfterClass.add(method.getName());
         }
+    }
+
+    @Override
+    public Class<FrameworkMethod> supportedType() {
+        return FrameworkMethod.class;
     }
     
     public List<String> getEnterBeforeClass() {

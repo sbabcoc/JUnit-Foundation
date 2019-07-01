@@ -103,7 +103,7 @@ public class RunReflectiveCall {
     static <W extends JUnitWatcher> Optional<W> getAttachedWatcher(Class<W> watcherType) {
         if (MethodWatcher.class.isAssignableFrom(watcherType)) {
             synchronized(methodWatcherLoader) {
-                for (MethodWatcher watcher : methodWatcherLoader) {
+                for (MethodWatcher<?> watcher : methodWatcherLoader) {
                     if (watcher.getClass() == watcherType) {
                         return Optional.of((W) watcher);
                     }
@@ -123,6 +123,7 @@ public class RunReflectiveCall {
      * @param callable {@link ReflectiveCallable} object being intercepted
      * @return {@code true} if event the {@code beforeInvocation} was fired; otherwise {@code false}
      */
+    @SuppressWarnings({"rawtypes", "unchecked"})
     private static boolean fireBeforeInvocation(Object runner, Object child, ReflectiveCallable callable) {
         if ((runner != null) && (child != null)) {
             DepthGauge depthGauge = LifecycleHooks.computeIfAbsent(methodDepth.get(), callable.hashCode(), newInstance);
@@ -136,7 +137,9 @@ public class RunReflectiveCall {
                 }
                 synchronized(methodWatcherLoader) {
                     for (MethodWatcher watcher : methodWatcherLoader) {
-                        watcher.beforeInvocation(runner, child, callable);
+                        if (watcher.supportedType().isInstance(child)) {
+                            watcher.beforeInvocation(runner, child, callable);
+                        }
                     }
                 }
                 return true;
@@ -156,6 +159,7 @@ public class RunReflectiveCall {
      * @param thrown exception thrown by method; null on normal completion
      * @return {@code true} if event the {@code afterInvocation} was fired; otherwise {@code false}
      */
+    @SuppressWarnings({"rawtypes", "unchecked"})
     private static boolean fireAfterInvocation(Object runner, Object child, ReflectiveCallable callable, Throwable thrown) {
         if ((runner != null) && (child != null)) {
             DepthGauge depthGauge = LifecycleHooks.computeIfAbsent(methodDepth.get(), callable.hashCode(), newInstance);
@@ -169,7 +173,9 @@ public class RunReflectiveCall {
                 }
                 synchronized(methodWatcherLoader) {
                     for (MethodWatcher watcher : methodWatcherLoader) {
-                        watcher.afterInvocation(runner, child, callable, thrown);
+                        if (watcher.supportedType().isInstance(child)) {
+                            watcher.afterInvocation(runner, child, callable, thrown);
+                        }
                     }
                 }
                 return true;

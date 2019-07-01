@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Optional;
 
-public class RunAnnouncer<T> extends RunListener {
+public class RunAnnouncer extends RunListener {
     
     @SuppressWarnings("rawtypes")
     private static final ServiceLoader<RunWatcher> runWatcherLoader;
@@ -28,13 +28,15 @@ public class RunAnnouncer<T> extends RunListener {
      * {@inheritDoc}
      */
     @Override
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public void testStarted(Description description) throws Exception {
         LOGGER.debug("testStarted: {}", description);
-        AtomicTest<T> atomicTest = getAtomicTestOf(description);
+        AtomicTest<?> atomicTest = getAtomicTestOf(description);
         synchronized(runWatcherLoader) {
-            for (RunWatcher<T> watcher : runWatcherLoader) {
-                watcher.testStarted(atomicTest);
+            for (RunWatcher watcher : runWatcherLoader) {
+                if (isSupported(watcher, atomicTest)) {
+                    watcher.testStarted(atomicTest);
+                }
             }
         }
     }
@@ -43,13 +45,15 @@ public class RunAnnouncer<T> extends RunListener {
      * {@inheritDoc}
      */
     @Override
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public void testFinished(Description description) throws Exception {
         LOGGER.debug("testFinished: {}", description);
-        AtomicTest<T> atomicTest = getAtomicTestOf(description);
+        AtomicTest<?> atomicTest = getAtomicTestOf(description);
         synchronized(runWatcherLoader) {
-            for (RunWatcher<T> watcher : runWatcherLoader) {
-                watcher.testFinished(atomicTest);
+            for (RunWatcher watcher : runWatcherLoader) {
+                if (isSupported(watcher, atomicTest)) {
+                    watcher.testFinished(atomicTest);
+                }
             }
         }
     }
@@ -58,13 +62,15 @@ public class RunAnnouncer<T> extends RunListener {
      * {@inheritDoc}
      */
     @Override
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public void testFailure(Failure failure) throws Exception {
         LOGGER.debug("testFailure: {}", failure);
-        AtomicTest<T> atomicTest = setTestFailure(failure);
+        AtomicTest<?> atomicTest = setTestFailure(failure);
         synchronized(runWatcherLoader) {
-            for (RunWatcher<T> watcher : runWatcherLoader) {
-                watcher.testFailure(atomicTest, failure.getException());
+            for (RunWatcher watcher : runWatcherLoader) {
+                if (isSupported(watcher, atomicTest)) {
+                    watcher.testFailure(atomicTest, failure.getException());
+                }
             }
         }
     }
@@ -73,13 +79,15 @@ public class RunAnnouncer<T> extends RunListener {
      * {@inheritDoc}
      */
     @Override
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public void testAssumptionFailure(Failure failure) {
         LOGGER.debug("testAssumptionFailure: {}", failure);
-        AtomicTest<T> atomicTest = setTestFailure(failure);
+        AtomicTest<?> atomicTest = setTestFailure(failure);
         synchronized(runWatcherLoader) {
-            for (RunWatcher<T> watcher : runWatcherLoader) {
-                watcher.testAssumptionFailure(atomicTest, (AssumptionViolatedException) failure.getException());
+            for (RunWatcher watcher : runWatcherLoader) {
+                if (isSupported(watcher, atomicTest)) {
+                    watcher.testAssumptionFailure(atomicTest, (AssumptionViolatedException) failure.getException());
+                }
             }
         }
     }
@@ -88,13 +96,15 @@ public class RunAnnouncer<T> extends RunListener {
      * {@inheritDoc}
      */
     @Override
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public void testIgnored(Description description) throws Exception {
         LOGGER.debug("testIgnored: {}", description);
-        AtomicTest<T> atomicTest = getAtomicTestOf(description);
+        AtomicTest<?> atomicTest = getAtomicTestOf(description);
         synchronized(runWatcherLoader) {
-            for (RunWatcher<T> watcher : runWatcherLoader) {
-                watcher.testIgnored(atomicTest);
+            for (RunWatcher watcher : runWatcherLoader) {
+                if (isSupported(watcher, atomicTest)) {
+                    watcher.testIgnored(atomicTest);
+                }
             }
         }
     }
@@ -117,6 +127,7 @@ public class RunAnnouncer<T> extends RunListener {
     /**
      * Get the atomic test object for the specified class runner or method description.
      * 
+     * @param <T> atomic test child object type
      * @param testKey JUnit class runner or method description
      * @return {@link AtomicTest} object (may be {@code null})
      */
@@ -128,6 +139,7 @@ public class RunAnnouncer<T> extends RunListener {
     /**
      * Store the specified failure in the active atomic test.
      * 
+     * @param <T> atomic test child object type
      * @param failure {@link Failure} object
      * @return {@link AtomicTest} object
      */
@@ -135,6 +147,17 @@ public class RunAnnouncer<T> extends RunListener {
         AtomicTest<T> atomicTest = getAtomicTestOf(Run.getThreadRunner());
         atomicTest.setThrowable(failure.getException());
         return atomicTest;
+    }
+    
+    /**
+     * Determine if the run watcher in question supports the specified atomic test.
+     * 
+     * @param watcher {@link RunWatcher} object
+     * @param atomicTest {@link AtomicTest} object
+     * @return {@code true} if the run watcher in question supports the specified atomic test; otherwise {@code false}
+     */
+    private static boolean isSupported(RunWatcher<?> watcher, AtomicTest<?> atomicTest) {
+        return watcher.supportedType().isInstance(atomicTest.getIdentity());
     }
     
     /**
