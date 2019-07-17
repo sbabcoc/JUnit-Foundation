@@ -302,28 +302,12 @@ public class LifecycleHooks {
      * @throws SecurityException if the request is denied
      */
     @SuppressWarnings("unchecked")
-    static <T> T getFieldValue(Object target, String name) throws IllegalAccessException, NoSuchFieldException, SecurityException {
+    public static <T> T getFieldValue(Object target, String name) throws IllegalAccessException, NoSuchFieldException, SecurityException {
         Field field = getDeclaredField(target, name);
         field.setAccessible(true);
         return (T) field.get(target);
     }
 
-    /**
-     * Set the value of the specified field of the supplied object.
-     * 
-     * @param target target object
-     * @param name field name
-     * @param value value to set in the specified field of the supplied object
-     * @throws IllegalAccessException if the {@code Field} object is enforcing access control for an inaccessible field
-     * @throws NoSuchFieldException if a field with the specified name is not found
-     * @throws SecurityException if the request is denied
-     */
-    static void setFieldValue(Object target, String name, Object value) throws IllegalAccessException, NoSuchFieldException, SecurityException {
-        Field field = getDeclaredField(target, name);
-        field.setAccessible(true);
-        field.set(target, value);
-    }
-    
     /**
      * Invoke an intercepted method through its callable proxy.
      * <p>

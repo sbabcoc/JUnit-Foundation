@@ -42,7 +42,7 @@ import com.nordstrom.automation.junit.TestClassWatcher;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.TestClass;
 
-public class ExploringWatcher implements TestClassWatcher, MethodWatcher {
+public class ExploringWatcher implements TestClassWatcher, MethodWatcher<FrameworkMethod> {
 
     ...
 
@@ -58,21 +58,23 @@ public class ExploringWatcher implements TestClassWatcher, MethodWatcher {
     }
 
     @Override
-    public void beforeInvocation(Object runner, Object target, FrameworkMethod method, Object... params) {
+    public void beforeInvocation(Object runner, FrameworkMethod method, ReflectiveCallable callable) {
+        Object target = LifecycleHooks.getFieldValue(callable, "val$target");
         // if target defined
         if (target != null) {
             // get the test class of the runner
             TestClass testClass = LifecycleHooks.getTestClassOf(runner);
+            ...
         }
         ...
     }
     
     @Override
-    public void afterInvocation(Object runner, Object target, FrameworkMethod method, Throwable thrown) {
-        // if target defined
-        if (target != null) {
+    public void afterInvocation(Object runner, FrameworkMethod method, ReflectiveCallable callable, Throwable thrown) {
+        // if child is a 'before' configuration method
+        if (null != method.getAnnotation(Before.class)) {
             // get the atomic test of the runner
-            AtomicTest atomicTest = LifecycleHooks.getAtomicTestOf(runner);
+            AtomicTest<FrameworkMethod> atomicTest = LifecycleHooks.getAtomicTestOf(runner);
             // get the "identity" method
             FrameworkMethod identity = atomicTest.getIdentity();
             ...
@@ -97,10 +99,16 @@ Note that some associations are not available for specific context:
 
 **JUnit Foundation** provides several static utility methods that can be useful in your service provider implementation.
 
+* `LifecycleHooks.isParticleMethod(Object child)`  
+Determines if the specified child is a test or configuration method.
+* `LifecycleHooks.getAnnotation(Object object, Class<T> annotationType)`  
+Returns the annotation of the specified type if the object is tagged with such an annotation.
 * `LifecycleHooks.describeChild(Object target, Object child)`  
 Get a `Description` for the indicated child object from the runner for the specified test class instance.
 * `LifecycleHooks.getInstanceClass(Object instance)`  
 Get class of specified test class instance.
+* `LifecycleHooks.getFieldValue(Object target, String name)`  
+Get the value of the specified field from the supplied object.
 
 ### How to Enable Notifications
 
@@ -124,7 +132,7 @@ The hooks that enable **JUnit Foundation** test lifecycle notifications are inst
     <dependency>
       <groupId>com.nordstrom.tools</groupId>
       <artifactId>junit-foundation</artifactId>
-      <version>9.4.3</version>
+      <version>11.0.0</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -201,7 +209,7 @@ repositories {
 }
 dependencies {
     ...
-    compile 'com.nordstrom.tools:junit-foundation:9.4.3
+    compile 'com.nordstrom.tools:junit-foundation:11.0.0
     '
 }
 ext {
@@ -276,12 +284,12 @@ import org.junit.runners.model.FrameworkMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class LoggingWatcher implements MethodWatcher {
+public class LoggingWatcher implements MethodWatcher<FrameworkMethod> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggingWatcher.class);
 
     @Override
-    public void beforeInvocation(Object target, FrameworkMethod method, Object... params) {
+    public void beforeInvocation(Object runner, FrameworkMethod method, ReflectiveCallable callable) {
         if (null != method.getAnnotation(Test.class)) {
             LOGGER.info(">>>>> ENTER 'test' method {}", method.getName());
         } else if (null != method.getAnnotation(Before.class)) {
@@ -296,7 +304,7 @@ public class LoggingWatcher implements MethodWatcher {
     }
 
     @Override
-    public void afterInvocation(Object obj, FrameworkMethod method, Object... params) {
+    public void afterInvocation(Object runner, FrameworkMethod method, ReflectiveCallable callable, Throwable thrown) {
         if (null != method.getAnnotation(Test.class)) {
             LOGGER.info("<<<<< LEAVE 'test' method {}", method.getName());
         } else if (null != method.getAnnotation(Before.class)) {
@@ -320,6 +328,15 @@ Note that the implementation in this method watcher uses the annotations attache
 As indicated previously, **JUnit Foundation** will automatically attach standard JUnit **`RunListener`** providers that are declared in the associated **`ServiceLoader`** provider configuration file (i.e. - **_org.junit.runner.notification.RunListener_**). Declared run listeners are attached to the **`RunNotifier`** supplied to the `run()` method of JUnit runners. This feature eliminates behavioral differences between the various test execution environments like Maven, Gradle, and native IDE test runners.
 
 **JUnit Foundation** uses this feature internally; notifications sent to **`RunWatcher`** service providers are published by an auto-attached **`RunListener`**. This notification-enhancing run listener, named [RunAnnouncer](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/RunAnnouncer.java), is registered via the aforementioned [**ServiceLoader** provider configuration file](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/resources/META-INF/services/org.junit.runner.notification.RunListener).
+
+### Getting Attached Watchers and Listeners
+
+**JUnit Foundation** attaches service providers that handle published event notifications via the standard **ServiceLoader** facility. You can acquire references to these service providers through the following methods:
+
+* `LifecycleHooks.getAttachedWatcher(Class<T> watcherType)`  
+Get reference to an instance of the specified watcher type.
+* `LifecycleHooks.getAttachedListener(Class<T> listenerType)`  
+Get reference to an instance of the specified listener type.
 
 ### Support for Parallel Execution
 
