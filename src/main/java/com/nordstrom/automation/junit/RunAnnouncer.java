@@ -145,6 +145,9 @@ public class RunAnnouncer extends RunListener {
      */
     private static <T> AtomicTest<T> setTestFailure(Failure failure) {
         AtomicTest<T> atomicTest = getAtomicTestOf(Run.getThreadRunner());
+        if (atomicTest == null) {
+            atomicTest = getAtomicTestOf(failure.getDescription());
+        }
         atomicTest.setThrowable(failure.getException());
         return atomicTest;
     }
