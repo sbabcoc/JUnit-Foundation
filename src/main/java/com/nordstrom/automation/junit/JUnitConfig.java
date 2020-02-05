@@ -28,6 +28,8 @@ public class JUnitConfig extends SettingsCore<JUnitConfig.JUnitSettings> {
         RULE_CHAIN_LIST("junit.rule.chain.list", "rulesStartingWithInnerMost"),
         /** name: <b>junit.timeout.test</b> <br> default: {@code null} */
         TEST_TIMEOUT("junit.timeout.test", null),
+        /** name: <b>junit.timeout.rule</b> <br> default: {@code null} */
+        TIMEOUT_RULE("junit.timeout.rule", null),
         /** name: <b>junit.max.retry</b> <br> default: <b>0</b> */
         MAX_RETRY("junit.max.retry", "0");
 

@@ -74,6 +74,7 @@ public class LifecycleHooks {
         final TypeDescription createTest = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.CreateTest").resolve();
         final TypeDescription runChild = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.RunChild").resolve();
         final TypeDescription run = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.Run").resolve();
+        final TypeDescription getTestRules = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.GetTestRules").resolve();
         
         final TypeDescription runNotifier = TypePool.Default.ofSystemLoader().describe("org.junit.runner.notification.RunNotifier").resolve();
         final SignatureToken runToken = new SignatureToken("run", TypeDescription.VOID, Arrays.asList(runNotifier));
@@ -105,6 +106,7 @@ public class LifecycleHooks {
                         return builder.method(named("createTest")).intercept(MethodDelegation.to(createTest))
                                       .method(named("runChild")).intercept(MethodDelegation.to(runChild))
                                       .method(hasSignature(runToken)).intercept(MethodDelegation.to(run))
+                                      .method(named("getTestRules")).intercept(MethodDelegation.to(getTestRules))
                                       .implement(Hooked.class);
                     }
                 })

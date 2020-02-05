@@ -79,7 +79,6 @@ public class MutableTest implements Test {
      * @return this mutable annotation object
      */
     public MutableTest setTimeout(long timeout) {
-        TestTimedOutException foo;
         this.timeout = timeout;
         return this;
     }
