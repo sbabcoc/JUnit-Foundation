@@ -91,7 +91,7 @@ public class GetTestRules {
             testRules.add(Timeout.millis(longestTimeout));
         }
         
-        // if Timeout rule interval was adopted from test timeout
+        // if Timeout rule interval matches test method timeout
         if ((ruleIndex != -1) && (longestTimeout == testTimeout)) {
             // disable test method timeout
             MutableTest.proxyFor(identity.getMethod()).setTimeout(0L);
