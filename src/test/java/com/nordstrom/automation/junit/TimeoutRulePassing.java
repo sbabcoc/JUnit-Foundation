@@ -6,17 +6,17 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
-public class MethodTimeoutPassing {
+public class TimeoutRulePassing {
     
     @Test
-    public void testPassed() {
-        System.out.println("testPassed");
+    public void testRulePassed() {
+        System.out.println("testRulePassed");
         assertTrue(true);
     }
     
     @Test(timeout = 1000)
-    public void testPassedWithSpecifiedTimeout() throws InterruptedException {
-        System.out.println("testPassedWithSpecifiedTimeout");
+    public void testRulePassedWithSpecifiedTimeout() throws InterruptedException {
+        System.out.println("testRulePassedWithSpecifiedTimeout");
         TimeUnit.MILLISECONDS.sleep(600);
         assertTrue(true);
     }
