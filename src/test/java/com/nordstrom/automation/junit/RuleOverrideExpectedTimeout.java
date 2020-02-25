@@ -20,10 +20,10 @@ public class RuleOverrideExpectedTimeout {
         assertTrue(true);
     }
     
-    @Test(timeout = 1500)
+    @Test(timeout = 500)
     public void testRuleOverrideTimeoutWithSpecifiedTimeout() throws InterruptedException {
         System.out.println("testRuleOverrideTimeoutWithSpecifiedTimeout");
-        TimeUnit.MILLISECONDS.sleep(1600);
+        TimeUnit.MILLISECONDS.sleep(1000);
         assertTrue(true);
     }
 

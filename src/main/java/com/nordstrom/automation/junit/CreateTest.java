@@ -4,12 +4,10 @@ import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Optional;
-
 import net.bytebuddy.implementation.bind.annotation.RuntimeType;
 import net.bytebuddy.implementation.bind.annotation.SuperCall;
 import net.bytebuddy.implementation.bind.annotation.This;
@@ -69,6 +67,7 @@ public class CreateTest {
             }
         }
         
+        TimeoutUtils.applyTestTimeout(runner, testObj);
         return testObj;
     }
     
@@ -112,4 +111,5 @@ public class CreateTest {
         }
         return Optional.absent();
     }
+    
 }

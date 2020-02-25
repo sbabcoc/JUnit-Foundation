@@ -417,9 +417,20 @@ For scenarios that require artifact capture of parameterized tests, the [Artifac
 
 ## Test Method Timeout Management
 
-**JUnit** provides test method timeout functionality via the `timeout` parameter of the **`@Test`** annotation. With this parameter, you can set an explicit timeout interval in milliseconds on an individual test method. If a test fails to complete within the specified interval, **JUnit** terminates the test and throws **TestTimedOutException**.
+**JUnit** provides two mechanisms for limiting the duration tests:
 
-**JUnit Foundation** extends this functionality, providing configurable test timeout management. Timeout management is applied by the **JUnit Foundation** Java agent, activated by setting the `TEST_TIMEOUT` configuration option to the desired default test timeout interval in milliseconds. This timeout specification is applied to every test method that doesn't explicitly specify a longer interval.
+* The [timeout](https://junit.org/junit4/javadoc/4.12/org/junit/Test.html#timeout()) parameter of the **`@Test`** annotation  
+With the `timeout` parameter, you can set an explicit timeout interval in milliseconds on an individual test method. If a test fails to complete within the specified interval, **JUnit** terminates the test and throws **TestTimedOutException**.
+* The [Timeout](https://junit.org/junit4/javadoc/4.12/org/junit/rules/Timeout.html) test rule  
+With the **`Timeout`** test rule, you can apply the same timeout interval to all of the methods in a test class.
+
+**JUnit Foundation** consolidates and extends the functionality of these mechanisms:
+
+* A global per-test timeout interval can be activated by setting the `TEST_TIMEOUT` configuration option to the desired default test timeout interval in milliseconds. This timeout specification is applied via the `timeout` parameter of the **`@Test`** annotation to every test method that doesn't explicitly specify a `timeout` parameter with a longer interval.
+* A global per-class timeout interval can be activated by setting the `TIMEOUT_RULE` configuration option to the desired default test timeout interval in milliseconds. This timeout specification is applied via the `Timeout` test rule to every test class that doesn't declare a `Timeout` test rule with a longer interval.
+* Timeout enforcement can be disabled locally by declaring a `Timeout` test rule that specifies an interval of zero (0).
+* Timeout enforcement can be disabled globally by setting the `TIMEOUT_RULE` configuration option, specifying an interval of zero (0).
+* Unless enforcement is disabled, per-test timeout intervals override shorter intervals specified by rule-based mechanisms.
 
 ## Automatic retry of failed tests
 
