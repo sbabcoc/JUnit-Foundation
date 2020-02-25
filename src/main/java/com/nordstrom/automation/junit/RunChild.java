@@ -4,12 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import org.junit.Ignore;
-import org.junit.Test;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.FrameworkMethod;
-
-import com.nordstrom.automation.junit.JUnitConfig.JUnitSettings;
-
 import net.bytebuddy.implementation.bind.annotation.Argument;
 import net.bytebuddy.implementation.bind.annotation.SuperCall;
 import net.bytebuddy.implementation.bind.annotation.This;
@@ -54,7 +50,6 @@ public class RunChild {
             if (child instanceof FrameworkMethod) {
                 FrameworkMethod method = (FrameworkMethod) child;
                 
-                applyTimeout(method);
                 int count = RetryHandler.getMaxRetry(runner, method);
                 boolean isIgnored = (null != method.getAnnotation(Ignore.class));
                 
@@ -85,25 +80,4 @@ public class RunChild {
             }
         }
     }
-    
-    /**
-     * If configured for default test timeout, apply the timeout value to the specified framework method if it doesn't
-     * already specify a longer timeout interval.
-     * 
-     * @param method {@link FrameworkMethod} object
-     */
-    private static void applyTimeout(FrameworkMethod method) {
-        // if default test timeout is defined
-        if (LifecycleHooks.getConfig().containsKey(JUnitSettings.TEST_TIMEOUT.key())) {
-            // get default test timeout
-            long defaultTimeout = LifecycleHooks.getConfig().getLong(JUnitSettings.TEST_TIMEOUT.key());
-            // get @Test annotation
-            Test annotation = method.getAnnotation(Test.class);
-            // if annotation declared and current timeout is less than default
-            if ((annotation != null) && (annotation.timeout() < defaultTimeout)) {
-                // set test timeout interval
-                MutableTest.proxyFor(method.getMethod()).setTimeout(defaultTimeout);
-            }
-        }
-    } 
 }
