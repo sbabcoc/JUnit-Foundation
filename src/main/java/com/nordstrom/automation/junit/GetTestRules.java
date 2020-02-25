@@ -15,8 +15,8 @@ public class GetTestRules {
      * Interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#getTestRules(Object)}  getTestRules} method.
      *
      * @param runner target {@link org.junit.runners.BlockJUnit4ClassRunner BlockJUnit4ClassRunner} object
-     * @param proxy  callable proxy for the intercepted method
-     * @param target the test class instance
+     * @param proxy callable proxy for the intercepted method
+     * @param target test class instance
      * @return {@code anything} - JUnit test class instance
      * @throws Exception {@code anything} (exception thrown by the intercepted method)
      */
