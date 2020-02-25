@@ -26,7 +26,7 @@ public class TimeoutRuleTest {
         MESSAGE_MAP.put("testRuleTimeoutWithShorterInterval", "test timed out after 400 milliseconds");
         MESSAGE_MAP.put("testRuleTimeoutWithLongerInterval", "test timed out after 600 milliseconds");
         MESSAGE_MAP.put("testRuleOverrideTimeout", "test timed out after 1000 milliseconds");
-        MESSAGE_MAP.put("testRuleOverrideTimeoutWithSpecifiedTimeout", "test timed out after 500 milliseconds");
+        MESSAGE_MAP.put("testRuleOverrideTimeoutWithSpecifiedTimeout", "test timed out after 1500 milliseconds");
     }
     
     @BeforeClass

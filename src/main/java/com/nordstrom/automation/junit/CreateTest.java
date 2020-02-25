@@ -47,28 +47,29 @@ public class CreateTest {
     public static Object intercept(@This final Object runner,
                     @SuperCall final Callable<?> proxy) throws Exception {
         
-        Object testObj;
+        Object target;
         try {
             DEPTH.get().increaseDepth();
-            testObj = LifecycleHooks.callProxy(proxy);
+            target = LifecycleHooks.callProxy(proxy);
         } finally {
             DEPTH.get().decreaseDepth();
         }
         
-        TARGET_TO_RUNNER.put(testObj, runner);
-        RUNNER_TO_TARGET.put(runner, testObj);
+        TARGET_TO_RUNNER.put(target, runner);
+        RUNNER_TO_TARGET.put(runner, target);
         
         if (DEPTH.get().atGroundLevel()) {
-            LOGGER.debug("testObjectCreated: {}", testObj);
+            LOGGER.debug("testObjectCreated: {}", target);
             synchronized(objectWatcherLoader) {
                 for (TestObjectWatcher watcher : objectWatcherLoader) {
-                    watcher.testObjectCreated(testObj, runner);
+                    watcher.testObjectCreated(target, runner);
                 }
             }
         }
         
-        TimeoutUtils.applyTestTimeout(runner, testObj);
-        return testObj;
+        // apply parameter-based global timeout
+        TimeoutUtils.applyTestTimeout(runner, target);
+        return target;
     }
     
     /**
