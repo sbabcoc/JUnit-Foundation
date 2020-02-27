@@ -211,12 +211,8 @@ dependencies {
     ...
     compile 'com.nordstrom.tools:junit-foundation:11.2.0'
 }
-//ext {
-//    junitFoundation = configurations.compile.resolvedConfiguration.resolvedArtifacts.find { it.name == 'junit-foundation' }
-//}
 test.doFirst {
     jvmArgs "-javaagent:${classpath.find { it.name == 'junit-foundation' }.absolutePath}"
-//    jvmArgs "-javaagent:${junitFoundation.file}"
 }
 test {
 //  debug true
