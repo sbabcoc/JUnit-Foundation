@@ -73,7 +73,7 @@ class TimeoutUtils {
             while (iterator.hasNext()) {
                 // get current rule field
                 FrameworkField ruleField = iterator.next();
-                // if this if a Timeout rule
+                // if this is a Timeout rule
                 if (Timeout.class.isAssignableFrom(ruleField.getType())) {
                     try {
                         // extract Timeout rule interval
@@ -128,7 +128,7 @@ class TimeoutUtils {
         AtomicTest<FrameworkMethod> atomicTest = LifecycleHooks.getAtomicTestOf(runner);
         // get "identity" method of atomic test
         FrameworkMethod identity = atomicTest.getIdentity();
-        // get "identity" method Test annotation
+        // get Test annotation of "identity" method
         Test annotation = identity.getAnnotation(Test.class);
         // get test method timeout interval
         long metaTimeout = annotation.timeout();
