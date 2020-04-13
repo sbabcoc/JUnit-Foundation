@@ -1,7 +1,6 @@
 package com.nordstrom.automation.junit;
 
 import java.util.Map;
-import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.junit.internal.AssumptionViolatedException;
@@ -11,19 +10,11 @@ import org.junit.runner.notification.RunListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Optional;
-
 public class RunAnnouncer extends RunListener {
     
-    @SuppressWarnings("rawtypes")
-    private static final ServiceLoader<RunWatcher> runWatcherLoader;
     private static final Map<Object, AtomicTest<?>> RUNNER_TO_ATOMICTEST = new ConcurrentHashMap<>();
     private static final Logger LOGGER = LoggerFactory.getLogger(RunAnnouncer.class);
     
-    static {
-        runWatcherLoader = ServiceLoader.load(RunWatcher.class);
-    }
-
     /**
      * {@inheritDoc}
      */
@@ -32,11 +23,9 @@ public class RunAnnouncer extends RunListener {
     public void testStarted(Description description) throws Exception {
         LOGGER.debug("testStarted: {}", description);
         AtomicTest<?> atomicTest = getAtomicTestOf(description);
-        synchronized(runWatcherLoader) {
-            for (RunWatcher watcher : runWatcherLoader) {
-                if (isSupported(watcher, atomicTest)) {
-                    watcher.testStarted(atomicTest);
-                }
+        for (RunWatcher watcher : LifecycleHooks.getRunWatchers()) {
+            if (isSupported(watcher, atomicTest)) {
+                watcher.testStarted(atomicTest);
             }
         }
     }
@@ -49,11 +38,9 @@ public class RunAnnouncer extends RunListener {
     public void testFinished(Description description) throws Exception {
         LOGGER.debug("testFinished: {}", description);
         AtomicTest<?> atomicTest = getAtomicTestOf(description);
-        synchronized(runWatcherLoader) {
-            for (RunWatcher watcher : runWatcherLoader) {
-                if (isSupported(watcher, atomicTest)) {
-                    watcher.testFinished(atomicTest);
-                }
+        for (RunWatcher watcher : LifecycleHooks.getRunWatchers()) {
+            if (isSupported(watcher, atomicTest)) {
+                watcher.testFinished(atomicTest);
             }
         }
     }
@@ -66,11 +53,9 @@ public class RunAnnouncer extends RunListener {
     public void testFailure(Failure failure) throws Exception {
         LOGGER.debug("testFailure: {}", failure);
         AtomicTest<?> atomicTest = setTestFailure(failure);
-        synchronized(runWatcherLoader) {
-            for (RunWatcher watcher : runWatcherLoader) {
-                if (isSupported(watcher, atomicTest)) {
-                    watcher.testFailure(atomicTest, failure.getException());
-                }
+        for (RunWatcher watcher : LifecycleHooks.getRunWatchers()) {
+            if (isSupported(watcher, atomicTest)) {
+                watcher.testFailure(atomicTest, failure.getException());
             }
         }
     }
@@ -83,11 +68,9 @@ public class RunAnnouncer extends RunListener {
     public void testAssumptionFailure(Failure failure) {
         LOGGER.debug("testAssumptionFailure: {}", failure);
         AtomicTest<?> atomicTest = setTestFailure(failure);
-        synchronized(runWatcherLoader) {
-            for (RunWatcher watcher : runWatcherLoader) {
-                if (isSupported(watcher, atomicTest)) {
-                    watcher.testAssumptionFailure(atomicTest, (AssumptionViolatedException) failure.getException());
-                }
+        for (RunWatcher watcher : LifecycleHooks.getRunWatchers()) {
+            if (isSupported(watcher, atomicTest)) {
+                watcher.testAssumptionFailure(atomicTest, (AssumptionViolatedException) failure.getException());
             }
         }
     }
@@ -100,11 +83,9 @@ public class RunAnnouncer extends RunListener {
     public void testIgnored(Description description) throws Exception {
         LOGGER.debug("testIgnored: {}", description);
         AtomicTest<?> atomicTest = getAtomicTestOf(description);
-        synchronized(runWatcherLoader) {
-            for (RunWatcher watcher : runWatcherLoader) {
-                if (isSupported(watcher, atomicTest)) {
-                    watcher.testIgnored(atomicTest);
-                }
+        for (RunWatcher watcher : LifecycleHooks.getRunWatchers()) {
+            if (isSupported(watcher, atomicTest)) {
+                watcher.testIgnored(atomicTest);
             }
         }
     }
@@ -161,26 +142,5 @@ public class RunAnnouncer extends RunListener {
      */
     private static boolean isSupported(RunWatcher<?> watcher, AtomicTest<?> atomicTest) {
         return watcher.supportedType().isInstance(atomicTest.getIdentity());
-    }
-    
-    /**
-     * Get reference to an instance of the specified watcher type.
-     * 
-     * @param <W> watcher type
-     * @param watcherType watcher type
-     * @return optional watcher instance
-     */
-    @SuppressWarnings("unchecked")
-    static <W extends JUnitWatcher> Optional<W> getAttachedWatcher(Class<W> watcherType) {
-        if (RunWatcher.class.isAssignableFrom(watcherType)) {
-            synchronized(runWatcherLoader) {
-                for (RunWatcher<?> watcher : runWatcherLoader) {
-                    if (watcher.getClass() == watcherType) {
-                        return Optional.of((W) watcher);
-                    }
-                }
-            }
-        }
-        return Optional.absent();
     }
 }

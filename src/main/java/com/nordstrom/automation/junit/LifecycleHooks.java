@@ -6,7 +6,10 @@ import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.Instrumentation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.util.AbstractList;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentMap;
@@ -36,6 +39,11 @@ import net.bytebuddy.utility.JavaModule;
 public class LifecycleHooks {
 
     private static JUnitConfig config;
+    private static final List<JUnitWatcher> watchers;
+    private static final List<RunWatcher<?>> runWatchers;
+    private static final List<RunnerWatcher> runnerWatchers;
+    private static final List<TestObjectWatcher> objectWatchers;
+    private static final List<MethodWatcher<?>> methodWatchers;
     
     private LifecycleHooks() {
         throw new AssertionError("LifecycleHooks is a static utility class that cannot be instantiated");
@@ -46,9 +54,31 @@ public class LifecycleHooks {
      * and BlockJUnit4ClassRunner classes to enable the core functionality of JUnit Foundation.
      */
     static {
-        for (ShutdownListener listener : ServiceLoader.load(ShutdownListener.class)) {
-            Runtime.getRuntime().addShutdownHook(getShutdownHook(listener));
+        watchers = new ArrayList<>();
+        
+        List<Integer> runWatcherIndexes = new ArrayList<>();
+        List<Integer> runnerWatcherIndexes = new ArrayList<>();
+        List<Integer> objectWatcherIndexes = new ArrayList<>();
+        List<Integer> methodWatcherIndexes = new ArrayList<>();
+        
+        int i = 0;
+        for (JUnitWatcher watcher : ServiceLoader.load(JUnitWatcher.class)) {
+            if (watcher instanceof ShutdownListener) {
+                Runtime.getRuntime().addShutdownHook(getShutdownHook((ShutdownListener) watcher));
+            } else {
+                watchers.add(watcher);
+                if (watcher instanceof RunWatcher) runWatcherIndexes.add(i);
+                if (watcher instanceof RunnerWatcher) runnerWatcherIndexes.add(i);
+                if (watcher instanceof TestObjectWatcher) objectWatcherIndexes.add(i);
+                if (watcher instanceof MethodWatcher) methodWatcherIndexes.add(i);
+                i++;
+            }
         }
+        
+        runWatchers = new WatcherList<>(runWatcherIndexes);
+        runnerWatchers = new WatcherList<>(runnerWatcherIndexes);
+        objectWatchers = new WatcherList<>(objectWatcherIndexes);
+        methodWatchers = new WatcherList<>(methodWatcherIndexes);
     }
     
     /**
@@ -334,17 +364,16 @@ public class LifecycleHooks {
      * @param watcherType watcher type
      * @return optional watcher instance
      */
+    @SuppressWarnings("unchecked")
     public static <T extends JUnitWatcher> Optional<T> getAttachedWatcher(Class<T> watcherType) {
-        Optional<T> watcher = CreateTest.getAttachedWatcher(watcherType);
-        if (watcher.isPresent()) return watcher;
-        
-        watcher = Run.getAttachedWatcher(watcherType);
-        if (watcher.isPresent()) return watcher;
-        
-        watcher = RunAnnouncer.getAttachedWatcher(watcherType);
-        if (watcher.isPresent()) return watcher;
-        
-        return RunReflectiveCall.getAttachedWatcher(watcherType);
+        synchronized(watchers) {
+            for (JUnitWatcher watcher : watchers) {
+                if (watcher.getClass() == watcherType) {
+                    return Optional.of((T) watcher);
+                }
+            }
+        }
+        return Optional.absent();
     }
     
     /**
@@ -377,5 +406,46 @@ public class LifecycleHooks {
             val = (val = map.putIfAbsent(key, obj)) == null ? obj : val;
         }
         return val;
+    }
+    
+    static List<RunWatcher<?>> getRunWatchers() {
+        return runWatchers;
+    }
+    
+    static List<RunnerWatcher> getRunnerWatchers() {
+        return runnerWatchers;
+    }
+    
+    static List<TestObjectWatcher> getObjectWatchers() {
+        return objectWatchers;
+    }
+    
+    static List<MethodWatcher<?>> getMethodWatchers() {
+        return methodWatchers;
+    }
+    
+    private static class WatcherList<T extends JUnitWatcher> extends AbstractList<T> {
+        
+        private int[] indexes;
+        
+        private WatcherList(List<Integer> indexes) {
+            int i = 0;
+            this.indexes = new int[indexes.size()];
+            for (int index : indexes) {
+                this.indexes[i++] = index;
+            }
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public T get(int index) {
+            return (T) watchers.get(indexes[index]);
+        }
+
+        @Override
+        public int size() {
+            return indexes.length;
+        }
+        
     }
 }
