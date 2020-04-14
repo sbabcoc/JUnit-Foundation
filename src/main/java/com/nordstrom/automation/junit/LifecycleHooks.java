@@ -63,16 +63,18 @@ public class LifecycleHooks {
         
         int i = 0;
         for (JUnitWatcher watcher : ServiceLoader.load(JUnitWatcher.class)) {
+            watchers.add(watcher);
+            
             if (watcher instanceof ShutdownListener) {
                 Runtime.getRuntime().addShutdownHook(getShutdownHook((ShutdownListener) watcher));
-            } else {
-                watchers.add(watcher);
-                if (watcher instanceof RunWatcher) runWatcherIndexes.add(i);
-                if (watcher instanceof RunnerWatcher) runnerWatcherIndexes.add(i);
-                if (watcher instanceof TestObjectWatcher) objectWatcherIndexes.add(i);
-                if (watcher instanceof MethodWatcher) methodWatcherIndexes.add(i);
-                i++;
             }
+            
+            if (watcher instanceof RunWatcher) runWatcherIndexes.add(i);
+            if (watcher instanceof RunnerWatcher) runnerWatcherIndexes.add(i);
+            if (watcher instanceof TestObjectWatcher) objectWatcherIndexes.add(i);
+            if (watcher instanceof MethodWatcher) methodWatcherIndexes.add(i);
+            
+            i++;
         }
         
         runWatchers = new WatcherList<>(runWatcherIndexes);
