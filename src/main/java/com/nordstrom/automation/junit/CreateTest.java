@@ -1,13 +1,11 @@
 package com.nordstrom.automation.junit;
 
 import java.util.Map;
-import java.util.ServiceLoader;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Optional;
 import net.bytebuddy.implementation.bind.annotation.RuntimeType;
 import net.bytebuddy.implementation.bind.annotation.SuperCall;
 import net.bytebuddy.implementation.bind.annotation.This;
@@ -19,14 +17,12 @@ import net.bytebuddy.implementation.bind.annotation.This;
 @SuppressWarnings("squid:S1118")
 public class CreateTest {
     
-    private static final ServiceLoader<TestObjectWatcher> objectWatcherLoader;
     private static final Map<Object, Object> TARGET_TO_RUNNER = new ConcurrentHashMap<>();
     private static final Map<Object, Object> RUNNER_TO_TARGET = new ConcurrentHashMap<>();
     private static final ThreadLocal<DepthGauge> DEPTH;
     private static final Logger LOGGER = LoggerFactory.getLogger(CreateTest.class);
     
     static {
-        objectWatcherLoader = ServiceLoader.load(TestObjectWatcher.class);
         DEPTH = new ThreadLocal<DepthGauge>() {
             @Override
             protected DepthGauge initialValue() {
@@ -60,10 +56,8 @@ public class CreateTest {
         
         if (DEPTH.get().atGroundLevel()) {
             LOGGER.debug("testObjectCreated: {}", target);
-            synchronized(objectWatcherLoader) {
-                for (TestObjectWatcher watcher : objectWatcherLoader) {
-                    watcher.testObjectCreated(target, runner);
-                }
+            for (TestObjectWatcher watcher : LifecycleHooks.getObjectWatchers()) {
+                watcher.testObjectCreated(target, runner);
             }
         }
         
@@ -91,26 +85,4 @@ public class CreateTest {
     static Object getTargetForRunner(Object runner) {
         return RUNNER_TO_TARGET.get(runner);
     }
-    
-    /**
-     * Get reference to an instance of the specified watcher type.
-     * 
-     * @param <T> watcher type
-     * @param watcherType watcher type
-     * @return optional watcher instance
-     */
-    @SuppressWarnings("unchecked")
-    static <T extends JUnitWatcher> Optional<T> getAttachedWatcher(Class<T> watcherType) {
-        if (TestObjectWatcher.class.isAssignableFrom(watcherType)) {
-            synchronized(objectWatcherLoader) {
-                for (TestObjectWatcher watcher : objectWatcherLoader) {
-                    if (watcher.getClass() == watcherType) {
-                        return Optional.of((T) watcher);
-                    }
-                }
-            }
-        }
-        return Optional.absent();
-    }
-    
 }

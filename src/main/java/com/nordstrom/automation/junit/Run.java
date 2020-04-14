@@ -31,7 +31,6 @@ public class Run {
     private static final Set<String> startNotified = new CopyOnWriteArraySet<>();
     private static final Set<String> finishNotified = new CopyOnWriteArraySet<>();
     private static final ServiceLoader<RunListener> runListenerLoader;
-    private static final ServiceLoader<RunnerWatcher> runnerWatcherLoader;
     private static final Map<Object, Object> CHILD_TO_PARENT = new ConcurrentHashMap<>();
     private static final Set<RunNotifier> NOTIFIERS = new CopyOnWriteArraySet<>();
     private static final Logger LOGGER = LoggerFactory.getLogger(Run.class);
@@ -44,7 +43,6 @@ public class Run {
             }
         };
         runListenerLoader = ServiceLoader.load(RunListener.class);
-        runnerWatcherLoader = ServiceLoader.load(RunnerWatcher.class);
     }
     
     /**
@@ -143,10 +141,8 @@ public class Run {
                 CHILD_TO_PARENT.put(grandchild, runner);
             }
             LOGGER.debug("runStarted: {}", runner);
-            synchronized(runnerWatcherLoader) {
-                for (RunnerWatcher watcher : runnerWatcherLoader) {
-                    watcher.runStarted(runner);
-                }
+            for (RunnerWatcher watcher : LifecycleHooks.getRunnerWatchers()) {
+                watcher.runStarted(runner);
             }
             return true;
         }
@@ -163,35 +159,12 @@ public class Run {
     static boolean fireRunFinished(Object runner) {
         if (finishNotified.add(runner.toString())) {
             LOGGER.debug("runFinished: {}", runner);
-            synchronized(runnerWatcherLoader) {
-                for (RunnerWatcher watcher : runnerWatcherLoader) {
-                    watcher.runFinished(runner);
-                }
+            for (RunnerWatcher watcher : LifecycleHooks.getRunnerWatchers()) {
+                watcher.runFinished(runner);
             }
             return true;
         }
         return false;
-    }
-    
-    /**
-     * Get reference to an instance of the specified watcher type.
-     * 
-     * @param <T> watcher type
-     * @param watcherType watcher type
-     * @return optional watcher instance
-     */
-    @SuppressWarnings("unchecked")
-    static <T extends JUnitWatcher> Optional<T> getAttachedWatcher(Class<T> watcherType) {
-        if (RunnerWatcher.class.isAssignableFrom(watcherType)) {
-            synchronized(runnerWatcherLoader) {
-                for (RunnerWatcher watcher : runnerWatcherLoader) {
-                    if (watcher.getClass() == watcherType) {
-                        return Optional.of((T) watcher);
-                    }
-                }
-            }
-        }
-        return Optional.absent();
     }
     
     /**

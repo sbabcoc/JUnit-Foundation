@@ -2,7 +2,6 @@ package com.nordstrom.automation.junit;
 
 import static com.nordstrom.automation.junit.LifecycleHooks.getFieldValue;
 
-import java.util.ServiceLoader;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -12,7 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Function;
-import com.google.common.base.Optional;
 import com.nordstrom.common.base.UncheckedThrow;
 
 import net.bytebuddy.implementation.bind.annotation.RuntimeType;
@@ -26,13 +24,11 @@ import net.bytebuddy.implementation.bind.annotation.This;
 @SuppressWarnings("squid:S1118")
 public class RunReflectiveCall {
     
-    private static final ServiceLoader<MethodWatcher> methodWatcherLoader;
     private static final ThreadLocal<ConcurrentMap<Integer, DepthGauge>> methodDepth;
     private static final Function<Integer, DepthGauge> newInstance;
     private static final Logger LOGGER = LoggerFactory.getLogger(RunReflectiveCall.class);
     
     static {
-        methodWatcherLoader = ServiceLoader.load(MethodWatcher.class);
         methodDepth = new ThreadLocal<ConcurrentMap<Integer, DepthGauge>>() {
             @Override
             protected ConcurrentMap<Integer, DepthGauge> initialValue() {
@@ -93,27 +89,6 @@ public class RunReflectiveCall {
     }
     
     /**
-     * Get reference to an instance of the specified watcher type.
-     * 
-     * @param <W> watcher type
-     * @param watcherType watcher type
-     * @return optional watcher instance
-     */
-    @SuppressWarnings("unchecked")
-    static <W extends JUnitWatcher> Optional<W> getAttachedWatcher(Class<W> watcherType) {
-        if (MethodWatcher.class.isAssignableFrom(watcherType)) {
-            synchronized(methodWatcherLoader) {
-                for (MethodWatcher<?> watcher : methodWatcherLoader) {
-                    if (watcher.getClass() == watcherType) {
-                        return Optional.of((W) watcher);
-                    }
-                }
-            }
-        }
-        return Optional.absent();
-    }
-    
-    /**
      * Fire the {@link MethodWatcher#beforeInvocation(Object, Object, ReflectiveCallable) event.
      * <p>
      * If the {@code beforeInvocation} event for the specified method has already been fired, do nothing.
@@ -135,11 +110,9 @@ public class RunReflectiveCall {
                         // nothing to do here
                     }
                 }
-                synchronized(methodWatcherLoader) {
-                    for (MethodWatcher watcher : methodWatcherLoader) {
-                        if (watcher.supportedType().isInstance(child)) {
-                            watcher.beforeInvocation(runner, child, callable);
-                        }
+                for (MethodWatcher watcher : LifecycleHooks.getMethodWatchers()) {
+                    if (watcher.supportedType().isInstance(child)) {
+                        watcher.beforeInvocation(runner, child, callable);
                     }
                 }
                 return true;
@@ -171,11 +144,9 @@ public class RunReflectiveCall {
                         // nothing to do here
                     }
                 }
-                synchronized(methodWatcherLoader) {
-                    for (MethodWatcher watcher : methodWatcherLoader) {
-                        if (watcher.supportedType().isInstance(child)) {
-                            watcher.afterInvocation(runner, child, callable, thrown);
-                        }
+                for (MethodWatcher watcher : LifecycleHooks.getMethodWatchers()) {
+                    if (watcher.supportedType().isInstance(child)) {
+                        watcher.afterInvocation(runner, child, callable, thrown);
                     }
                 }
                 return true;
