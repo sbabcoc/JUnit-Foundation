@@ -366,11 +366,9 @@ public class LifecycleHooks {
      */
     @SuppressWarnings("unchecked")
     public static <T extends JUnitWatcher> Optional<T> getAttachedWatcher(Class<T> watcherType) {
-        synchronized(watchers) {
-            for (JUnitWatcher watcher : watchers) {
-                if (watcher.getClass() == watcherType) {
-                    return Optional.of((T) watcher);
-                }
+        for (JUnitWatcher watcher : watchers) {
+            if (watcher.getClass() == watcherType) {
+                return Optional.of((T) watcher);
             }
         }
         return Optional.absent();
@@ -408,26 +406,59 @@ public class LifecycleHooks {
         return val;
     }
     
+    /**
+     * Get the list of attached {@link RunWatcher} objects.
+     * 
+     * @return run watcher list
+     */
     static List<RunWatcher<?>> getRunWatchers() {
         return runWatchers;
     }
     
+    /**
+     * Get the list of attached {@link RunnerWatcher} objects.
+     * 
+     * @return runner watcher list
+     */
     static List<RunnerWatcher> getRunnerWatchers() {
         return runnerWatchers;
     }
     
+    /**
+     * Get the list of attached {@link TestObjectWatcher} objects.
+     * 
+     * @return test object watcher list
+     */
     static List<TestObjectWatcher> getObjectWatchers() {
         return objectWatchers;
     }
     
+    /**
+     * Get the list of attached {@link MethodWatcher} objects.
+     * 
+     * @return method watcher list
+     */
     static List<MethodWatcher<?>> getMethodWatchers() {
         return methodWatchers;
     }
     
+    /**
+     * This class encapsulates the process of retrieving watcher objects of the target type from the collection of all
+     * attached watcher objects. This is a private nested class that directly accesses the main collection. It is also
+     * unmodifiable. Any attempts to alter the collection will trigger an {@link UnsupportedOperationException}.
+     * 
+     * @param <T> subclass of {@link JUnitWatcher} object supplied by this instance
+     */
     private static class WatcherList<T extends JUnitWatcher> extends AbstractList<T> {
         
         private int[] indexes;
         
+        /**
+         * Constructor for a list of watcher objects of the target type retrieved from the collection of all attached
+         * {@link JUnitWatcher} objects.
+         * 
+         * @param indexes indexes of watchers of the requisite type in the main collection
+         */
         private WatcherList(List<Integer> indexes) {
             int i = 0;
             this.indexes = new int[indexes.size()];
@@ -436,12 +467,18 @@ public class LifecycleHooks {
             }
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         @SuppressWarnings("unchecked")
         public T get(int index) {
             return (T) watchers.get(indexes[index]);
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public int size() {
             return indexes.length;
