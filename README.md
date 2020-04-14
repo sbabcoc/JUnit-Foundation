@@ -229,17 +229,21 @@ To enable notifications in the native test runner of IDEs like Eclipse or IDEA, 
 
 To provide reliable, consistent behavior regardless of execution environment, **JUnit Foundation** notification subscribers are registered through the standard Java **ServiceLoader** mechanism. To attach **JUnit Foundation** watchers and standard JUnit run listeners to your tests, declare them in **ServiceLoader** [provider configuration files](https://docs.oracle.com/javase/tutorial/ext/basics/spi.html#register-service-providers) in a **_META-INF/services/_** folder of your project resources:
 
-###### com.nordstrom.automation.junit.MethodWatcher
+###### com.nordstrom.automation.junit.JUnitWatcher
 ```
-com.mycompany.example.MyWatcher
+# implements com.nordstrom.automation.junit.MethodWatcher
+com.mycompany.example.MyMethodWatcher
+# implements com.nordstrom.automation.junit.ShutdownListener
+com.mycompany.example.MyShutdownListener
 ```
 
 ###### org.junit.runner.notification.RunListener
 ```
-com.mycompany.example.MyListener
+# implements org.junit.runner.notification.RunListener
+com.mycompany.example.MyRunListener
 ```
 
-The preceding **ServiceLoader** provider configuration files declare a **JUnit Foundation** [MethodWatcher](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/MethodWatcher.java) and a standard JUnit [RunListener](https://github.com/junit-team/junit4/blob/41d44734f41aba0cf6ba5a11ff5d32ffed155027/src/main/java/org/junit/runner/notification/RunListener.java).
+The preceding **ServiceLoader** provider configuration files declare a **JUnit Foundation** [MethodWatcher](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/MethodWatcher.java), a **JUnit Foundation** [ShutdownListener](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/ShutdownListener.java), and a standard **JUnit** [RunListener](https://github.com/junit-team/junit4/blob/41d44734f41aba0cf6ba5a11ff5d32ffed155027/src/main/java/org/junit/runner/notification/RunListener.java). Note that all **JUnit Foundation** watcher/listener service providers are declared in a single common configuration file to eliminate the need to declare classes implementing multiple interfaces in several different configuration files.
 
 ### Defined Service Provider Interfaces
 
@@ -443,7 +447,7 @@ Failed attempts of tests that are selected for retry are tallied as ignored test
 **JUnit** provides a run listener feature, but this operates most readily on a per-class basis. The method for attaching these run listeners also imposes structural and operational constraints on **JUnit** projects, and the configuration required to register for end-of-suite notifications necessitates hard-coding the composition of the suite. All of these factors make run listeners unattractive or ineffectual for final cleanup operations.
 
 **JUnit Foundation** enables you to declare shutdown listeners in a service loader configuration file.  
-**_META-INF/services/com.nordstrom.automation.junit.ShutdownListener_** is the service loader shutdown listener configuration file. By default, this file is absent. To add managed listeners, create this file and add the fully-qualified names of their classes, one line per item. When it loads, the **JUnit Foundation** Java agent uses the service loader to instantiate your shutdown listeners and attaches them to the active JVM.
+As shown previously under [ServiceLoader Configuration Files](#serviceloader-configuration-files), **_META-INF/services/com.nordstrom.automation.junit.JUnitWatcher_** is the configuration file where shutdown listeners are declared. By default, this file is absent. To add managed listeners, create this file and add the fully-qualified names of their classes, one line per item. When it loads, the **JUnit Foundation** Java agent uses the service loader to instantiate your shutdown listeners and attaches them to the active JVM.
 
 ## Artifact Capture
 
