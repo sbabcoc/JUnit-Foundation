@@ -54,33 +54,69 @@ public class LifecycleHooks {
      * and BlockJUnit4ClassRunner classes to enable the core functionality of JUnit Foundation.
      */
     static {
-        watchers = new ArrayList<>();
+        WatcherClassifier classifier = new WatcherClassifier();
+        
+        for (JUnitWatcher watcher : ServiceLoader.load(JUnitWatcher.class)) {
+            classifier.add(watcher);
+        }
+        
+        for (ShutdownListener watcher : ServiceLoader.load(ShutdownListener.class)) {
+            classifier.add(watcher);
+        }
+        
+        for (RunWatcher<?> watcher : ServiceLoader.load(RunWatcher.class)) {
+            classifier.add(watcher);
+        }
+        
+        for (RunnerWatcher watcher : ServiceLoader.load(RunnerWatcher.class)) {
+            classifier.add(watcher);
+        }
+        
+        for (TestObjectWatcher watcher : ServiceLoader.load(TestObjectWatcher.class)) {
+            classifier.add(watcher);
+        }
+        
+        for (MethodWatcher<?> watcher : ServiceLoader.load(MethodWatcher.class)) {
+            classifier.add(watcher);
+        }
+        
+        watchers = classifier.watchers;
+        
+        runWatchers = new WatcherList<>(classifier.runWatcherIndexes);
+        runnerWatchers = new WatcherList<>(classifier.runnerWatcherIndexes);
+        objectWatchers = new WatcherList<>(classifier.objectWatcherIndexes);
+        methodWatchers = new WatcherList<>(classifier.methodWatcherIndexes);
+    }
+    
+    private static class WatcherClassifier {
+        int i = 0;
+        
+        List<JUnitWatcher> watchers = new ArrayList<>();
+        List<Class<? extends JUnitWatcher>> watcherClasses = new ArrayList<>();
         
         List<Integer> runWatcherIndexes = new ArrayList<>();
         List<Integer> runnerWatcherIndexes = new ArrayList<>();
         List<Integer> objectWatcherIndexes = new ArrayList<>();
         List<Integer> methodWatcherIndexes = new ArrayList<>();
         
-        int i = 0;
-        for (JUnitWatcher watcher : ServiceLoader.load(JUnitWatcher.class)) {
-            watchers.add(watcher);
-            
-            if (watcher instanceof ShutdownListener) {
-                Runtime.getRuntime().addShutdownHook(getShutdownHook((ShutdownListener) watcher));
+        boolean add(JUnitWatcher watcher) {
+            if ( ! watcherClasses.contains(watcher.getClass())) {
+                watchers.add(watcher);
+                watcherClasses.add(watcher.getClass());
+                
+                if (watcher instanceof ShutdownListener) {
+                    Runtime.getRuntime().addShutdownHook(getShutdownHook((ShutdownListener) watcher));
+                }
+                
+                if (watcher instanceof RunWatcher) runWatcherIndexes.add(i);
+                if (watcher instanceof RunnerWatcher) runnerWatcherIndexes.add(i);
+                if (watcher instanceof TestObjectWatcher) objectWatcherIndexes.add(i);
+                if (watcher instanceof MethodWatcher) methodWatcherIndexes.add(i);
+                
+                i++;
             }
-            
-            if (watcher instanceof RunWatcher) runWatcherIndexes.add(i);
-            if (watcher instanceof RunnerWatcher) runnerWatcherIndexes.add(i);
-            if (watcher instanceof TestObjectWatcher) objectWatcherIndexes.add(i);
-            if (watcher instanceof MethodWatcher) methodWatcherIndexes.add(i);
-            
-            i++;
+            return false;
         }
-        
-        runWatchers = new WatcherList<>(runWatcherIndexes);
-        runnerWatchers = new WatcherList<>(runnerWatcherIndexes);
-        objectWatchers = new WatcherList<>(objectWatcherIndexes);
-        methodWatchers = new WatcherList<>(methodWatcherIndexes);
     }
     
     /**
