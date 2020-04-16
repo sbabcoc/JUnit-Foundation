@@ -114,7 +114,7 @@ public class RunAnnouncer extends RunListener {
      */
     @SuppressWarnings("unchecked")
     static <T> AtomicTest<T> getAtomicTestOf(Object testKey) {
-        return (AtomicTest<T>) RUNNER_TO_ATOMICTEST.get(testKey);
+        return (testKey == null) ? null : (AtomicTest<T>) RUNNER_TO_ATOMICTEST.get(testKey);
     }
     
     /**
@@ -129,7 +129,9 @@ public class RunAnnouncer extends RunListener {
         if (atomicTest == null) {
             atomicTest = getAtomicTestOf(failure.getDescription());
         }
-        atomicTest.setThrowable(failure.getException());
+        if (atomicTest != null) {
+            atomicTest.setThrowable(failure.getException());
+        }
         return atomicTest;
     }
     
@@ -141,6 +143,6 @@ public class RunAnnouncer extends RunListener {
      * @return {@code true} if the run watcher in question supports the specified atomic test; otherwise {@code false}
      */
     private static boolean isSupported(RunWatcher<?> watcher, AtomicTest<?> atomicTest) {
-        return watcher.supportedType().isInstance(atomicTest.getIdentity());
+        return (atomicTest == null) ? false : watcher.supportedType().isInstance(atomicTest.getIdentity());
     }
 }
