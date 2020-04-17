@@ -10,6 +10,15 @@ import org.junit.runner.notification.RunListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * This class implements a notification-enhancing extension of the standard {@link RunListener} class. This run
+ * announcer is the source of notifications sent to attached implementations of the {@link RunWatcher} interface.
+ * Note that <b>RunAnnouncer</b> is attached
+ * <a href="https://github.com/Nordstrom/JUnit-Foundation#support-for-standard-junit-runlistener-providers">
+ * automatically</a> by <b>JUnit Foundation</b>; attaching this run listener through conventional methods (Maven
+ * or Gradle project configuration, {@code JUnitCore.addListener()}) is not only unnecessary, but will likely
+ * suppress <b>RunWatcher</b> notifications.
+ */
 public class RunAnnouncer extends RunListener {
     
     private static final Map<Object, AtomicTest<?>> RUNNER_TO_ATOMICTEST = new ConcurrentHashMap<>();
@@ -136,11 +145,11 @@ public class RunAnnouncer extends RunListener {
     }
     
     /**
-     * Determine if the run watcher in question supports the specified atomic test.
+     * Determine if the run watcher in question supports the data type of specified atomic test.
      * 
      * @param watcher {@link RunWatcher} object
      * @param atomicTest {@link AtomicTest} object
-     * @return {@code true} if the run watcher in question supports the specified atomic test; otherwise {@code false}
+     * @return {@code true} if the specified run watcher supports the indicated data type; otherwise {@code false}
      */
     private static boolean isSupported(RunWatcher<?> watcher, AtomicTest<?> atomicTest) {
         return (atomicTest == null) ? false : watcher.supportedType().isInstance(atomicTest.getIdentity());
