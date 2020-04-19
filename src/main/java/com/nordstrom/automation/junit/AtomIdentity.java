@@ -42,16 +42,18 @@ public class AtomIdentity extends TestWatcher implements ArtifactParams {
     }
     
     /**
-     * 
-     * @param callable
+     * Set the {@link ReflectiveCallable} object for the current test class instance.
+     *  
+     * @param callable {@link ReflectiveCallable} object
      */
     public void setCallable(ReflectiveCallable callable) {
         this.callable = callable;
     }
     
     /**
-     * 
-     * @return
+     * Get the {@link ReflectiveCallable} object for the current test class instance.
+     *  
+     * @return {@link ReflectiveCallable} object
      */
     public ReflectiveCallable getCallable() {
         return callable;
