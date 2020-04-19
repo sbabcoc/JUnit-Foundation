@@ -31,7 +31,7 @@ public class RunAnnouncer extends RunListener {
     @SuppressWarnings({"rawtypes", "unchecked"})
     public void testStarted(Description description) throws Exception {
         LOGGER.debug("testStarted: {}", description);
-        AtomicTest<?> atomicTest = getAtomicTestOf(description);
+        AtomicTest<?> atomicTest = newAtomicTest(description);
         for (RunWatcher watcher : LifecycleHooks.getRunWatchers()) {
             if (isSupported(watcher, atomicTest)) {
                 watcher.testStarted(atomicTest);
@@ -110,7 +110,25 @@ public class RunAnnouncer extends RunListener {
     static <T> AtomicTest<T> newAtomicTest(Object runner, T identity) {
         AtomicTest<T> atomicTest = new AtomicTest<>(runner, identity);
         RUNNER_TO_ATOMICTEST.put(runner, atomicTest);
-        RUNNER_TO_ATOMICTEST.put(atomicTest.getDescription(), atomicTest);
+        return atomicTest;
+    }
+    
+    /**
+     * Create new atomic test object for the specified description.
+     * 
+     * @param <T> type of children associated with the specified runner
+     * @param description description of the test that is about to be run
+     * @return {@link AtomicTest} object (may be {@code null})
+     */
+    static <T> AtomicTest<T> newAtomicTest(Description description) {
+        AtomicTest<T> atomicTest = null;
+        AtomicTest<T> original = getAtomicTestOf(LifecycleHooks.getThreadRunner());
+        
+        if (original != null) {
+            atomicTest = new AtomicTest<>(original, description);
+            RUNNER_TO_ATOMICTEST.put(description, atomicTest);
+        }
+        
         return atomicTest;
     }
     

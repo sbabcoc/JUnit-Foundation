@@ -2,6 +2,7 @@ package com.nordstrom.automation.junit;
 
 import java.util.Map;
 
+import org.junit.internal.runners.model.ReflectiveCallable;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
@@ -17,6 +18,7 @@ public class AtomIdentity extends TestWatcher implements ArtifactParams {
 
     private final Object instance;
     private Description description;
+    private ReflectiveCallable callable;
     
     public AtomIdentity(Object instance) {
         this.instance = instance;
@@ -40,6 +42,32 @@ public class AtomIdentity extends TestWatcher implements ArtifactParams {
     }
     
     /**
+     * Set the {@link ReflectiveCallable} object for the current test class instance.
+     *  
+     * @param callable {@link ReflectiveCallable} object
+     */
+    public void setCallable(ReflectiveCallable callable) {
+        this.callable = callable;
+    }
+    
+    /**
+     * Get the {@link ReflectiveCallable} object for the current test class instance.
+     *  
+     * @return {@link ReflectiveCallable} object
+     */
+    public ReflectiveCallable getCallable() {
+        return callable;
+    }
+    
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public AtomIdentity getAtomIdentity() {
+        return this;
+    }
+    
+    /**
      * {@inheritDoc}
      */
     @Override
@@ -57,5 +85,5 @@ public class AtomIdentity extends TestWatcher implements ArtifactParams {
         }
         return Optional.absent();
     }
-    
+
 }

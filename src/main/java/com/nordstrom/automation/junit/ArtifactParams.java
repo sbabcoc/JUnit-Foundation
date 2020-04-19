@@ -10,6 +10,13 @@ import com.nordstrom.common.params.Params;
 public interface ArtifactParams extends Params {
     
     /**
+     * Get the {@link AtomIdentity} test watcher for the current test class instance.
+     * 
+     * @return {@code AtomIdentity} test watcher
+     */
+    AtomIdentity getAtomIdentity();
+    
+    /**
      * Get the JUnit method description object for the current test class instance.
      * 
      * @return JUnit method description object

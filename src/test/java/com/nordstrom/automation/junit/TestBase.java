@@ -13,6 +13,11 @@ public abstract class TestBase implements ArtifactParams {
     public final UnitTestCapture watcher = new UnitTestCapture(this);
     
     @Override
+    public AtomIdentity getAtomIdentity() {
+        return watcher;
+    }
+    
+    @Override
     public Description getDescription() {
         return watcher.getDescription();
     }
