@@ -33,6 +33,13 @@ public class AtomicTest<T> {
         this.description = invoke(runner, "describeChild", identity);
         this.particles = invoke(runner, "getChildren");
     }
+    
+    public AtomicTest(AtomicTest<T> original, Description description) {
+        this.runner = original.runner;
+        this.identity = original.identity;
+        this.description = description;
+        this.particles = original.particles;
+    }
 
     /**
      * Get the runner for this atomic test.

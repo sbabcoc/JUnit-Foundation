@@ -57,9 +57,11 @@ public class RunReflectiveCall {
                     throws Exception {
         
         Object child = null;
+        Object target = null;
 
         try {
             child = getFieldValue(callable, "this$0");
+            target = getFieldValue(callable, "val$target");
         } catch (IllegalAccessException | NoSuchFieldException | SecurityException | IllegalArgumentException e) {
             // handled below
         }
@@ -67,6 +69,10 @@ public class RunReflectiveCall {
         Object runner = Run.getParentOf(child);
         if (runner == null) {
             runner = Run.getThreadRunner();
+        }
+
+        if (ArtifactParams.class.isInstance(target)) {
+            ((ArtifactParams) target).getAtomIdentity().setCallable(callable);
         }
         
         Object result = null;

@@ -19,17 +19,7 @@ public class CreateTest {
     
     private static final Map<Object, Object> TARGET_TO_RUNNER = new ConcurrentHashMap<>();
     private static final Map<Object, Object> RUNNER_TO_TARGET = new ConcurrentHashMap<>();
-    private static final ThreadLocal<DepthGauge> DEPTH;
     private static final Logger LOGGER = LoggerFactory.getLogger(CreateTest.class);
-    
-    static {
-        DEPTH = new ThreadLocal<DepthGauge>() {
-            @Override
-            protected DepthGauge initialValue() {
-                return new DepthGauge();
-            }
-        };
-    }
     
     /**
      * Interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#createTest createTest} method.
@@ -43,26 +33,19 @@ public class CreateTest {
     public static Object intercept(@This final Object runner,
                     @SuperCall final Callable<?> proxy) throws Exception {
         
-        Object target;
-        try {
-            DEPTH.get().increaseDepth();
-            target = LifecycleHooks.callProxy(proxy);
-        } finally {
-            DEPTH.get().decreaseDepth();
-        }
+        Object target = LifecycleHooks.callProxy(proxy);
+        // apply parameter-based global timeout
+        TimeoutUtils.applyTestTimeout(runner, target);
         
-        TARGET_TO_RUNNER.put(target, runner);
-        RUNNER_TO_TARGET.put(runner, target);
-        
-        if (DEPTH.get().atGroundLevel()) {
+        if (null == TARGET_TO_RUNNER.put(target, runner)) {
             LOGGER.debug("testObjectCreated: {}", target);
+            RUNNER_TO_TARGET.put(runner, target);
+            
             for (TestObjectWatcher watcher : LifecycleHooks.getObjectWatchers()) {
                 watcher.testObjectCreated(target, runner);
             }
         }
         
-        // apply parameter-based global timeout
-        TimeoutUtils.applyTestTimeout(runner, target);
         return target;
     }
     
