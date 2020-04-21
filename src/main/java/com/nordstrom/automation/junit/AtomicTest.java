@@ -3,6 +3,7 @@ package com.nordstrom.automation.junit;
 import static com.nordstrom.automation.junit.LifecycleHooks.invoke;
 
 import java.util.List;
+import java.util.Objects;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -120,5 +121,25 @@ public class AtomicTest<T> {
     @Override
     public String toString() {
         return description.toString();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        AtomicTest<T> that = (AtomicTest<T>) o;
+        return Objects.equals(runner, that.runner) &&
+                Objects.equals(identity, that.identity);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        return Objects.hash(runner, identity);
     }
 }
