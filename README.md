@@ -30,7 +30,7 @@ Get the test class associated with the specified framework method.
 Get the test class object associated with the specified parent runner.
 * `LifecycleHooks.getAtomicTestOf(Object runner)`  
 Get the atomic test object for the specified class runner.
-* `LifecycleHooks.getCallableOf(Object runner, Object child)`
+* `LifecycleHooks.getCallableOf(Object runner, Object child)`. 
 Get the _callable_ object associated with the specified parent runner and child runner or framework method.
 
 ###### Exploring the Test Run Hierarchy
@@ -111,7 +111,7 @@ Get a `Description` for the indicated child object from the runner for the speci
 Get class of specified test class instance.
 * `LifecycleHooks.getFieldValue(Object target, String name)`  
 Get the value of the specified field from the supplied object.
-* `LifecycleHooks.encloseCallable(Method method, Object target, Object... params)`
+* `LifecycleHooks.encloseCallable(Method method, Object target, Object... params)`  
 Synthesize a _callable_ object with the specified parameters.
 
 ### How to Enable Notifications
@@ -613,6 +613,7 @@ public class MyParameterizedCapture extends ArtifactCollector<MyParameterizedTyp
 
 The following example implements a parameterized test class that publishes its invocation parameters through the **ArtifactParams** interface. It uses the custom **Parameterized** runner to invoke the `parameterized()` test method twice - once with input "first test", and once with input "second test". The test class constructor accepts the invocation parameter as its argument and stores it in an instance field for use by the test.
 
+* The `getAtomIdentity()` method provides access to the **ParameterizedCapture** test watcher, which implements the **AtomIdentity** interface.
 * The `getDescription()` method acquires the **Description** object for the current `atomic test` from the `watcher` test rule.
 * The `getParameters()` method uses static methods of the **ArtifactParams** interface to assemble the map of invocation parameters from the `input` instance field populated by the constructor.
 
@@ -652,6 +653,11 @@ public class ParameterizedTest implements ArtifactParams {
     @Parameters
     public static Object[] data() {
         return new Object[] { "first test", "second test" };
+    }
+    
+    @Override
+    public AtomIdentity getAtomIdentity() {
+        return watcher;
     }
     
     @Override
