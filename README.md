@@ -30,6 +30,8 @@ Get the test class associated with the specified framework method.
 Get the test class object associated with the specified parent runner.
 * `LifecycleHooks.getAtomicTestOf(Object runner)`  
 Get the atomic test object for the specified class runner.
+* `LifecycleHooks.getCallableOf(Object runner, Object child)`
+Get the _callable_ object associated with the specified parent runner and child runner or framework method.
 
 ###### Exploring the Test Run Hierarchy
 ```java
@@ -109,6 +111,8 @@ Get a `Description` for the indicated child object from the runner for the speci
 Get class of specified test class instance.
 * `LifecycleHooks.getFieldValue(Object target, String name)`  
 Get the value of the specified field from the supplied object.
+* `LifecycleHooks.encloseCallable(Method method, Object target, Object... params)`
+Synthesize a _callable_ object with the specified parameters.
 
 ### How to Enable Notifications
 
@@ -132,7 +136,7 @@ The hooks that enable **JUnit Foundation** test lifecycle notifications are inst
     <dependency>
       <groupId>com.nordstrom.tools</groupId>
       <artifactId>junit-foundation</artifactId>
-      <version>11.3.0</version>
+      <version>12.1.0</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -209,7 +213,7 @@ repositories {
 }
 dependencies {
     ...
-    compile 'com.nordstrom.tools:junit-foundation:11.3.0'
+    compile 'com.nordstrom.tools:junit-foundation:12.1.0'
 }
 ext {
     junitFoundation = configurations.compile.resolvedConfiguration.resolvedArtifacts.find { it.name == 'junit-foundation' }
@@ -372,10 +376,6 @@ import org.junit.runners.Parameterized.Parameters;
 import com.nordstrom.automation.junit.ArtifactParams;
 import com.nordstrom.automation.junit.AtomIdentity;
 
-
-import com.nordstrom.automation.junit.ArtifactParams;
-import com.nordstrom.automation.junit.AtomIdentity;
-
 @RunWith(Parameterized.class)
 public class ExampleTest implements ArtifactParams {
     
@@ -391,6 +391,11 @@ public class ExampleTest implements ArtifactParams {
     @Parameters
     public static Object[] data() {
         return new Object[] { "first test", "second test" };
+    }
+    
+    @Override
+    public AtomIdentity getAtomIdentity() {
+        return identity;
     }
     
     @Override
