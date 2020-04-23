@@ -2,10 +2,15 @@ package com.nordstrom.automation.junit;
 
 import static com.nordstrom.automation.junit.LifecycleHooks.getFieldValue;
 
+import java.lang.reflect.Method;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.lang.IllegalAccessException;
+
+import com.google.common.base.Optional;
 import org.junit.internal.runners.model.ReflectiveCallable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +28,8 @@ import net.bytebuddy.implementation.bind.annotation.This;
  */
 @SuppressWarnings("squid:S1118")
 public class RunReflectiveCall {
-    
+
+    private static final Map<Object, ReflectiveCallable> CHILD_TO_CALLABLE = new ConcurrentHashMap<>();
     private static final ThreadLocal<ConcurrentMap<Integer, DepthGauge>> methodDepth;
     private static final Function<Integer, DepthGauge> newInstance;
     private static final Logger LOGGER = LoggerFactory.getLogger(RunReflectiveCall.class);
@@ -57,11 +63,9 @@ public class RunReflectiveCall {
                     throws Exception {
         
         Object child = null;
-        Object target = null;
 
         try {
             child = getFieldValue(callable, "this$0");
-            target = getFieldValue(callable, "val$target");
         } catch (IllegalAccessException | NoSuchFieldException | SecurityException | IllegalArgumentException e) {
             // handled below
         }
@@ -71,10 +75,8 @@ public class RunReflectiveCall {
             runner = Run.getThreadRunner();
         }
 
-        if (ArtifactParams.class.isInstance(target)) {
-            ((ArtifactParams) target).getAtomIdentity().setCallable(callable);
-        }
-        
+        CHILD_TO_CALLABLE.put(Objects.hash(runner, child), callable);
+
         Object result = null;
         Throwable thrown = null;
 
@@ -93,7 +95,18 @@ public class RunReflectiveCall {
 
         return result;
     }
-    
+
+    /**
+     * Get the {@link ReflectiveCallable} object for the specified class runner or method description.
+     *
+     * @param runner JUnit class runner
+     * @param child JUnit child object (runner or framework method)
+     * @return <b>ReflectiveCallable</b> object (may be {@code null})
+     */
+    static ReflectiveCallable getCallableOf(Object runner, Object child) {
+        return CHILD_TO_CALLABLE.get(Objects.hash(runner, child));
+    }
+
     /**
      * Fire the {@link MethodWatcher#beforeInvocation(Object, Object, ReflectiveCallable) event.
      * <p>
@@ -128,7 +141,7 @@ public class RunReflectiveCall {
     }
     
     /**
-     * Fire the {@link MethodWatcher#afterInvocation(Object, Object, ReflectiveCallable) event.
+     * Fire the {@link MethodWatcher#afterInvocation(Object, Object, ReflectiveCallable, Throwable) event.
      * <p>
      * If the {@code afterInvocation} event for the specified method has already been fired, do nothing.
      * 

@@ -6,6 +6,7 @@ import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.Instrumentation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15,6 +16,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentMap;
 
 import org.apache.commons.lang3.reflect.MethodUtils;
+import org.junit.internal.runners.model.ReflectiveCallable;
 import org.junit.runner.Description;
 import org.junit.runner.notification.RunListener;
 import org.junit.runners.model.TestClass;
@@ -267,7 +269,35 @@ public class LifecycleHooks {
     public static <T> AtomicTest<T> getAtomicTestOf(Object runner) {
         return RunAnnouncer.getAtomicTestOf(runner);
     }
-    
+
+    /**
+     * Get the {@link ReflectiveCallable} object for the specified class runner or method description.
+     *
+     * @param runner JUnit class runner
+     * @param child JUnit child object (runner or framework method)
+     * @return <b>ReflectiveCallable</b> object (may be {@code null})
+     */
+    public static ReflectiveCallable getCallableOf(Object runner, Object child) {
+        return RunReflectiveCall.getCallableOf(runner, child);
+    }
+
+    /**
+     * Synthesize a {@link ReflectiveCallable} closure with the specified parameters.
+     *
+     * @param method {@link Method} object to be invoked
+     * @param target test class instance to target
+     * @param params method invocation parameters
+     * @return <b>ReflectiveCallable</b> object as specified
+     */
+    public static ReflectiveCallable encloseCallable(final Method method, final Object target, final Object... params) {
+        return new ReflectiveCallable() {
+            @Override
+            protected Object runReflectiveCall() throws Throwable {
+                return method.invoke(target, params);
+            }
+        };
+    }
+
     /**
      * Get the description of the indicated child object from the runner for the specified test class instance.
      * 

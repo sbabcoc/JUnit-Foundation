@@ -91,7 +91,15 @@ public class RunAnnouncer extends RunListener {
     @SuppressWarnings({"rawtypes", "unchecked"})
     public void testIgnored(Description description) throws Exception {
         LOGGER.debug("testIgnored: {}", description);
+        // determine if retrying a failed invocation
         AtomicTest<?> atomicTest = getAtomicTestOf(description);
+
+        // if actually ignored
+        if (atomicTest == null) {
+            // create new atomic test object
+            atomicTest = newAtomicTest(description);
+        }
+
         for (RunWatcher watcher : LifecycleHooks.getRunWatchers()) {
             if (isSupported(watcher, atomicTest)) {
                 watcher.testIgnored(atomicTest);
