@@ -31,7 +31,7 @@ Get the test class object associated with the specified parent runner.
 * `LifecycleHooks.getAtomicTestOf(Object runner)`  
 Get the atomic test object for the specified class runner.
 * `LifecycleHooks.getCallableOf(Object runner, Object child)`  
-Get the _callable_ object associated with the specified parent runner and child runner or framework method.
+Get the _callable_ closure associated with the specified parent runner and child runner or framework method.
 
 ###### Exploring the Test Run Hierarchy
 ```java
@@ -112,7 +112,7 @@ Get class of specified test class instance.
 * `LifecycleHooks.getFieldValue(Object target, String name)`  
 Get the value of the specified field from the supplied object.
 * `LifecycleHooks.encloseCallable(Method method, Object target, Object... params)`  
-Synthesize a _callable_ object with the specified parameters.
+Synthesize a _callable_ closure with the specified parameters.
 
 ### How to Enable Notifications
 
