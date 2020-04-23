@@ -30,7 +30,7 @@ Get the test class associated with the specified framework method.
 Get the test class object associated with the specified parent runner.
 * `LifecycleHooks.getAtomicTestOf(Object runner)`  
 Get the atomic test object for the specified class runner.
-* `LifecycleHooks.getCallableOf(Object runner, Object child)`. 
+* `LifecycleHooks.getCallableOf(Object runner, Object child)`  
 Get the _callable_ object associated with the specified parent runner and child runner or framework method.
 
 ###### Exploring the Test Run Hierarchy
