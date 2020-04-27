@@ -705,32 +705,30 @@ The following example implements a parameterized test class that publishes its i
 ```java
 package com.nordstrom.example;
 
-import static com.nordstrom.automation.junit.ArtifactParams.param;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static com.nordstrom.automation.junit.ArtifactParams.param;
 
+import java.util.Map;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.Description;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-
 import com.nordstrom.automation.junit.ArtifactParams;
 import com.nordstrom.automation.junit.AtomIdentity;
-
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Optional;
+import com.google.common.base.Optional;
 
 @RunWith(Parameterized.class)
-public class ParameterizedTest implements ArtifactParams {
-
+public class ExampleTest implements ArtifactParams {
+    
     @Rule
-    public final MyParameterizedCapture watcher = new MyParameterizedCapture(this);
+    public final AtomIdentity identity = new AtomIdentity(this);
     
     private String input;
     
-    public ParameterizedTest(String input) {
+    public ExampleTest(String input) {
         this.input = input;
     }
     
@@ -741,22 +739,23 @@ public class ParameterizedTest implements ArtifactParams {
     
     @Override
     public AtomIdentity getAtomIdentity() {
-        return watcher;
+        return identity;
     }
     
     @Override
     public Description getDescription() {
-        return watcher.getDescription();
+        return identity.getDescription();
     }
     
     @Override
     public Optional<Map<String, Object>> getParameters() {
-    	return Param.mapOf(Param.param("input", input));
+        return Param.mapOf(Param.param("input", input));
     }
     
     @Test
     public void parameterized() {
-    	Optional<Map<String, Object>> params = watcher.getParameters();
+        System.out.println("invoking: " + getDescription().getMethodName());
+    	Optional<Map<String, Object>> params = identity.getParameters();
     	assertTrue(params.isPresent());
     	assertTrue(params.get().containsKey("input"));
         assertEquals(input, params.get().get("input"));
