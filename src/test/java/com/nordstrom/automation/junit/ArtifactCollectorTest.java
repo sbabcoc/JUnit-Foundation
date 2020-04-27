@@ -127,4 +127,23 @@ public class ArtifactCollectorTest {
         assertNull(watcher.getArtifactProvider().getCaptureState(), "Artifact provider capture state should be 'null'");
         assertNull(watcher.getArtifactPath(), "Artifact capture should not have been requested");
     }
+
+    @Test
+    public void verifyJUnitParamsCapture() {
+        RunListenerAdapter rla = new RunListenerAdapter();
+
+        JUnitCore runner = new JUnitCore();
+        runner.addListener(rla);
+        Result result = runner.run(ArtifactCollectorJUnitParams.class);
+        assertFalse(result.wasSuccessful());
+
+        assertEquals(rla.getPassedTests().size(), 1, "Incorrect passed test count");
+        assertEquals(rla.getFailedTests().size(), 1, "Incorrect failed test count");
+        assertEquals(rla.getIgnoredTests().size(), 0, "Incorrect ignored test count");
+
+        Description description = rla.getPassedTests().get(0);
+        UnitTestCapture watcher = ArtifactCollector.getWatcher(description, UnitTestCapture.class).get();
+        assertNull(watcher.getArtifactProvider().getCaptureState(), "Artifact provider capture state should be 'null'");
+        assertNull(watcher.getArtifactPath(), "Artifact capture should not have been requested");
+    }
 }

@@ -36,6 +36,7 @@
     <bytebuddy.version>1.10.3</bytebuddy.version>
     <logback.version>1.2.3</logback.version>
     <guava.version>28.1-android</guava.version>
+    <junitparams.version>1.1.1</junitparams.version>
     <toolchains-plugin.version>1.1</toolchains-plugin.version>
     <surefire-plugin.version>2.22.0</surefire-plugin.version>
     <source-plugin.version>3.2.0</source-plugin.version>
@@ -107,6 +108,11 @@
         <artifactId>guava</artifactId>
         <version>${guava.version}</version>
       </dependency>
+      <dependency>
+        <groupId>pl.pragmatists</groupId>
+        <artifactId>JUnitParams</artifactId>
+        <version>${junitparams.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
   
@@ -144,6 +150,11 @@
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>pl.pragmatists</groupId>
+      <artifactId>JUnitParams</artifactId>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 

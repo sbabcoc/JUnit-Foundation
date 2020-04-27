@@ -200,7 +200,7 @@ The hooks that enable **JUnit Foundation** test lifecycle notifications are inst
 ```
 
 #### Gradle Configuration for JUnit Foundation
-```
+```groovy
 // build.gradle
 ...
 apply plugin: 'maven'
@@ -325,7 +325,6 @@ public class LoggingWatcher implements MethodWatcher<FrameworkMethod> {
         }
     }
 }
-
 ```
 
 Note that the implementation in this method watcher uses the annotations attached to the method objects to determine the type of method they're intercepting. Because each test method can have multiple configuration methods (both before and after), you may need to define additional conditions to control when your implementation runs. Examples of additional conditions include method name, method annotation, or an execution flag.
@@ -355,7 +354,11 @@ The ability to run **JUnit** tests in parallel is provided by the JUnit 4 test r
 
 For lifecycle notification subscribers that need access to test invocation parameters, **JUnit Foundation** defines the [ArtifactParams](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/ArtifactParams.java) interface. This interface, along with the [AtomIdentity](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/AtomIdentity.java) test rule, enables test classes to publish their invocation parameters.
 
-###### Publishing and Accessing Invocation Parameters
+The following example demonstrates how to publish invocation parameters with the [Parameterized](https://junit.org/junit4/javadoc/4.12/org/junit/runners/Parameterized.html) runner. The implementation is relatively simple, due to the strategy used by the runner to inject parameters into the test methods.
+
+The `Parameterized` runner relies on instance fields to inject parameter values, and requires the test implementer to provide a constructor that initializes these fields. Alternatively, the implementer can mark the instance fields with the `@Parameter` annotation.
+
+###### Publishing Invocation Parameters - `Parameterized` Runner
 ```java
 package com.nordstrom.example;
 
@@ -364,17 +367,15 @@ import static org.junit.Assert.assertTrue;
 import static com.nordstrom.automation.junit.ArtifactParams.param;
 
 import java.util.Map;
-import java.util.Optional;
-
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.Description;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-
 import com.nordstrom.automation.junit.ArtifactParams;
 import com.nordstrom.automation.junit.AtomIdentity;
+import com.google.common.base.Optional;
 
 @RunWith(Parameterized.class)
 public class ExampleTest implements ArtifactParams {
@@ -405,7 +406,7 @@ public class ExampleTest implements ArtifactParams {
     
     @Override
     public Optional<Map<String, Object>> getParameters() {
-        return ArtifactParams.mapOf(param("input", input));
+        return Param.mapOf(Param.param("input", input));
     }
     
     @Test
@@ -415,6 +416,89 @@ public class ExampleTest implements ArtifactParams {
     	assertTrue(params.isPresent());
     	assertTrue(params.get().containsKey("input"));
         assertEquals(input, params.get().get("input"));
+    }
+}
+```
+
+The following example demonstrates how to publish invocation parameters with the [JUnitParams](https://github.com/Pragmatists/JUnitParams) runner. The implementation is more complex than the `Parameterized` example above, due to the strategy used by the runner to inject parameters into the test methods.
+
+The `JUnitParams` runner injects parameters via test method arguments, with values provided by a `val$params` field in the "callable" closures associated with each test method invocation. Unlike the `Parameterized` runner, where all test methods in the class run with the same set of values, the `JUnitParams` runner allows each test method in the class to run with its own unique set of values. This variability must be accounted for on the implementation of the `getParameters()` method.
+
+The example below queries the method for its parameter types, then uses these to cast each injected value to its corresponding type. This implementation assigns generic ordinal names to the parameters, because Java 7 reflection doesn't expose the names of method arguments. These could be acquired via the Java 8 API, or explicit mappings between test method signatures and argument names could be provided.
+
+###### Publishing Invocation Parameters - `JUnitParams` Runner
+```java
+package com.nordstrom.example;
+
+import static org.junit.Assert.assertEquals;
+
+import java.util.Map;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.internal.runners.model.ReflectiveCallable;
+import org.junit.runners.model.FrameworkMethod;
+import junitparams.JUnitParamsRunner;
+import junitparams.Parameters;
+import com.nordstrom.automation.junit.ArtifactParams;
+import com.nordstrom.automation.junit.AtomIdentity;
+import com.google.common.base.Optional;
+
+@RunWith(JUnitParamsRunner.class)
+public class ArtifactCollectorJUnitParams implements ArtifactParams {
+    
+    @Rule
+    public final AtomIdentity identity = new AtomIdentity(this);
+    
+    @Override
+    public AtomIdentity getAtomIdentity() {
+        return identity;
+    }
+    
+    @Override
+    public Description getDescription() {
+        return identity.getDescription();
+    }
+    
+    @Override
+    public Optional<Map<String, Object>> getParameters() {
+        // get runner for this target
+        Object runner = LifecycleHooks.getRunnerForTarget(this);
+        // get atomic test of target runner
+        AtomicTest<FrameworkMethod> test = LifecycleHooks.getAtomicTestOf(runner);
+        // get "callable" closure of test method
+        ReflectiveCallable callable = LifecycleHooks.getCallableOf(runner, test.getIdentity());
+        // get test method parameters
+        Class<?>[] paramTypes = test.getIdentity().getMethod().getParameterTypes();
+
+        try {
+            // extract execution parameters from "callable" closure
+            Object[] params = LifecycleHooks.getFieldValue(callable, "val$params");
+
+            // NOTE: The "callable" closure also includes:
+            // * this$0 - test case FrameworkMethod object
+            // * val$target - test class instance ('this')
+            // Only 'val$params' is unavailable elsewhere.
+
+            // allocate named parameters array
+            Param[] namedParams = new Param[params.length];
+            // populate named parameters array
+            for (int i = 0; i < params.length; i++) {
+                // create array item with generic name
+                namedParams[i] = Param.param("param" + i, paramTypes[i].cast(params[i]));
+            }
+
+            // return params map as Optional
+            return Param.mapOf(namedParams);
+        } catch (IllegalAccessException | NoSuchFieldException e) {
+            return Optional.absent();
+        }
+    }
+    
+    @Test
+    @Parameters({ "first test", "second test" })
+    public void parameterized(String input) {
+        System.out.println("parameterized: input = [" + input + "]");
+        assertEquals("first test", input);
     }
 }
 ```
