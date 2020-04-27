@@ -364,7 +364,6 @@ package com.nordstrom.example;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static com.nordstrom.automation.junit.ArtifactParams.param;
 
 import java.util.Map;
 import org.junit.Rule;
@@ -707,8 +706,8 @@ package com.nordstrom.example;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static com.nordstrom.automation.junit.ArtifactParams.param;
 
+import java.util.Arrays;
 import java.util.Map;
 import org.junit.Rule;
 import org.junit.Test;
@@ -721,14 +720,14 @@ import com.nordstrom.automation.junit.AtomIdentity;
 import com.google.common.base.Optional;
 
 @RunWith(Parameterized.class)
-public class ExampleTest implements ArtifactParams {
+public class ParameterizedTest implements ArtifactParams {
     
     @Rule
-    public final AtomIdentity identity = new AtomIdentity(this);
+    public final MyParameterizedCapture watcher = new MyParameterizedCapture(this);
     
     private String input;
     
-    public ExampleTest(String input) {
+    public ParameterizedTest(String input) {
         this.input = input;
     }
     
@@ -739,12 +738,12 @@ public class ExampleTest implements ArtifactParams {
     
     @Override
     public AtomIdentity getAtomIdentity() {
-        return identity;
+        return watcher;
     }
     
     @Override
     public Description getDescription() {
-        return identity.getDescription();
+        return return watcher;
     }
     
     @Override
@@ -754,10 +753,9 @@ public class ExampleTest implements ArtifactParams {
     
     @Test
     public void parameterized() {
-        System.out.println("invoking: " + getDescription().getMethodName());
-    	Optional<Map<String, Object>> params = identity.getParameters();
-    	assertTrue(params.isPresent());
-    	assertTrue(params.get().containsKey("input"));
+        Optional<Map<String, Object>> params = watcher.getParameters();
+        assertTrue(params.isPresent());
+        assertTrue(params.get().containsKey("input"));
         assertEquals(input, params.get().get("input"));
     }
 }
