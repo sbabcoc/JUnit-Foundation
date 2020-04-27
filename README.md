@@ -136,7 +136,7 @@ The hooks that enable **JUnit Foundation** test lifecycle notifications are inst
     <dependency>
       <groupId>com.nordstrom.tools</groupId>
       <artifactId>junit-foundation</artifactId>
-      <version>12.1.0</version>
+      <version>12.1.1</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -213,7 +213,7 @@ repositories {
 }
 dependencies {
     ...
-    compile 'com.nordstrom.tools:junit-foundation:12.1.0'
+    compile 'com.nordstrom.tools:junit-foundation:12.1.1'
 }
 ext {
     junitFoundation = configurations.compile.resolvedConfiguration.resolvedArtifacts.find { it.name == 'junit-foundation' }
@@ -751,7 +751,7 @@ public class ParameterizedTest implements ArtifactParams {
     
     @Override
     public Optional<Map<String, Object>> getParameters() {
-    	return ArtifactParams.mapOf(param("input", input));
+    	return Param.mapOf(Param.param("input", input));
     }
     
     @Test
