@@ -422,7 +422,7 @@ public class ExampleTest implements ArtifactParams {
 
 The following example demonstrates how to publish invocation parameters with the [JUnitParams](https://github.com/Pragmatists/JUnitParams) runner. The implementation is more complex than the `Parameterized` example above, due to the strategy used by the runner to inject parameters into the test methods.
 
-The `JUnitParams` runner injects parameters via test method arguments, with values provided by a `val$params` field in the "callable" closures associated with each test method invocation. Unlike the `Parameterized` runner, where all test methods in the class run with the same set of values, the `JUnitParams` runner allows each test method in the class to run with its own unique set of values. This variability must be accounted for on the implementation of the `getParameters()` method.
+The `JUnitParams` runner injects parameters via test method arguments, with values provided by a `val$params` field in the "callable" closures associated with each test method invocation. Unlike the `Parameterized` runner, where all test methods in the class run with the same set of values, the `JUnitParams` runner allows each test method in the class to run with its own unique set of values. This variability must be accounted for in the implementation of the `getParameters()` method.
 
 The example below queries the method for its parameter types, then uses these to cast each injected value to its corresponding type. This implementation assigns generic ordinal names to the parameters, because Java 7 reflection doesn't expose the names of method arguments. These could be acquired via the Java 8 API, or explicit mappings between test method signatures and argument names could be provided.
 
