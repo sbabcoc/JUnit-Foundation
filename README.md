@@ -237,25 +237,34 @@ To enable notifications in the native test runner of IDEs like Eclipse or IDEA, 
 To provide reliable, consistent behavior regardless of execution environment, **JUnit Foundation** notification subscribers are registered through the standard Java **ServiceLoader** mechanism. To attach **JUnit Foundation** watchers and standard JUnit run listeners to your tests, declare them in **ServiceLoader** [provider configuration files](https://docs.oracle.com/javase/tutorial/ext/basics/spi.html#register-service-providers) in a **_META-INF/services/_** folder of your project resources:
 
 ###### com.nordstrom.automation.junit.JUnitWatcher
-```
+```shell
 # implements com.nordstrom.automation.junit.MethodWatcher
 com.mycompany.example.MyMethodWatcher
 # implements com.nordstrom.automation.junit.ShutdownListener
 com.mycompany.example.MyShutdownListener
+# extends org.junit.runner.notification.RunListener
+# implements com.nordstrom.automation.junit.JUnitWatcher
+com.mycompany.example.MarkedRunListener
 ```
 
 ###### org.junit.runner.notification.RunListener
-```
-# implements org.junit.runner.notification.RunListener
+```shell
+# extends org.junit.runner.notification.RunListener
 com.mycompany.example.MyRunListener
 ```
 
-The preceding **ServiceLoader** provider configuration files declare a **JUnit Foundation** [MethodWatcher](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/MethodWatcher.java), a **JUnit Foundation** [ShutdownListener](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/ShutdownListener.java), and a standard **JUnit** [RunListener](https://github.com/junit-team/junit4/blob/41d44734f41aba0cf6ba5a11ff5d32ffed155027/src/main/java/org/junit/runner/notification/RunListener.java). Note that all **JUnit Foundation** watcher/listener service providers are declared in a single common configuration file to eliminate the need to declare classes implementing multiple interfaces in several different configuration files.
+The preceding **ServiceLoader** provider configuration files declare a **JUnit Foundation** [MethodWatcher](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/MethodWatcher.java), a **JUnit Foundation** [ShutdownListener](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/ShutdownListener.java), and two standard **JUnit** [RunListener](https://github.com/junit-team/junit4/blob/41d44734f41aba0cf6ba5a11ff5d32ffed155027/src/main/java/org/junit/runner/notification/RunListener.java) providers.
+
+Note that every **JUnit Foundation** service provider interface extends a common marker interface - [JUnitWatcher](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/JUnitWather.java). All watcher/listener service providers can be declared in a single common configuration file, eliminating the need to declare classes implementing multiple interfaces in several different configuration files.
+
+As indicated by the comments, the **`MarkedRunListener`** service provider extends the standard **`RunListener`** class and implements the **`JUnitWatcher`** marker interface. The marker allows this service provider to be declared in the common configuration file. This approach is employed by the **`RunAnnouncer`** run listener that **JUnit Foundation** uses to provide enhanced run event notifications.
 
 ### Defined Service Provider Interfaces
 
 **JUnit Foundation** defines several service provider interfaces that notification subscribers can implement:
 
+* [JUnitWatcher](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/JUnitWatcher.java)  
+**JUnitWatcher** is a marker interface for JUnit test execution event watchers. It can also be used to mark extensions to the standard **RunListener** class.
 * [ShutdownListener](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/ShutdownListener.java)  
 **ShutdownListener** provides callbacks for events in the lifecycle of the JVM that runs the Java code that comprises your tests. It receives the following notification:
   * The JVM that's running the tests is about to close. This signals the completion of the test run.
@@ -331,9 +340,9 @@ Note that the implementation in this method watcher uses the annotations attache
 
 ### Support for Standard JUnit RunListener Providers
 
-As indicated previously, **JUnit Foundation** will automatically attach standard JUnit **`RunListener`** providers that are declared in the associated **`ServiceLoader`** provider configuration file (i.e. - **_org.junit.runner.notification.RunListener_**). Declared run listeners are attached to the **`RunNotifier`** supplied to the `run()` method of JUnit runners. This feature eliminates behavioral differences between the various test execution environments like Maven, Gradle, and native IDE test runners.
+As indicated previously, **JUnit Foundation** will automatically attach standard JUnit **`RunListener`** providers that are declared in the associated **`ServiceLoader`** provider configuration file (i.e. - **_org.junit.runner.notification.RunListener_**). Run listeners that implement the **`JUnitWatcher`** marker interface can be declared in the common configuration file (i.e. - **_com.nordstrom.automation.junit.JUnitWatcher_**). Declared run listeners are attached to the **`RunNotifier`** supplied to the `run()` method of JUnit runners. This feature eliminates behavioral differences between the various test execution environments like Maven, Gradle, and native IDE test runners.
 
-**JUnit Foundation** uses this feature internally; notifications sent to **`RunWatcher`** service providers are published by an auto-attached **`RunListener`**. This notification-enhancing run listener, named [RunAnnouncer](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/RunAnnouncer.java), is registered via the aforementioned [**ServiceLoader** provider configuration file](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/resources/META-INF/services/org.junit.runner.notification.RunListener).
+**JUnit Foundation** uses this feature internally; notifications sent to **`RunWatcher`** service providers are published by an auto-attached **`RunListener`**. This notification-enhancing run listener, named [RunAnnouncer](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/RunAnnouncer.java), is registered via the aforementioned [**ServiceLoader** provider configuration file](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/resources/META-INF/services/com.nordstrom.automation.junit.JUnitWatcher).
 
 ### Getting Attached Watchers and Listeners
 

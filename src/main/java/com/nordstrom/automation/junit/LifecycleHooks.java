@@ -42,11 +42,12 @@ public class LifecycleHooks {
 
     private static JUnitConfig config;
     private static final List<JUnitWatcher> watchers;
+    private static final List<RunListener> runListeners;
     private static final List<RunWatcher<?>> runWatchers;
     private static final List<RunnerWatcher> runnerWatchers;
     private static final List<TestObjectWatcher> objectWatchers;
     private static final List<MethodWatcher<?>> methodWatchers;
-    
+
     private LifecycleHooks() {
         throw new AssertionError("LifecycleHooks is a static utility class that cannot be instantiated");
     }
@@ -61,7 +62,11 @@ public class LifecycleHooks {
         for (JUnitWatcher watcher : ServiceLoader.load(JUnitWatcher.class)) {
             classifier.add(watcher);
         }
-        
+
+        for (RunListener listener : ServiceLoader.load(RunListener.class)) {
+            classifier.add(listener);
+        }
+
         for (ShutdownListener watcher : ServiceLoader.load(ShutdownListener.class)) {
             classifier.add(watcher);
         }
@@ -81,8 +86,9 @@ public class LifecycleHooks {
         for (MethodWatcher<?> watcher : ServiceLoader.load(MethodWatcher.class)) {
             classifier.add(watcher);
         }
-        
+
         watchers = classifier.watchers;
+        runListeners = classifier.listeners;
         
         runWatchers = new WatcherList<>(classifier.runWatcherIndexes);
         runnerWatchers = new WatcherList<>(classifier.runnerWatcherIndexes);
@@ -92,30 +98,45 @@ public class LifecycleHooks {
     
     private static class WatcherClassifier {
         int i = 0;
-        
+
         List<JUnitWatcher> watchers = new ArrayList<>();
         List<Class<? extends JUnitWatcher>> watcherClasses = new ArrayList<>();
-        
+
+        List<RunListener> listeners = new ArrayList<>();
+        List<Class<? extends RunListener>> listenerClasses = new ArrayList<>();
+
         List<Integer> runWatcherIndexes = new ArrayList<>();
         List<Integer> runnerWatcherIndexes = new ArrayList<>();
         List<Integer> objectWatcherIndexes = new ArrayList<>();
         List<Integer> methodWatcherIndexes = new ArrayList<>();
-        
+
         boolean add(JUnitWatcher watcher) {
             if ( ! watcherClasses.contains(watcher.getClass())) {
                 watchers.add(watcher);
                 watcherClasses.add(watcher.getClass());
-                
+
+                if (watcher instanceof RunListener) add((RunListener) watcher);
+
                 if (watcher instanceof ShutdownListener) {
                     Runtime.getRuntime().addShutdownHook(getShutdownHook((ShutdownListener) watcher));
                 }
-                
+
                 if (watcher instanceof RunWatcher) runWatcherIndexes.add(i);
                 if (watcher instanceof RunnerWatcher) runnerWatcherIndexes.add(i);
                 if (watcher instanceof TestObjectWatcher) objectWatcherIndexes.add(i);
                 if (watcher instanceof MethodWatcher) methodWatcherIndexes.add(i);
-                
+
                 i++;
+                return true;
+            }
+            return false;
+        }
+
+        boolean add(RunListener listener) {
+            if ( ! listenerClasses.contains(listener.getClass())) {
+                listeners.add(listener);
+                listenerClasses.add(listener.getClass());
+                return true;
             }
             return false;
         }
@@ -450,7 +471,12 @@ public class LifecycleHooks {
      * @return optional listener instance
      */
     public static <T extends RunListener> Optional<T> getAttachedListener(Class<T> listenerType) {
-        return Run.getAttachedListener(listenerType);
+        for (RunListener listener : runListeners) {
+            if (listener.getClass() == listenerType) {
+                return Optional.of((T) listener);
+            }
+        }
+        return Optional.absent();
     }
     
     /**
@@ -473,7 +499,16 @@ public class LifecycleHooks {
         }
         return val;
     }
-    
+
+    /**
+     * Get the list of attached {@link RunListener} objects.
+     *
+     * @return run listener list
+     */
+    static List<RunListener> getRunListeners() {
+        return runListeners;
+    }
+
     /**
      * Get the list of attached {@link RunWatcher} objects.
      * 
