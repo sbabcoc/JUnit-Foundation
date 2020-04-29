@@ -24,8 +24,6 @@ Get the parent runner that owns specified child runner or framework method.
 Get the parent runner that owns the specified instance.
 * `LifecycleHooks.getTargetForRunner(Object runner)`  
 Get the JUnit test class instance owned by the specified parent runner.
-* `LifecycleHooks.getTestClassWith(Object method)`  
-Get the test class associated with the specified framework method.
 * `LifecycleHooks.getTestClassOf(Object runner)`  
 Get the test class object associated with the specified parent runner.
 * `LifecycleHooks.getAtomicTestOf(Object runner)`  
@@ -139,7 +137,7 @@ The hooks that enable **JUnit Foundation** test lifecycle notifications are inst
     <dependency>
       <groupId>com.nordstrom.tools</groupId>
       <artifactId>junit-foundation</artifactId>
-      <version>12.1.1</version>
+      <version>12.2.0</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -218,7 +216,7 @@ repositories {
 }
 dependencies {
     // ...
-    compile 'com.nordstrom.tools:junit-foundation:12.1.1'
+    compile 'com.nordstrom.tools:junit-foundation:12.2.0'
 }
 ext {
     junitFoundation = configurations.compile.resolvedConfiguration.resolvedArtifacts.find { it.name == 'junit-foundation' }
