@@ -46,7 +46,7 @@ import org.junit.runners.model.TestClass;
 
 public class ExploringWatcher implements TestClassWatcher, MethodWatcher<FrameworkMethod> {
 
-    ...
+    // ...
 
     @Override
     public void testClassStarted(TestClass testClass, Object runner) {
@@ -54,9 +54,9 @@ public class ExploringWatcher implements TestClassWatcher, MethodWatcher<Framewo
         if (runner instanceof org.junit.runners.Suite) {
             // get the parent of this runner
             Object parent = LifecycleHooks.getParentOf(runner);
-            ...
+            // ...
         }
-        ...
+        // ...
     }
 
     @Override
@@ -66,9 +66,9 @@ public class ExploringWatcher implements TestClassWatcher, MethodWatcher<Framewo
         if (target != null) {
             // get the test class of the runner
             TestClass testClass = LifecycleHooks.getTestClassOf(runner);
-            ...
+            // ...
         }
-        ...
+        // ...
     }
     
     @Override
@@ -79,12 +79,12 @@ public class ExploringWatcher implements TestClassWatcher, MethodWatcher<Framewo
             AtomicTest<FrameworkMethod> atomicTest = LifecycleHooks.getAtomicTestOf(runner);
             // get the "identity" method
             FrameworkMethod identity = atomicTest.getIdentity();
-            ...
+            // ...
         }
-        ...
+        // ...
     }
 
-    ...
+    // ...
 
 }
 ```
@@ -120,11 +120,14 @@ The hooks that enable **JUnit Foundation** test lifecycle notifications are inst
 
 #### Maven Configuration for JUnit Foundation
 ```xml
-[pom.xml]
+<!-- pom.xml -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+  <artifactId>example-maven-pom</artifactId>
   
-  [...]
+  <!-- ... -->
   
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -202,17 +205,19 @@ The hooks that enable **JUnit Foundation** test lifecycle notifications are inst
 #### Gradle Configuration for JUnit Foundation
 ```groovy
 // build.gradle
-...
+
+// ...
+
 apply plugin: 'maven'
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
 repositories {
     mavenLocal()
     mavenCentral()
-    ...
+    // ...
 }
 dependencies {
-    ...
+    // ...
     compile 'com.nordstrom.tools:junit-foundation:12.1.1'
 }
 ext {
@@ -645,7 +650,12 @@ public class ExampleTest implements ArtifactParams {
     @Rule   // Option #2: Compose type-specific artifact collector in-line
     public final ArtifactCollector<MyArtifactType> watcher2 = new ArtifactCollector<>(this, new MyArtifactType());
     
-    ...
+    // ...
+    
+    @Override
+    public AtomIdentity getAtomIdentity() {
+        return watcher1;
+    }
     
     @Override
     public Description getDescription() {
@@ -674,7 +684,7 @@ class MyParameterizedType extends MyArtifactType {
                             .append(publisher.getDescription().getMethodName()).append("\n");
             if (publisher.getParameters().isPresent()) {
                 for (Entry<String, Object> param : publisher.getParameters().get().entrySet()) {
-                    artifact.append(param.getKey() + ": [" + param.getValue() + "]\n");
+                    artifact.append(param.getKey()).append(": [").append(param.getValue()).append("]\n");
                 }
             }
             return artifact.toString().getBytes().clone();
@@ -752,7 +762,7 @@ public class ParameterizedTest implements ArtifactParams {
     
     @Override
     public Description getDescription() {
-        return return watcher;
+        return watcher.getDescription();
     }
     
     @Override
