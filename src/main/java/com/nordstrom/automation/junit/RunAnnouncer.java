@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory;
  * or Gradle project configuration, {@code JUnitCore.addListener()}) is not only unnecessary, but will likely
  * suppress <b>RunWatcher</b> notifications.
  */
-public class RunAnnouncer extends RunListener {
+public class RunAnnouncer extends RunListener implements JUnitWatcher {
     
     private static final Map<Object, AtomicTest<?>> RUNNER_TO_ATOMICTEST = new ConcurrentHashMap<>();
     private static final Logger LOGGER = LoggerFactory.getLogger(RunAnnouncer.class);

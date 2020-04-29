@@ -1,11 +1,6 @@
 package com.nordstrom.automation.junit;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.List;
-import java.util.Map;
-import java.util.ServiceLoader;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -15,8 +10,6 @@ import org.junit.runner.notification.RunListener;
 import org.junit.runner.notification.RunNotifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.base.Optional;
 
 import net.bytebuddy.implementation.bind.annotation.Argument;
 import net.bytebuddy.implementation.bind.annotation.SuperCall;
@@ -30,7 +23,6 @@ public class Run {
     private static final ThreadLocal<Deque<Object>> runnerStack;
     private static final Set<String> startNotified = new CopyOnWriteArraySet<>();
     private static final Set<String> finishNotified = new CopyOnWriteArraySet<>();
-    private static final ServiceLoader<RunListener> runListenerLoader;
     private static final Map<Object, Object> CHILD_TO_PARENT = new ConcurrentHashMap<>();
     private static final Set<RunNotifier> NOTIFIERS = new CopyOnWriteArraySet<>();
     private static final Logger LOGGER = LoggerFactory.getLogger(Run.class);
@@ -42,7 +34,6 @@ public class Run {
                 return new ArrayDeque<>();
             }
         };
-        runListenerLoader = ServiceLoader.load(RunListener.class);
     }
     
     /**
@@ -90,11 +81,9 @@ public class Run {
     static void attachRunListeners(Object runner, final RunNotifier notifier) throws Exception {
         if (NOTIFIERS.add(notifier)) {
             Description description = LifecycleHooks.invoke(runner, "getDescription");
-            synchronized(runListenerLoader) {
-                for (RunListener listener : runListenerLoader) {
-                    notifier.addListener(listener);
-                    listener.testRunStarted(description);
-                }
+            for (RunListener listener : LifecycleHooks.getRunListeners()) {
+                notifier.addListener(listener);
+                listener.testRunStarted(description);
             }
         }
     }
@@ -165,24 +154,5 @@ public class Run {
             return true;
         }
         return false;
-    }
-    
-    /**
-     * Get reference to an instance of the specified listener type.
-     * 
-     * @param <T> listener type
-     * @param listenerType listener type
-     * @return optional listener instance
-     */
-    @SuppressWarnings("unchecked")
-    static <T extends RunListener> Optional<T> getAttachedListener(Class<T> listenerType) {
-        synchronized(runListenerLoader) {
-            for (RunListener listener : runListenerLoader) {
-                if (listener.getClass() == listenerType) {
-                    return Optional.of((T) listener);
-                }
-            }
-        }
-        return Optional.absent();
     }
 }

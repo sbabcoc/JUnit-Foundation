@@ -46,7 +46,7 @@ import org.junit.runners.model.TestClass;
 
 public class ExploringWatcher implements TestClassWatcher, MethodWatcher<FrameworkMethod> {
 
-    ...
+    // ...
 
     @Override
     public void testClassStarted(TestClass testClass, Object runner) {
@@ -54,9 +54,9 @@ public class ExploringWatcher implements TestClassWatcher, MethodWatcher<Framewo
         if (runner instanceof org.junit.runners.Suite) {
             // get the parent of this runner
             Object parent = LifecycleHooks.getParentOf(runner);
-            ...
+            // ...
         }
-        ...
+        // ...
     }
 
     @Override
@@ -66,9 +66,9 @@ public class ExploringWatcher implements TestClassWatcher, MethodWatcher<Framewo
         if (target != null) {
             // get the test class of the runner
             TestClass testClass = LifecycleHooks.getTestClassOf(runner);
-            ...
+            // ...
         }
-        ...
+        // ...
     }
     
     @Override
@@ -79,12 +79,12 @@ public class ExploringWatcher implements TestClassWatcher, MethodWatcher<Framewo
             AtomicTest<FrameworkMethod> atomicTest = LifecycleHooks.getAtomicTestOf(runner);
             // get the "identity" method
             FrameworkMethod identity = atomicTest.getIdentity();
-            ...
+            // ...
         }
-        ...
+        // ...
     }
 
-    ...
+    // ...
 
 }
 ```
@@ -120,11 +120,14 @@ The hooks that enable **JUnit Foundation** test lifecycle notifications are inst
 
 #### Maven Configuration for JUnit Foundation
 ```xml
-[pom.xml]
+<!-- pom.xml -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+  <artifactId>example-maven-pom</artifactId>
   
-  [...]
+  <!-- ... -->
   
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -202,17 +205,19 @@ The hooks that enable **JUnit Foundation** test lifecycle notifications are inst
 #### Gradle Configuration for JUnit Foundation
 ```groovy
 // build.gradle
-...
+
+// ...
+
 apply plugin: 'maven'
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
 repositories {
     mavenLocal()
     mavenCentral()
-    ...
+    // ...
 }
 dependencies {
-    ...
+    // ...
     compile 'com.nordstrom.tools:junit-foundation:12.1.1'
 }
 ext {
@@ -237,25 +242,34 @@ To enable notifications in the native test runner of IDEs like Eclipse or IDEA, 
 To provide reliable, consistent behavior regardless of execution environment, **JUnit Foundation** notification subscribers are registered through the standard Java **ServiceLoader** mechanism. To attach **JUnit Foundation** watchers and standard JUnit run listeners to your tests, declare them in **ServiceLoader** [provider configuration files](https://docs.oracle.com/javase/tutorial/ext/basics/spi.html#register-service-providers) in a **_META-INF/services/_** folder of your project resources:
 
 ###### com.nordstrom.automation.junit.JUnitWatcher
-```
+```shell
 # implements com.nordstrom.automation.junit.MethodWatcher
 com.mycompany.example.MyMethodWatcher
 # implements com.nordstrom.automation.junit.ShutdownListener
 com.mycompany.example.MyShutdownListener
+# extends org.junit.runner.notification.RunListener
+# implements com.nordstrom.automation.junit.JUnitWatcher
+com.mycompany.example.MarkedRunListener
 ```
 
 ###### org.junit.runner.notification.RunListener
-```
-# implements org.junit.runner.notification.RunListener
+```shell
+# extends org.junit.runner.notification.RunListener
 com.mycompany.example.MyRunListener
 ```
 
-The preceding **ServiceLoader** provider configuration files declare a **JUnit Foundation** [MethodWatcher](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/MethodWatcher.java), a **JUnit Foundation** [ShutdownListener](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/ShutdownListener.java), and a standard **JUnit** [RunListener](https://github.com/junit-team/junit4/blob/41d44734f41aba0cf6ba5a11ff5d32ffed155027/src/main/java/org/junit/runner/notification/RunListener.java). Note that all **JUnit Foundation** watcher/listener service providers are declared in a single common configuration file to eliminate the need to declare classes implementing multiple interfaces in several different configuration files.
+The preceding **ServiceLoader** provider configuration files declare a **JUnit Foundation** [MethodWatcher](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/MethodWatcher.java), a **JUnit Foundation** [ShutdownListener](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/ShutdownListener.java), and two standard **JUnit** [RunListener](https://github.com/junit-team/junit4/blob/41d44734f41aba0cf6ba5a11ff5d32ffed155027/src/main/java/org/junit/runner/notification/RunListener.java) providers.
+
+Note that every **JUnit Foundation** service provider interface extends a common marker interface - [JUnitWatcher](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/JUnitWatcher.java). All watcher/listener service providers can be declared in a single common configuration file, eliminating the need to declare classes implementing multiple interfaces in several different configuration files.
+
+As indicated by the comments, the **`MarkedRunListener`** service provider extends the standard **`RunListener`** class and implements the **`JUnitWatcher`** marker interface. The marker allows this service provider to be declared in the common configuration file. This approach is employed by the **`RunAnnouncer`** run listener that **JUnit Foundation** uses to provide enhanced run event notifications.
 
 ### Defined Service Provider Interfaces
 
 **JUnit Foundation** defines several service provider interfaces that notification subscribers can implement:
 
+* [JUnitWatcher](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/JUnitWatcher.java)  
+**JUnitWatcher** is a marker interface for JUnit test execution event watchers. It can also be used to mark extensions to the standard **RunListener** class.
 * [ShutdownListener](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/ShutdownListener.java)  
 **ShutdownListener** provides callbacks for events in the lifecycle of the JVM that runs the Java code that comprises your tests. It receives the following notification:
   * The JVM that's running the tests is about to close. This signals the completion of the test run.
@@ -331,9 +345,9 @@ Note that the implementation in this method watcher uses the annotations attache
 
 ### Support for Standard JUnit RunListener Providers
 
-As indicated previously, **JUnit Foundation** will automatically attach standard JUnit **`RunListener`** providers that are declared in the associated **`ServiceLoader`** provider configuration file (i.e. - **_org.junit.runner.notification.RunListener_**). Declared run listeners are attached to the **`RunNotifier`** supplied to the `run()` method of JUnit runners. This feature eliminates behavioral differences between the various test execution environments like Maven, Gradle, and native IDE test runners.
+As indicated previously, **JUnit Foundation** will automatically attach standard JUnit **`RunListener`** providers that are declared in the associated **`ServiceLoader`** provider configuration file (i.e. - **_org.junit.runner.notification.RunListener_**). Run listeners that implement the **`JUnitWatcher`** marker interface can be declared in the common configuration file (i.e. - **_com.nordstrom.automation.junit.JUnitWatcher_**). Declared run listeners are attached to the **`RunNotifier`** supplied to the `run()` method of JUnit runners. This feature eliminates behavioral differences between the various test execution environments like Maven, Gradle, and native IDE test runners.
 
-**JUnit Foundation** uses this feature internally; notifications sent to **`RunWatcher`** service providers are published by an auto-attached **`RunListener`**. This notification-enhancing run listener, named [RunAnnouncer](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/RunAnnouncer.java), is registered via the aforementioned [**ServiceLoader** provider configuration file](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/resources/META-INF/services/org.junit.runner.notification.RunListener).
+**JUnit Foundation** uses this feature internally; notifications sent to **`RunWatcher`** service providers are published by an auto-attached **`RunListener`**. This notification-enhancing run listener, named [RunAnnouncer](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/RunAnnouncer.java), is registered via the aforementioned [**ServiceLoader** provider configuration file](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/resources/META-INF/services/com.nordstrom.automation.junit.JUnitWatcher).
 
 ### Getting Attached Watchers and Listeners
 
@@ -636,7 +650,12 @@ public class ExampleTest implements ArtifactParams {
     @Rule   // Option #2: Compose type-specific artifact collector in-line
     public final ArtifactCollector<MyArtifactType> watcher2 = new ArtifactCollector<>(this, new MyArtifactType());
     
-    ...
+    // ...
+    
+    @Override
+    public AtomIdentity getAtomIdentity() {
+        return watcher1;
+    }
     
     @Override
     public Description getDescription() {
@@ -665,7 +684,7 @@ class MyParameterizedType extends MyArtifactType {
                             .append(publisher.getDescription().getMethodName()).append("\n");
             if (publisher.getParameters().isPresent()) {
                 for (Entry<String, Object> param : publisher.getParameters().get().entrySet()) {
-                    artifact.append(param.getKey() + ": [" + param.getValue() + "]\n");
+                    artifact.append(param.getKey()).append(": [").append(param.getValue()).append("]\n");
                 }
             }
             return artifact.toString().getBytes().clone();
@@ -743,7 +762,7 @@ public class ParameterizedTest implements ArtifactParams {
     
     @Override
     public Description getDescription() {
-        return return watcher;
+        return watcher.getDescription();
     }
     
     @Override
