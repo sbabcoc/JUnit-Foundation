@@ -7,7 +7,7 @@
   
   <name>JUnit Foundation</name>
   <description>This is the foundation framework for JUnit automation</description>
-  <url>https://github.com/Nordstrom/JUnit-Foundation</url>
+  <url>https://github.com/sbabcoc/JUnit-Foundation</url>
   
   <licenses>
     <license>
@@ -49,9 +49,9 @@
   </properties>
   
   <scm>
-    <connection>scm:git:https://github.com/Nordstrom/JUnit-Foundation.git</connection>
-    <developerConnection>scm:git:https://github.com/Nordstrom/JUnit-Foundation.git</developerConnection>
-    <url>https://github.com/Nordstrom/JUnit-Foundation/tree/master</url>
+    <connection>scm:git:https://github.com/sbabcoc/JUnit-Foundation.git</connection>
+    <developerConnection>scm:git:https://github.com/sbabcoc/JUnit-Foundation.git</developerConnection>
+    <url>https://github.com/sbabcoc/JUnit-Foundation/tree/master</url>
     <tag>HEAD</tag>
   </scm>
 
