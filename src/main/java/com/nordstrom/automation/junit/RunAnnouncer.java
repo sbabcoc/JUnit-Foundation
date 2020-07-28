@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
  * This class implements a notification-enhancing extension of the standard {@link RunListener} class. This run
  * announcer is the source of notifications sent to attached implementations of the {@link RunWatcher} interface.
  * Note that <b>RunAnnouncer</b> is attached
- * <a href="https://github.com/Nordstrom/JUnit-Foundation#support-for-standard-junit-runlistener-providers">
+ * <a href="https://github.com/sbabcoc/JUnit-Foundation#support-for-standard-junit-runlistener-providers">
  * automatically</a> by <b>JUnit Foundation</b>; attaching this run listener through conventional methods (Maven
  * or Gradle project configuration, {@code JUnitCore.addListener()}) is not only unnecessary, but will likely
  * suppress <b>RunWatcher</b> notifications.

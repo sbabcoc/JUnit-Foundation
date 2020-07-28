@@ -256,9 +256,9 @@ com.mycompany.example.MarkedRunListener
 com.mycompany.example.MyRunListener
 ```
 
-The preceding **ServiceLoader** provider configuration files declare a **JUnit Foundation** [MethodWatcher](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/MethodWatcher.java), a **JUnit Foundation** [ShutdownListener](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/ShutdownListener.java), and two standard **JUnit** [RunListener](https://github.com/junit-team/junit4/blob/41d44734f41aba0cf6ba5a11ff5d32ffed155027/src/main/java/org/junit/runner/notification/RunListener.java) providers.
+The preceding **ServiceLoader** provider configuration files declare a **JUnit Foundation** [MethodWatcher](https://github.com/sbabcoc/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/MethodWatcher.java), a **JUnit Foundation** [ShutdownListener](https://github.com/sbabcoc/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/ShutdownListener.java), and two standard **JUnit** [RunListener](https://github.com/junit-team/junit4/blob/41d44734f41aba0cf6ba5a11ff5d32ffed155027/src/main/java/org/junit/runner/notification/RunListener.java) providers.
 
-Note that every **JUnit Foundation** service provider interface extends a common marker interface - [JUnitWatcher](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/JUnitWatcher.java). All watcher/listener service providers can be declared in a single common configuration file, eliminating the need to declare classes implementing multiple interfaces in several different configuration files.
+Note that every **JUnit Foundation** service provider interface extends a common marker interface - [JUnitWatcher](https://github.com/sbabcoc/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/JUnitWatcher.java). All watcher/listener service providers can be declared in a single common configuration file, eliminating the need to declare classes implementing multiple interfaces in several different configuration files.
 
 As indicated by the comments, the **`MarkedRunListener`** service provider extends the standard **`RunListener`** class and implements the **`JUnitWatcher`** marker interface. The marker allows this service provider to be declared in the common configuration file. This approach is employed by the **`RunAnnouncer`** run listener that **JUnit Foundation** uses to provide enhanced run event notifications.
 
@@ -266,26 +266,26 @@ As indicated by the comments, the **`MarkedRunListener`** service provider exten
 
 **JUnit Foundation** defines several service provider interfaces that notification subscribers can implement:
 
-* [JUnitWatcher](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/JUnitWatcher.java)  
+* [JUnitWatcher](https://github.com/sbabcoc/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/JUnitWatcher.java)  
 **JUnitWatcher** is a marker interface for JUnit test execution event watchers. It can also be used to mark extensions to the standard **RunListener** class.
-* [ShutdownListener](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/ShutdownListener.java)  
+* [ShutdownListener](https://github.com/sbabcoc/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/ShutdownListener.java)  
 **ShutdownListener** provides callbacks for events in the lifecycle of the JVM that runs the Java code that comprises your tests. It receives the following notification:
   * The JVM that's running the tests is about to close. This signals the completion of the test run.
-* [RunnerWatcher](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/RunnerWatcher.java)  
+* [RunnerWatcher](https://github.com/sbabcoc/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/RunnerWatcher.java)  
 **RunnerWatcher** provides callbacks for events in the lifecycle of **`ParentRunner`** objects. It receives the following notifications:
   * A **`ParentRunner`** object is about to run.
   * A **`ParentRunner`** object has finished running.
-* [TestObjectWatcher](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/TestObjectWatcher.java)  
+* [TestObjectWatcher](https://github.com/sbabcoc/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/TestObjectWatcher.java)  
 **TestObjectWatcher** provides callbacks for events in the lifecycle of Java test class instances. It receives the following notification:
   * An instance of a JUnit test class has been created for the execution of a single `atomic test`.
-* [RunWatcher](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/RunWatcher.java)  
+* [RunWatcher](https://github.com/sbabcoc/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/RunWatcher.java)  
 **RunWatcher** provides callbacks for events in the lifecycle of `atomic tests`. This is a functional replacement for the standard JUnit **RunListener**, with the execution context that the standard interface lacks. It receives the following notifications:
   * An `atomic test` is about to start.
   * An `atomic test` has finished, pass or fail.
   * An `atomic test` has failed.
   * An `atomic test` flags that it assumes a condition that is false.
   * An `atomic test` has been ignored.
-* [MethodWatcher](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/MethodWatcher.java)  
+* [MethodWatcher](https://github.com/sbabcoc/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/MethodWatcher.java)  
 **MethodWatcher** provides callbacks for events in the lifecycle of a `particle method`, which is a component of an `atomic test`. It receives the following notifications:
   * A `particle method` is about to be invoked.
   * A `particle method` has just finished.
@@ -345,7 +345,7 @@ Note that the implementation in this method watcher uses the annotations attache
 
 As indicated previously, **JUnit Foundation** will automatically attach standard JUnit **`RunListener`** providers that are declared in the associated **`ServiceLoader`** provider configuration file (i.e. - **_org.junit.runner.notification.RunListener_**). Run listeners that implement the **`JUnitWatcher`** marker interface can be declared in the common configuration file (i.e. - **_com.nordstrom.automation.junit.JUnitWatcher_**). Declared run listeners are attached to the **`RunNotifier`** supplied to the `run()` method of JUnit runners. This feature eliminates behavioral differences between the various test execution environments like Maven, Gradle, and native IDE test runners.
 
-**JUnit Foundation** uses this feature internally; notifications sent to **`RunWatcher`** service providers are published by an auto-attached **`RunListener`**. This notification-enhancing run listener, named [RunAnnouncer](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/RunAnnouncer.java), is registered via the aforementioned [**ServiceLoader** provider configuration file](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/resources/META-INF/services/com.nordstrom.automation.junit.JUnitWatcher).
+**JUnit Foundation** uses this feature internally; notifications sent to **`RunWatcher`** service providers are published by an auto-attached **`RunListener`**. This notification-enhancing run listener, named [RunAnnouncer](https://github.com/sbabcoc/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/RunAnnouncer.java), is registered via the aforementioned [**ServiceLoader** provider configuration file](https://github.com/sbabcoc/JUnit-Foundation/blob/master/src/main/resources/META-INF/services/com.nordstrom.automation.junit.JUnitWatcher).
 
 ### Getting Attached Watchers and Listeners
 
@@ -358,13 +358,13 @@ Get reference to an instance of the specified listener type.
 
 ### Support for Parallel Execution
 
-The ability to run **JUnit** tests in parallel is provided by the JUnit 4 test runner of the [Maven Surefire plugin](https://maven.apache.org/surefire/maven-surefire-plugin/examples/fork-options-and-parallel-execution.html). This feature utilizes private **JUnit** interfaces and undocuments behaviors, which greatly complicated the task of adding event notification hooks. As of version [9.0.3](https://github.com/Nordstrom/JUnit-Foundation/releases/tag/junit-foundation-9.0.3), **JUnit Foundation** supports parallel execution of both classes and methods.
+The ability to run **JUnit** tests in parallel is provided by the JUnit 4 test runner of the [Maven Surefire plugin](https://maven.apache.org/surefire/maven-surefire-plugin/examples/fork-options-and-parallel-execution.html). This feature utilizes private **JUnit** interfaces and undocuments behaviors, which greatly complicated the task of adding event notification hooks. As of version [9.0.3](https://github.com/sbabcoc/JUnit-Foundation/releases/tag/junit-foundation-9.0.3), **JUnit Foundation** supports parallel execution of both classes and methods.
 
 ### Support for Parameterized Tests
 
 **JUnit** provides a custom [Parameterized](https://junit.org/junit4/javadoc/4.12/org/junit/runners/Parameterized.html) runner for executing parameterized tests. Third-party solutions are also available, such as [JUnitParams](https://github.com/Pragmatists/JUnitParams) and [ParameterizedSuite](https://github.com/PeterWippermann/parameterized-suite). Each of these solutions has its own implementation strategy, and no common interface is provided to access the parameters supplied to each invocation of the test methods in the parameterized class.
 
-For lifecycle notification subscribers that need access to test invocation parameters, **JUnit Foundation** defines the [ArtifactParams](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/ArtifactParams.java) interface. This interface, along with the [AtomIdentity](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/AtomIdentity.java) test rule, enables test classes to publish their invocation parameters.
+For lifecycle notification subscribers that need access to test invocation parameters, **JUnit Foundation** defines the [ArtifactParams](https://github.com/sbabcoc/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/ArtifactParams.java) interface. This interface, along with the [AtomIdentity](https://github.com/sbabcoc/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/AtomIdentity.java) test rule, enables test classes to publish their invocation parameters.
 
 The following example demonstrates how to publish invocation parameters with the [Parameterized](https://junit.org/junit4/javadoc/4.12/org/junit/runners/Parameterized.html) runner. The implementation is relatively simple, due to the strategy used by the runner to inject parameters into the test methods.
 
@@ -516,7 +516,7 @@ public class ArtifactCollectorJUnitParams implements ArtifactParams {
 
 #### Artifact capture for parameterized tests
 
-For scenarios that require artifact capture of parameterized tests, the [ArtifactCollector](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/ArtifactCollector.java) class extends the [AtomIdentity](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/AtomIdentity.java) test rule. This enables artifact type implementations to access invocation parameters and **Description** object for the current `atomic test`. For more details, see the [Artifact Capture](#artifact-capture) section below.
+For scenarios that require artifact capture of parameterized tests, the [ArtifactCollector](https://github.com/sbabcoc/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/ArtifactCollector.java) class extends the [AtomIdentity](https://github.com/sbabcoc/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/AtomIdentity.java) test rule. This enables artifact type implementations to access invocation parameters and **Description** object for the current `atomic test`. For more details, see the [Artifact Capture](#artifact-capture) section below.
 
 ## Test Method Timeout Management
 
@@ -554,11 +554,11 @@ As shown previously under [ServiceLoader Configuration Files](#serviceloader-con
 
 ## Artifact Capture
 
-* [ArtifactCollector](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/ArtifactCollector.java):  
+* [ArtifactCollector](https://github.com/sbabcoc/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/ArtifactCollector.java):  
 **ArtifactCollector** is a JUnit [test watcher](http://junit.org/junit4/javadoc/latest/org/junit/rules/TestWatcher.html) that serves as the foundation for artifact-capturing test watchers. This is a generic class, with the artifact-specific implementation provided by instances of the **ArtifactType** interface. For artifact capture scenarios where you need access to the current method description or the values provided to parameterized tests, the test class can implement the **ArtifactParams** interface.
-* [ArtifactParams](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/ArtifactParams.java):  
+* [ArtifactParams](https://github.com/sbabcoc/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/ArtifactParams.java):  
 By implementing the **ArtifactParams** interface in your test classes, you enable the artifact capture framework to access test method description objects and parameterized test values. These can be used for composing, naming, and storing artifacts. 
-* [ArtifactType](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/ArtifactType.java):  
+* [ArtifactType](https://github.com/sbabcoc/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/ArtifactType.java):  
 Classes that implement the **ArtifactType** interface provide the artifact-specific methods used by the **ArtifactCollector** watcher to capture and store test-related artifacts. The unit tests for this project include a reference implementation (**UnitTestArtifact**) that provides a basic outline for a scenario-specific artifact provider. This artifact provider is specified as the superclass type parameter in the **UnitTestCapture** watcher, which is a lightweight extension of **ArtifactCollector**. The most basic example is shown below:
 
 ###### Implementing ArtifactType
@@ -666,7 +666,7 @@ This example demonstrates two techniques for attaching artifact collectors to te
 
 ### Parameter-Aware Artifact Capture
 
-Although the **ExampleTest** class in the previous section implements the [ArtifactParams](https://github.com/Nordstrom/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/ArtifactParams.java) interface, this non-parameterized example only shows half of the story. In addition to the **Description** objects of `atomic tests`, classes that implement parameterized tests are able to publish their invocation parameters, and the artifact capture feature is able to access them.
+Although the **ExampleTest** class in the previous section implements the [ArtifactParams](https://github.com/sbabcoc/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/ArtifactParams.java) interface, this non-parameterized example only shows half of the story. In addition to the **Description** objects of `atomic tests`, classes that implement parameterized tests are able to publish their invocation parameters, and the artifact capture feature is able to access them.
 
 The following example extends the previous artifact type to add parameter-awareness:
 
