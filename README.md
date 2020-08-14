@@ -130,7 +130,7 @@ The hooks that enable **JUnit Foundation** test lifecycle notifications are inst
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.target>1.7</maven.compiler.target>
-    <maven.compiler.source>1.7</maven.compiler.source>  	
+    <maven.compiler.source>1.7</maven.compiler.source>
   </properties>
   
   <dependencies>
@@ -218,16 +218,36 @@ dependencies {
     // ...
     compile 'com.nordstrom.tools:junit-foundation:12.2.0'
 }
-ext {
-    junitFoundation = configurations.compile.resolvedConfiguration.resolvedArtifacts.find { it.name == 'junit-foundation' }
-}
-test.doFirst {
-    jvmArgs "-javaagent:${junitFoundation.file}"
-}
 test {
 //  debug true
+    jvmArgs "-javaagent:${classpath.find { it.name.contains('junit-foundation') }.absolutePath}"
     // not required, but definitely useful
     testLogging.showStandardStreams = true
+}
+```
+
+###### Gradle configuration (Android Studio):  
+```gradle
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+
+android {
+    compileSdkVersion 30
+    buildToolsVersion "30.0.1"
+
+    // ...
+
+    testOptions {
+        unitTests.all {
+            jvmArgs "-javaagent:${classpath.find { it.name.contains('junit-foundation') }.absolutePath}"
+        }
+    }
+}
+
+dependencies {
+    // ...
+    testImplementation 'com.nordstrom.tools:junit-foundation:12.2.0'
 }
 ```
 
