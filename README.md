@@ -226,7 +226,7 @@ test {
 }
 ```
 
-###### Gradle configuration (Android Studio):  
+#### Gradle configuration (Android Studio):  
 ```gradle
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
