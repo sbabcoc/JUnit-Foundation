@@ -2,7 +2,6 @@ package com.nordstrom.automation.junit;
 
 import java.util.Map;
 
-import org.junit.internal.runners.model.ReflectiveCallable;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 

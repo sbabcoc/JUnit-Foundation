@@ -42,6 +42,16 @@ class TimeoutUtils {
      */
     @SuppressWarnings("unchecked")
     static void applyTestTimeout(final Object runner, final Object target) {
+        // get "atomic" test of the specified runner
+        AtomicTest<FrameworkMethod> atomicTest = LifecycleHooks.getAtomicTestOf(runner);
+        // get identity method for this "atomic" test
+        FrameworkMethod identity = atomicTest.getIdentity();
+        // get @Test annotation
+        Test annotation = identity.getAnnotation(Test.class);
+        
+        // exit if annotation is absent 
+        if (annotation == null) return;
+        
         long uberTimeout = -1;
         // if default timeout rule interval is defined
         if (LifecycleHooks.getConfig().containsKey(JUnitSettings.TIMEOUT_RULE.key())) {
@@ -87,11 +97,6 @@ class TimeoutUtils {
             }
         }
         
-        // get "atomic" test of the specified runner
-        AtomicTest<FrameworkMethod> atomicTest = LifecycleHooks.getAtomicTestOf(runner);
-        // get identity method for this "atomic" test
-        FrameworkMethod identity = atomicTest.getIdentity();
-        
         // if timeout disabled by local or global rule
         if ((uberTimeout == 0) || (ruleTimeout == 0)) {
             // disable timeout of @Test annotation
@@ -104,8 +109,6 @@ class TimeoutUtils {
                 testTimeout = LifecycleHooks.getConfig().getLong(JUnitSettings.TEST_TIMEOUT.key());
             }
             
-            // get @Test annotation
-            Test annotation = identity.getAnnotation(Test.class);
             // extract value of timeout parameter
             long metaTimeout = annotation.timeout();
             
@@ -130,8 +133,9 @@ class TimeoutUtils {
         FrameworkMethod identity = atomicTest.getIdentity();
         // get Test annotation of "identity" method
         Test annotation = identity.getAnnotation(Test.class);
+        
         // get test method timeout interval
-        long metaTimeout = annotation.timeout();
+        long metaTimeout = (annotation != null) ? annotation.timeout() : 0L;
         
         long uberTimeout = -1;
         // if default timeout rule interval is defined
