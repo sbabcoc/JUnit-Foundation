@@ -154,11 +154,16 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
     static <T> AtomicTest<T> getAtomicTestOf(Object testKey) {
     	AtomicTest<T> atomicTest = null;
     	if (testKey != null) {
+    		// get atomic test for this runner
     		atomicTest = (AtomicTest<T>) RUNNER_TO_ATOMICTEST.get(testKey);
+    		// if none is found
     		if (atomicTest == null) {
     	        try {
+    	        	// get object that created this runner
     	            Object anchor = getFieldValue(testKey, "this$0");
+    	            // if created by TheoryAnchor
     	            if (anchor instanceof TheoryAnchor) {
+    	            	// create new atomic test for "theory" test method
     	            	atomicTest = (AtomicTest<T>) newAtomicTest(testKey, getFieldValue(anchor, "testMethod"));
     	            }
     	        } catch (IllegalAccessException | NoSuchFieldException | SecurityException | IllegalArgumentException e) {
