@@ -1,8 +1,11 @@
 package com.nordstrom.automation.junit;
 
+import static com.nordstrom.automation.junit.LifecycleHooks.getFieldValue;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.junit.experimental.theories.Theories.TheoryAnchor;
 import org.junit.internal.AssumptionViolatedException;
 import org.junit.runner.Description;
 import org.junit.runner.notification.Failure;
@@ -149,7 +152,21 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
      */
     @SuppressWarnings("unchecked")
     static <T> AtomicTest<T> getAtomicTestOf(Object testKey) {
-        return (testKey == null) ? null : (AtomicTest<T>) RUNNER_TO_ATOMICTEST.get(testKey);
+    	AtomicTest<T> atomicTest = null;
+    	if (testKey != null) {
+    		atomicTest = (AtomicTest<T>) RUNNER_TO_ATOMICTEST.get(testKey);
+    		if (atomicTest == null) {
+    	        try {
+    	            Object anchor = getFieldValue(testKey, "this$0");
+    	            if (anchor instanceof TheoryAnchor) {
+    	            	atomicTest = (AtomicTest<T>) newAtomicTest(testKey, getFieldValue(anchor, "testMethod"));
+    	            }
+    	        } catch (IllegalAccessException | NoSuchFieldException | SecurityException | IllegalArgumentException e) {
+    	            // nothing to do here
+    	        }
+    		}
+    	}
+    	return atomicTest;
     }
     
     /**

@@ -2,7 +2,6 @@ package com.nordstrom.automation.junit;
 
 import static com.nordstrom.automation.junit.LifecycleHooks.getFieldValue;
 
-import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Callable;
@@ -10,7 +9,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.lang.IllegalAccessException;
 
-import com.google.common.base.Optional;
 import org.junit.internal.runners.model.ReflectiveCallable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
