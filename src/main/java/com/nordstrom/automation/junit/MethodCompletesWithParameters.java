@@ -32,6 +32,7 @@ public class MethodCompletesWithParameters {
         
         Object statement = null;
         Throwable thrown = null;
+        Run.pushThreadRunner(classRunner);
         
         EachTestNotifier eachNotifier = new EachTestNotifier(notifier, description);
         eachNotifier.fireTestStarted();
@@ -45,6 +46,7 @@ public class MethodCompletesWithParameters {
             eachNotifier.addFailure(e);
         } finally {
             eachNotifier.fireTestFinished();
+            Run.popThreadRunner();
         }
         
         if (thrown != null) {
