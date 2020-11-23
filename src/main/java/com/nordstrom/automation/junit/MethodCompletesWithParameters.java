@@ -29,10 +29,11 @@ public class MethodCompletesWithParameters {
     	RunNotifier notifier = Run.getNotifierOf(parentRunner);
         Object classRunner = CreateTest.getRunnerForTarget(target);
         Description description = LifecycleHooks.invoke(classRunner, "describeChild", method);
-        EachTestNotifier eachNotifier = new EachTestNotifier(notifier, description);
         
         Object statement = null;
         Throwable thrown = null;
+        
+        EachTestNotifier eachNotifier = new EachTestNotifier(notifier, description);
         eachNotifier.fireTestStarted();
         try {
             statement = LifecycleHooks.callProxy(proxy);
