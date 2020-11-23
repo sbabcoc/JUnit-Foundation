@@ -24,6 +24,7 @@ public class Run {
     private static final Set<String> startNotified = new CopyOnWriteArraySet<>();
     private static final Set<String> finishNotified = new CopyOnWriteArraySet<>();
     private static final Map<Object, Object> CHILD_TO_PARENT = new ConcurrentHashMap<>();
+    private static final Map<Object, RunNotifier> RUNNER_TO_NOTIFIER = new ConcurrentHashMap<>();
     private static final Set<RunNotifier> NOTIFIERS = new CopyOnWriteArraySet<>();
     private static final Logger LOGGER = LoggerFactory.getLogger(Run.class);
     
@@ -47,6 +48,8 @@ public class Run {
     public static void intercept(@This final Object runner, @SuperCall final Callable<?> proxy,
                     @Argument(0) final RunNotifier notifier) throws Exception {
         
+        RUNNER_TO_NOTIFIER.put(runner, notifier);
+        
         attachRunListeners(runner, notifier);
         
         try {
@@ -67,6 +70,16 @@ public class Run {
      */
     static Object getParentOf(final Object child) {
         return CHILD_TO_PARENT.get(child);
+    }
+    
+    /**
+     * Get the run notifier associated with the specified parent runner.
+     * 
+     * @param runner JUnit parent runner
+     * @return <b>RunNotifier</b> object (may be {@code null})
+     */
+    static RunNotifier getNotifierOf(final Object runner) {
+    	return RUNNER_TO_NOTIFIER.get(runner);
     }
     
     /**

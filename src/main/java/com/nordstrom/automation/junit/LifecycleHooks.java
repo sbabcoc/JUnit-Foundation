@@ -19,6 +19,7 @@ import org.apache.commons.lang3.reflect.MethodUtils;
 import org.junit.internal.runners.model.ReflectiveCallable;
 import org.junit.runner.Description;
 import org.junit.runner.notification.RunListener;
+import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.TestClass;
 
 import com.google.common.base.Function;
@@ -170,6 +171,8 @@ public class LifecycleHooks {
         final TypeDescription runNotifier = TypePool.Default.ofSystemLoader().describe("org.junit.runner.notification.RunNotifier").resolve();
         final SignatureToken runToken = new SignatureToken("run", TypeDescription.VOID, Arrays.asList(runNotifier));
         
+        final TypeDescription methodCompletesWithParameters = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.MethodCompletesWithParameters").resolve();
+        
         return new AgentBuilder.Default()
                 .type(hasSuperType(named("org.junit.internal.runners.model.ReflectiveCallable")))
                 .transform(new Transformer() {
@@ -198,6 +201,15 @@ public class LifecycleHooks {
                                       .method(named("runChild")).intercept(MethodDelegation.to(runChild))
                                       .method(hasSignature(runToken)).intercept(MethodDelegation.to(run))
                                       .method(named("getTestRules")).intercept(MethodDelegation.to(getTestRules))
+                                      .implement(Hooked.class);
+                    }
+                })
+                .type(hasSuperType(named("org.junit.experimental.theories.Theories$TheoryAnchor")))
+                .transform(new Transformer() {
+                    @Override
+                    public Builder<?> transform(Builder<?> builder, TypeDescription type,
+                                    ClassLoader classloader, JavaModule module) {
+                        return builder.method(named("methodCompletesWithParameters")).intercept(MethodDelegation.to(methodCompletesWithParameters))
                                       .implement(Hooked.class);
                     }
                 })
@@ -262,6 +274,16 @@ public class LifecycleHooks {
         return Run.getParentOf(child);
     }
 
+    /**
+     * Get the run notifier associated with the specified parent runner.
+     * 
+     * @param runner JUnit parent runner
+     * @return <b>RunNotifier</b> object (may be {@code null})
+     */
+    public static RunNotifier getNotifierOf(final Object runner) {
+    	return Run.getNotifierOf(runner);
+    }
+    
     /**
      * Get the runner that owns the active thread context.
      * 

@@ -156,7 +156,7 @@ public class ArtifactCollectorTest {
         Result result = runner.run(ArtifactCollectorTheories.class);
         assertFalse(result.wasSuccessful());
 
-        assertEquals(rla.getPassedTests().size(), 0, "Incorrect passed test count");
+        assertEquals(rla.getPassedTests().size(), 2, "Incorrect passed test count");
         assertEquals(rla.getFailedTests().size(), 1, "Incorrect failed test count");
         assertEquals(rla.getIgnoredTests().size(), 0, "Incorrect ignored test count");
 
