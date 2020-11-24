@@ -281,7 +281,7 @@ public class LifecycleHooks {
      * @return <b>RunNotifier</b> object (may be {@code null})
      */
     public static RunNotifier getNotifierOf(final Object runner) {
-    	return Run.getNotifierOf(runner);
+        return Run.getNotifierOf(runner);
     }
     
     /**
