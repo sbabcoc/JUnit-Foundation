@@ -79,7 +79,7 @@ public class Run {
      * @return <b>RunNotifier</b> object (may be {@code null})
      */
     static RunNotifier getNotifierOf(final Object runner) {
-    	return RUNNER_TO_NOTIFIER.get(runner);
+        return RUNNER_TO_NOTIFIER.get(runner);
     }
     
     /**
