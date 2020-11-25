@@ -30,10 +30,12 @@ public class MethodBlock {
                     RUNNER_TO_STATEMENT.put(runner, statement);
                     statement = new Statement() {
                         final Object threadRunner = runner;
+                        final FrameworkMethod testMethod = method;
                         
                         @Override
                         public void evaluate() throws Throwable {
                             Run.pushThreadRunner(threadRunner);
+                            RunAnnouncer.newAtomicTest(threadRunner, testMethod);
                         }
                     };
                 }
