@@ -58,7 +58,7 @@ public class RunReflectiveCall {
      */
     @RuntimeType
     public static Object intercept(@This final ReflectiveCallable callable, @SuperCall final Callable<?> proxy)
-                    throws Exception {
+            throws Exception {
         
         Object child = null;
 

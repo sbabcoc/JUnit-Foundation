@@ -167,11 +167,14 @@ public class LifecycleHooks {
         final TypeDescription runChild = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.RunChild").resolve();
         final TypeDescription run = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.Run").resolve();
         final TypeDescription getTestRules = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.GetTestRules").resolve();
+        final TypeDescription describeChild = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.DescribeChild").resolve();
+        
+        final TypeDescription methodBlock = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.MethodBlock").resolve();
         
         final TypeDescription runNotifier = TypePool.Default.ofSystemLoader().describe("org.junit.runner.notification.RunNotifier").resolve();
         final SignatureToken runToken = new SignatureToken("run", TypeDescription.VOID, Arrays.asList(runNotifier));
         
-        final TypeDescription methodCompletesWithParameters = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.MethodCompletesWithParameters").resolve();
+        final TypeDescription runWithCompleteAssignment = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.RunWithCompleteAssignment").resolve();
         
         return new AgentBuilder.Default()
                 .type(hasSuperType(named("org.junit.internal.runners.model.ReflectiveCallable")))
@@ -197,10 +200,12 @@ public class LifecycleHooks {
                     @Override
                     public Builder<?> transform(Builder<?> builder, TypeDescription type,
                                     ClassLoader classloader, JavaModule module) {
-                        return builder.method(named("createTest")).intercept(MethodDelegation.to(createTest))
+                        return builder.method(named("createTest").and(takesArguments(0))).intercept(MethodDelegation.to(createTest))
                                       .method(named("runChild")).intercept(MethodDelegation.to(runChild))
                                       .method(hasSignature(runToken)).intercept(MethodDelegation.to(run))
                                       .method(named("getTestRules")).intercept(MethodDelegation.to(getTestRules))
+                                      .method(named("describeChild")).intercept(MethodDelegation.to(describeChild))
+                                      .method(named("methodBlock")).intercept(MethodDelegation.to(methodBlock))
                                       .implement(Hooked.class);
                     }
                 })
@@ -209,7 +214,7 @@ public class LifecycleHooks {
                     @Override
                     public Builder<?> transform(Builder<?> builder, TypeDescription type,
                                     ClassLoader classloader, JavaModule module) {
-                        return builder.method(named("methodCompletesWithParameters")).intercept(MethodDelegation.to(methodCompletesWithParameters))
+                        return builder.method(named("runWithCompleteAssignment")).intercept(MethodDelegation.to(runWithCompleteAssignment))
                                       .implement(Hooked.class);
                     }
                 })
@@ -492,6 +497,7 @@ public class LifecycleHooks {
      * @param listenerType listener type
      * @return optional listener instance
      */
+    @SuppressWarnings("unchecked")
     public static <T extends RunListener> Optional<T> getAttachedListener(Class<T> listenerType) {
         for (RunListener listener : runListeners) {
             if (listener.getClass() == listenerType) {

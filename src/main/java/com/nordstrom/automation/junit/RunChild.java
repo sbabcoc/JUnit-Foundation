@@ -75,7 +75,7 @@ public class RunChild {
     static void finished() {
         Object runner = Run.getThreadRunner();
         synchronized(notifyMap) {
-            if (notifyMap.get(runner.toString())) {
+            if (Boolean.TRUE == notifyMap.get(runner.toString())) {
                 Run.fireRunFinished(runner);
             }
         }
