@@ -177,9 +177,10 @@ class TimeoutUtils {
     }
     
     /**
+     * Get "identity" method of the atomic test for the specified class runner.
      * 
-     * @param runner
-     * @return
+     * @param runner JUnit class runner
+     * @return {@link FrameworkMethod} "identity" for atomic test (may be {@code null})
      */
     private static FrameworkMethod getIdentity(Object runner) {
         FrameworkMethod method = null;
