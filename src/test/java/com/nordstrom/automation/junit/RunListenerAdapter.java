@@ -171,10 +171,20 @@ public class RunListenerAdapter extends RunListener {
         return m_retriedTests;
     }
 
+    /**
+     * Get list of all theory methods that were run.
+     * 
+     * @return list of all theories
+     */
     public List<Description> getAllTheories() {
         return m_allTheories;
     }
 
+    /**
+     * Get list of passed theories.
+     * 
+     * @return list of passed theories
+     */
     public List<Description> getPassedTheories() {
         m_passedTheories.clear();
         m_passedTheories.addAll(m_allTheories);
@@ -183,18 +193,39 @@ public class RunListenerAdapter extends RunListener {
         return m_passedTheories;
     }
     
+    /**
+     * Get list of theory failure objects.
+     * 
+     * @return list of theory failure objects
+     */
     public List<Failure> getTheoryFailures() {
         return m_theoryFailures;
     }
 
+    /**
+     * Get list of failed theories.
+     * 
+     * @return list of failed theories
+     */
     public List<Description> getFailedTheories() {
         return m_failedTheories;
     }
 
+    /**
+     * Get list of ignored theories.
+     * 
+     * @return list of ignored theories
+     */
     public List<Description> getIgnoredTheories() {
         return m_ignoredTheories;
     }
     
+    /**
+     * Determine if the specified description represents a theory.
+     * 
+     * @param description description of test "identity" method
+     * @return {@code true} if description represents a theory; otherwise {@code false}
+     */
     private boolean isTheory(Description description) {
         AtomicTest<?> atomicTest = LifecycleHooks.getAtomicTestOf(description);
         if (atomicTest != null) {
