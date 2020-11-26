@@ -284,7 +284,7 @@ public class LifecycleHooks {
      * Get the run notifier associated with the specified parent runner.
      * 
      * @param runner JUnit parent runner
-     * @return <b>RunNotifier</b> object (may be {@code null})
+     * @return {@link RunNotifier} object for the specified parent runner (may be {@code null})
      */
     public static RunNotifier getNotifierOf(final Object runner) {
         return Run.getNotifierOf(runner);
