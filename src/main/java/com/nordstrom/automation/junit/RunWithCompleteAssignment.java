@@ -22,21 +22,21 @@ import net.bytebuddy.implementation.bind.annotation.This;
  */
 public class RunWithCompleteAssignment {
 
-	/**
-	 * Interceptor for the {@link TheoryAnchor#runWithCompleteAssignment
-	 * runWithCompleteAssignment} method.
-	 * <p>
-	 * <b>NOTE</b>: This method relies on the "theory catalyst" created by the {@link MethodBlock}
-	 * class to attach the class runner to the thread and create a new atomic test for the target
-	 * method. The actual method block statement is retrieved from <b>MethodBlock<b> and executed,
-	 * publishing a complete set of test lifecycle events.
-	 * 
-	 * @param anchor current {@code TheoryAnchor} statement
+    /**
+     * Interceptor for the {@link TheoryAnchor#runWithCompleteAssignment
+     * runWithCompleteAssignment} method.
+     * <p>
+     * <b>NOTE</b>: This method relies on the "theory catalyst" created by the {@link MethodBlock}
+     * class to attach the class runner to the thread and create a new atomic test for the target
+     * method. The actual method block statement is retrieved from <b>MethodBlock<b> and executed,
+     * publishing a complete set of test lifecycle events.
+     * 
+     * @param anchor current {@code TheoryAnchor} statement
      * @param proxy callable proxy for the intercepted method
      * @param assignments arguments for this theory permutation
      * @throws Exception {@code anything} (exception thrown by the intercepted method)
-	 */
-	public static void intercept(@This final TheoryAnchor anchor, @SuperCall final Callable<?> proxy,
+     */
+    public static void intercept(@This final TheoryAnchor anchor, @SuperCall final Callable<?> proxy,
             @Argument(0) final Assignments assignments) throws Exception {
         
         // grab the current thread runner

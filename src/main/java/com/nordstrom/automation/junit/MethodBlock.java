@@ -63,11 +63,11 @@ public class MethodBlock {
         // if at ground level
         if (0 == depthGauge.decreaseDepth()) {
             try {
-            	// get parent of test runner
+                // get parent of test runner
                 Object parent = LifecycleHooks.getFieldValue(runner, "this$0");
                 // if child of TheoryAnchor statement
                 if (parent instanceof TheoryAnchor) {
-                	// store actual statement of test runner
+                    // store actual statement of test runner
                     RUNNER_TO_STATEMENT.put(runner, statement);
                     // create lifecycle catalyst
                     statement = new Statement() {
@@ -76,7 +76,7 @@ public class MethodBlock {
                         
                         @Override
                         public void evaluate() throws Throwable {
-                        	// attach class runner to thread
+                            // attach class runner to thread
                             Run.pushThreadRunner(threadRunner);
                             // create new atomic test for target method
                             RunAnnouncer.newAtomicTest(threadRunner, testMethod);
