@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.junit.experimental.theories.Theories;
 import org.junit.runner.Description;
 import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
@@ -21,6 +22,12 @@ public class RunListenerAdapter extends RunListener {
     private List<Description> m_ignoredTests = Collections.synchronizedList(new ArrayList<Description>());
     private List<Description> m_retriedTests = Collections.synchronizedList(new ArrayList<Description>());
     private List<Description> m_passedTests = Collections.synchronizedList(new ArrayList<Description>());
+    
+    private List<Description> m_allTheories = Collections.synchronizedList(new ArrayList<Description>());
+    private List<Failure> m_theoryFailures = Collections.synchronizedList(new ArrayList<Failure>());
+    private List<Description> m_failedTheories = Collections.synchronizedList(new ArrayList<Description>());
+    private List<Description> m_ignoredTheories = Collections.synchronizedList(new ArrayList<Description>());
+    private List<Description> m_passedTheories = Collections.synchronizedList(new ArrayList<Description>());
                 
     /**
      * Called when an atomic test is about to be started.
@@ -30,7 +37,11 @@ public class RunListenerAdapter extends RunListener {
      */
     @Override
     public void testStarted(Description description) throws Exception {
-        m_allTestMethods.add(description);
+        if (isTheory(description)) {
+            m_allTheories.add(description);
+        } else {
+            m_allTestMethods.add(description);
+        }
     }
 
     /** 
@@ -40,8 +51,13 @@ public class RunListenerAdapter extends RunListener {
      */
     @Override
     public void testFailure(Failure failure) throws Exception {
-        m_testFailures.add(failure);
-        m_failedTests.add(failure.getDescription());
+        if (isTheory(failure.getDescription())) {
+            m_theoryFailures.add(failure);
+            m_failedTheories.add(failure.getDescription());
+        } else {
+            m_testFailures.add(failure);
+            m_failedTests.add(failure.getDescription());
+        }
     }
 
     /**
@@ -66,10 +82,14 @@ public class RunListenerAdapter extends RunListener {
      */
     @Override
     public void testIgnored(Description description) throws Exception {
-        if (null != description.getAnnotation(RetriedTest.class)) {
-            m_retriedTests.add(description);
+        if (isTheory(description)) {
+            m_ignoredTheories.add(description);
         } else {
-            m_ignoredTests.add(description);
+            if (null != description.getAnnotation(RetriedTest.class)) {
+                m_retriedTests.add(description);
+            } else {
+                m_ignoredTests.add(description);
+            }
         }
     }
     
@@ -149,6 +169,69 @@ public class RunListenerAdapter extends RunListener {
      */
     public List<Description> getRetriedTests() {
         return m_retriedTests;
+    }
+
+    /**
+     * Get list of all theory methods that were run.
+     * 
+     * @return list of all theories
+     */
+    public List<Description> getAllTheories() {
+        return m_allTheories;
+    }
+
+    /**
+     * Get list of passed theories.
+     * 
+     * @return list of passed theories
+     */
+    public List<Description> getPassedTheories() {
+        m_passedTheories.clear();
+        m_passedTheories.addAll(m_allTheories);
+        for (Description description : m_failedTheories) { m_passedTheories.remove(description); }
+        for (Description description : m_ignoredTests) { m_passedTheories.remove(description); }
+        return m_passedTheories;
+    }
+    
+    /**
+     * Get list of theory failure objects.
+     * 
+     * @return list of theory failure objects
+     */
+    public List<Failure> getTheoryFailures() {
+        return m_theoryFailures;
+    }
+
+    /**
+     * Get list of failed theories.
+     * 
+     * @return list of failed theories
+     */
+    public List<Description> getFailedTheories() {
+        return m_failedTheories;
+    }
+
+    /**
+     * Get list of ignored theories.
+     * 
+     * @return list of ignored theories
+     */
+    public List<Description> getIgnoredTheories() {
+        return m_ignoredTheories;
+    }
+    
+    /**
+     * Determine if the specified description represents a theory.
+     * 
+     * @param description description of test "identity" method
+     * @return {@code true} if description represents a theory; otherwise {@code false}
+     */
+    private boolean isTheory(Description description) {
+        AtomicTest<?> atomicTest = LifecycleHooks.getAtomicTestOf(description);
+        if (atomicTest != null) {
+            return (atomicTest.getRunner() instanceof Theories);
+        }
+        return false;
     }
 
 }

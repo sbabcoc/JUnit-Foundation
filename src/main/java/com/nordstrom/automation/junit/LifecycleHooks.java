@@ -19,6 +19,7 @@ import org.apache.commons.lang3.reflect.MethodUtils;
 import org.junit.internal.runners.model.ReflectiveCallable;
 import org.junit.runner.Description;
 import org.junit.runner.notification.RunListener;
+import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.TestClass;
 
 import com.google.common.base.Function;
@@ -162,10 +163,13 @@ public class LifecycleHooks {
     public static ClassFileTransformer installTransformer(Instrumentation instrumentation) {
         final TypeDescription runReflectiveCall = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.RunReflectiveCall").resolve();
         final TypeDescription finished = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.Finished").resolve();
-        final TypeDescription createTest = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.CreateTest").resolve();
         final TypeDescription runChild = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.RunChild").resolve();
         final TypeDescription run = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.Run").resolve();
+        final TypeDescription describeChild = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.DescribeChild").resolve();
+        final TypeDescription methodBlock = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.MethodBlock").resolve();
+        final TypeDescription createTest = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.CreateTest").resolve();
         final TypeDescription getTestRules = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.GetTestRules").resolve();
+        final TypeDescription runWithCompleteAssignment = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.RunWithCompleteAssignment").resolve();
         
         final TypeDescription runNotifier = TypePool.Default.ofSystemLoader().describe("org.junit.runner.notification.RunNotifier").resolve();
         final SignatureToken runToken = new SignatureToken("run", TypeDescription.VOID, Arrays.asList(runNotifier));
@@ -194,10 +198,24 @@ public class LifecycleHooks {
                     @Override
                     public Builder<?> transform(Builder<?> builder, TypeDescription type,
                                     ClassLoader classloader, JavaModule module) {
-                        return builder.method(named("createTest")).intercept(MethodDelegation.to(createTest))
-                                      .method(named("runChild")).intercept(MethodDelegation.to(runChild))
+                        return builder.method(named("runChild")).intercept(MethodDelegation.to(runChild))
                                       .method(hasSignature(runToken)).intercept(MethodDelegation.to(run))
+                                      .method(named("describeChild")).intercept(MethodDelegation.to(describeChild))
+                                      // NOTE: The 'methodBlock', 'createTest', and 'getTestRules' methods
+                                      //       are defined in BlockJUnit4ClassRunner, but I've been unable
+                                      //       to transform this ParentRunner subclass.
+                                      .method(named("methodBlock")).intercept(MethodDelegation.to(methodBlock))
+                                      .method(named("createTest").and(takesArguments(0))).intercept(MethodDelegation.to(createTest))
                                       .method(named("getTestRules")).intercept(MethodDelegation.to(getTestRules))
+                                      .implement(Hooked.class);
+                    }
+                })
+                .type(hasSuperType(named("org.junit.experimental.theories.Theories$TheoryAnchor")))
+                .transform(new Transformer() {
+                    @Override
+                    public Builder<?> transform(Builder<?> builder, TypeDescription type,
+                                    ClassLoader classloader, JavaModule module) {
+                        return builder.method(named("runWithCompleteAssignment")).intercept(MethodDelegation.to(runWithCompleteAssignment))
                                       .implement(Hooked.class);
                     }
                 })
@@ -262,6 +280,16 @@ public class LifecycleHooks {
         return Run.getParentOf(child);
     }
 
+    /**
+     * Get the run notifier associated with the specified parent runner.
+     * 
+     * @param runner JUnit parent runner
+     * @return {@link RunNotifier} object for the specified parent runner (may be {@code null})
+     */
+    public static RunNotifier getNotifierOf(final Object runner) {
+        return Run.getNotifierOf(runner);
+    }
+    
     /**
      * Get the runner that owns the active thread context.
      * 
@@ -470,6 +498,7 @@ public class LifecycleHooks {
      * @param listenerType listener type
      * @return optional listener instance
      */
+    @SuppressWarnings("unchecked")
     public static <T extends RunListener> Optional<T> getAttachedListener(Class<T> listenerType) {
         for (RunListener listener : runListeners) {
             if (listener.getClass() == listenerType) {

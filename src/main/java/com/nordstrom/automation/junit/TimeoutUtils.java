@@ -1,5 +1,7 @@
 package com.nordstrom.automation.junit;
 
+import static com.nordstrom.automation.junit.LifecycleHooks.getFieldValue;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.util.Arrays;
@@ -11,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.theories.Theories.TheoryAnchor;
 import org.junit.rules.TestRule;
 import org.junit.rules.Timeout;
 import org.junit.runners.model.FrameworkField;
@@ -42,12 +45,10 @@ class TimeoutUtils {
      */
     @SuppressWarnings("unchecked")
     static void applyTestTimeout(final Object runner, final Object target) {
-        // get "atomic" test of the specified runner
-        AtomicTest<FrameworkMethod> atomicTest = LifecycleHooks.getAtomicTestOf(runner);
-        // get identity method for this "atomic" test
-        FrameworkMethod identity = atomicTest.getIdentity();
+        // get "identity" method
+        FrameworkMethod identity = getIdentity(runner);
         // get @Test annotation
-        Test annotation = identity.getAnnotation(Test.class);
+        Test annotation = (identity != null) ? identity.getAnnotation(Test.class) : null;
         
         // exit if annotation is absent 
         if (annotation == null) return;
@@ -127,13 +128,10 @@ class TimeoutUtils {
      * @param testRules test rules of associated test class
      */
     static void applyRuleTimeout(final Object runner, final List<TestRule> testRules) {
-        // get atomic test object for target class runner
-        AtomicTest<FrameworkMethod> atomicTest = LifecycleHooks.getAtomicTestOf(runner);
-        // get "identity" method of atomic test
-        FrameworkMethod identity = atomicTest.getIdentity();
-        // get Test annotation of "identity" method
-        Test annotation = identity.getAnnotation(Test.class);
-        
+        // get "identity" method
+        FrameworkMethod identity = getIdentity(runner);
+        // get @Test annotation
+        Test annotation = (identity != null) ? identity.getAnnotation(Test.class) : null;
         // get test method timeout interval
         long metaTimeout = (annotation != null) ? annotation.timeout() : 0L;
         
@@ -176,5 +174,37 @@ class TimeoutUtils {
             // add Timeout of longest interval
             testRules.add(Timeout.millis(timeout));
         }
+    }
+    
+    /**
+     * Get "identity" method of the atomic test for the specified class runner.
+     * 
+     * @param runner JUnit class runner
+     * @return {@link FrameworkMethod} "identity" for atomic test (may be {@code null})
+     */
+    private static FrameworkMethod getIdentity(Object runner) {
+        FrameworkMethod method = null;
+        
+        // get "atomic" test of the specified runner
+        AtomicTest<FrameworkMethod> atomicTest = LifecycleHooks.getAtomicTestOf(runner);
+        
+        if (atomicTest != null) {
+            // get identity method for this "atomic" test
+            method = atomicTest.getIdentity();
+        } else {
+            try {
+                // get object that created this runner
+                Object anchor = getFieldValue(runner, "this$0");
+                // if created by TheoryAnchor
+                if (anchor instanceof TheoryAnchor) {
+                    // get Theory method
+                    method = getFieldValue(anchor, "testMethod");
+                }
+            } catch (IllegalAccessException | NoSuchFieldException | SecurityException | IllegalArgumentException e) {
+                // nothing to do here
+            }
+        }
+        
+        return method;
     }
 }
