@@ -43,8 +43,8 @@ public class MethodBlock {
      * <p>
      * <b>NOTE</b>: For "theory" methods, the actual class runner statement is stored and a
      * "lifecycle catalyst" statement is returned instead. This enables the interceptor declared
-     * in the {@link RunWithCompleteAssignment} to manage the execution of the actual statement,
-     * publishing a complete set of test lifecycle events.
+     * in the {@link RunWithCompleteAssignment} class to manage the execution of the actual
+     * statement, publishing a complete set of test lifecycle events.
      * 
      * @param runner underlying test runner
      * @param proxy callable proxy for the intercepted method
