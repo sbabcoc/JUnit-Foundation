@@ -203,7 +203,7 @@ public class LifecycleHooks {
                                       .method(named("describeChild")).intercept(MethodDelegation.to(describeChild))
                                       // NOTE: The 'methodBlock', 'createTest', and 'getTestRules' methods
                                       //       are defined in BlockJUnit4ClassRunner, but I've been unable
-                                      //       to transform this ParentRuner subclass.
+                                      //       to transform this ParentRunner subclass.
                                       .method(named("methodBlock")).intercept(MethodDelegation.to(methodBlock))
                                       .method(named("createTest").and(takesArguments(0))).intercept(MethodDelegation.to(createTest))
                                       .method(named("getTestRules")).intercept(MethodDelegation.to(getTestRules))
