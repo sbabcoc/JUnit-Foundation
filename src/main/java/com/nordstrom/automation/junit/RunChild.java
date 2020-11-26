@@ -11,7 +11,8 @@ import net.bytebuddy.implementation.bind.annotation.SuperCall;
 import net.bytebuddy.implementation.bind.annotation.This;
 
 /**
- * This class declares the interceptor for the {@code runChild} method.
+ * This class declares the interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#runChild
+ * runChild} method.
  */
 @SuppressWarnings("squid:S1118")
 public class RunChild {
@@ -21,7 +22,7 @@ public class RunChild {
     /**
      * Interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#runChild runChild} method.
      * <p>
-     * <b>NOTE</b>: If the {@link RunnerWatcher#runStarted(Object)} event hasn't been fired yet for the specified
+     * <b>NOTE</b>: If the {@link RunnerWatcher#runStarted runStarted} event hasn't been fired yet for the specified
      * JUnit test runner, the event will be fired by this interceptor.
      * 
      * @param runner underlying test runner
@@ -69,8 +70,8 @@ public class RunChild {
     }
     
     /**
-     * If the {@link RunnerWatcher#runStarted(Object)} event was fired by the {@code runChild} interceptor, fire the 
-     * {@link RunnerWatcher#runFinished(Object)} event.
+     * If the {@link RunnerWatcher#runStarted runStarted} event was fired by the {@code runChild} interceptor, fire the 
+     * {@link RunnerWatcher#runFinished runFinished} event.
      */
     static void finished() {
         Object runner = Run.getThreadRunner();

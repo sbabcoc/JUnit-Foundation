@@ -15,10 +15,24 @@ import net.bytebuddy.implementation.bind.annotation.Argument;
 import net.bytebuddy.implementation.bind.annotation.SuperCall;
 import net.bytebuddy.implementation.bind.annotation.This;
 
+/**
+ * This class declares an interceptor for the
+ * {@link TheoryAnchor#runWithCompleteAssignment runWithCompleteAssignment}
+ * method.
+ */
 public class RunWithCompleteAssignment {
 
-    public static void intercept(@This final TheoryAnchor anchor, @SuperCall final Callable<?> proxy,
-            @Argument(0) final Assignments assignments) throws Throwable {
+	/**
+	 * Interceptor for the {@link TheoryAnchor#runWithCompleteAssignment
+	 * runWithCompleteAssignment} method.
+	 * 
+	 * @param anchor current {@code TheoryAnchor} statement
+     * @param proxy callable proxy for the intercepted method
+     * @param assignments arguments for this theory permutation
+     * @throws Exception {@code anything} (exception thrown by the intercepted method)
+	 */
+	public static void intercept(@This final TheoryAnchor anchor, @SuperCall final Callable<?> proxy,
+            @Argument(0) final Assignments assignments) throws Exception {
         
         // grab the current thread runner
         Object parentRunner = Run.getThreadRunner();
