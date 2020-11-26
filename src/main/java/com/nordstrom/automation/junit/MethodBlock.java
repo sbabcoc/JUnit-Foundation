@@ -40,6 +40,11 @@ public class MethodBlock {
 
     /**
      * Interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#methodBlock methodBlock} method.
+     * <p>
+     * <b>NOTE</b>: For "theory" methods, the actual class runner statement is stored and a
+     * "lifecycle catalyst" statement is returned instead. This enables the interceptor declared
+     * in the {@link RunWithCompleteAssignment} to manage the execution of the actual statement,
+     * publishing a complete set of test lifecycle events.
      * 
      * @param runner underlying test runner
      * @param proxy callable proxy for the intercepted method
@@ -55,18 +60,25 @@ public class MethodBlock {
         
         Statement statement = (Statement) LifecycleHooks.callProxy(proxy);
         
+        // if at ground level
         if (0 == depthGauge.decreaseDepth()) {
             try {
+            	// get parent of test runner
                 Object parent = LifecycleHooks.getFieldValue(runner, "this$0");
+                // if child of TheoryAnchor statement
                 if (parent instanceof TheoryAnchor) {
+                	// store actual statement of test runner
                     RUNNER_TO_STATEMENT.put(runner, statement);
+                    // create lifecycle catalyst
                     statement = new Statement() {
                         final Object threadRunner = runner;
                         final FrameworkMethod testMethod = method;
                         
                         @Override
                         public void evaluate() throws Throwable {
+                        	// attach class runner to thread
                             Run.pushThreadRunner(threadRunner);
+                            // create new atomic test for target method
                             RunAnnouncer.newAtomicTest(threadRunner, testMethod);
                         }
                     };
