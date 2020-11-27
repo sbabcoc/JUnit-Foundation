@@ -312,6 +312,7 @@ public class LifecycleHooks {
     /**
      * Get the atomic test object for the specified class runner.
      * 
+     * @param <T> data type of runner's children
      * @param runner JUnit class runner
      * @return {@link AtomicTest} object (may be {@code null})
      */
