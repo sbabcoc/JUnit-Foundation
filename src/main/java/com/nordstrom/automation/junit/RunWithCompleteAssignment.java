@@ -28,7 +28,7 @@ public class RunWithCompleteAssignment {
      * <p>
      * <b>NOTE</b>: This method relies on the "theory catalyst" created by the {@link MethodBlock}
      * class to attach the class runner to the thread and create a new atomic test for the target
-     * method. The actual method block statement is retrieved from <b>MethodBlock<b> and executed,
+     * method. The actual method block statement is retrieved from <b>MethodBlock</b> and executed,
      * publishing a complete set of test lifecycle events.
      * 
      * @param anchor current {@code TheoryAnchor} statement

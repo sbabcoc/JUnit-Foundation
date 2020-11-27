@@ -10,6 +10,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.lang.IllegalAccessException;
 
 import org.junit.internal.runners.model.ReflectiveCallable;
+import org.junit.runner.Description;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -123,7 +124,8 @@ public class RunReflectiveCall {
             if (0 == depthGauge.increaseDepth()) {
                 if (LOGGER.isDebugEnabled()) {
                     try {
-                        LOGGER.debug("beforeInvocation: {}", LifecycleHooks.invoke(runner, "describeChild", child));
+                        LOGGER.debug("beforeInvocation: {}",
+                                (Description) LifecycleHooks.invoke(runner, "describeChild", child));
                     } catch (Throwable t) {
                         // nothing to do here
                     }
@@ -157,7 +159,8 @@ public class RunReflectiveCall {
             if (0 == depthGauge.decreaseDepth()) {
                 if (LOGGER.isDebugEnabled()) {
                     try {
-                        LOGGER.debug("afterInvocation: {}", LifecycleHooks.invoke(runner, "describeChild", child));
+                        LOGGER.debug("afterInvocation: {}",
+                                (Description) LifecycleHooks.invoke(runner, "describeChild", child));
                     } catch (Throwable t) {
                         // nothing to do here
                     }

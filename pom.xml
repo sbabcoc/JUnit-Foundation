@@ -27,8 +27,8 @@
   
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.source>1.7</maven.compiler.source>
-    <maven.compiler.target>1.7</maven.compiler.target>
+    <compile-jdk.version>1.7</compile-jdk.version>
+    <test-jdk.version>1.8</test-jdk.version>
     <java-utils.version>1.9.3</java-utils.version>
     <settings.version>2.3.3</settings.version>
     <junit.version>4.13.1</junit.version>
@@ -37,7 +37,9 @@
     <logback.version>1.2.3</logback.version>
     <guava.version>28.1-android</guava.version>
     <junitparams.version>1.1.1</junitparams.version>
+    <powermock.version>2.0.9</powermock.version>
     <toolchains-plugin.version>1.1</toolchains-plugin.version>
+    <compiler-plugin.version>3.8.1</compiler-plugin.version>
     <surefire-plugin.version>2.22.0</surefire-plugin.version>
     <source-plugin.version>3.2.0</source-plugin.version>
     <javadoc-plugin.version>3.1.1</javadoc-plugin.version>
@@ -113,6 +115,16 @@
         <artifactId>JUnitParams</artifactId>
         <version>${junitparams.version}</version>
       </dependency>
+      <dependency>
+        <groupId>org.powermock</groupId>
+        <artifactId>powermock-module-junit4</artifactId>
+        <version>${powermock.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.powermock</groupId>
+        <artifactId>powermock-api-mockito2</artifactId>
+        <version>${powermock.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
   
@@ -156,6 +168,16 @@
       <artifactId>JUnitParams</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.powermock</groupId>
+      <artifactId>powermock-module-junit4</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.powermock</groupId>
+      <artifactId>powermock-api-mockito2</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -163,8 +185,8 @@
       <plugins>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-toolchains-plugin</artifactId>
-          <version>${toolchains-plugin.version}</version>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>${compiler-plugin.version}</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -201,57 +223,30 @@
           <artifactId>maven-jar-plugin</artifactId>
           <version>${jar-plugin.version}</version>
         </plugin>
-        <plugin>
-          <groupId>org.eclipse.m2e</groupId>
-          <artifactId>lifecycle-mapping</artifactId>
-          <version>1.0.0</version>
-          <configuration>
-            <lifecycleMappingMetadata>
-              <pluginExecutions>
-                <pluginExecution>
-                  <pluginExecutionFilter>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-toolchains-plugin</artifactId>
-                    <versionRange>[1.0.0,)</versionRange>
-                    <goals>
-                      <goal>toolchain</goal>
-                    </goals>
-                  </pluginExecutionFilter>
-                  <action>
-                    <execute />
-                  </action>
-                </pluginExecution>
-              </pluginExecutions>
-            </lifecycleMappingMetadata>
-          </configuration>
-        </plugin>
       </plugins>
     </pluginManagement>
     
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-toolchains-plugin</artifactId>
-        <executions>
-          <execution>
-            <goals>
-              <goal>toolchain</goal>
-            </goals>
-          </execution>
-        </executions>
+        <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
-          <toolchains>
-            <jdk>
-              <version>1.7</version>
-              <vendor>oracle</vendor>
-            </jdk>
-          </toolchains>
+          <source>${compile-jdk.version}</source>
+          <target>${compile-jdk.version}</target>
+          <jdkToolchain>
+            <version>${compile-jdk.version}</version>
+            <vendor>oracle</vendor>
+          </jdkToolchain>
         </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
+          <jdkToolchain>
+            <version>${test-jdk.version}</version>
+            <vendor>oracle</vendor>
+          </jdkToolchain>
           <argLine>-javaagent:src/test/resources/test-agent.jar</argLine>
         </configuration>
       </plugin>
