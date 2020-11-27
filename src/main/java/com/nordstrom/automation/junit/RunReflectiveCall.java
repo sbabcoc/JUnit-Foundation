@@ -159,8 +159,8 @@ public class RunReflectiveCall {
             if (0 == depthGauge.decreaseDepth()) {
                 if (LOGGER.isDebugEnabled()) {
                     try {
-						LOGGER.debug("afterInvocation: {}",
-								(Description) LifecycleHooks.invoke(runner, "describeChild", child));
+                        LOGGER.debug("afterInvocation: {}",
+                                (Description) LifecycleHooks.invoke(runner, "describeChild", child));
                     } catch (Throwable t) {
                         // nothing to do here
                     }

@@ -17,24 +17,24 @@ import org.powermock.modules.junit4.PowerMockRunnerDelegate;
 @PowerMockRunnerDelegate(BlockJUnit4ClassRunner.class)
 @PrepareForTest(PowerMockCases.StaticClass.class)
 public class PowerMockCases {
-	
-	@Test
-	public void testHappyPath() {
+    
+    @Test
+    public void testHappyPath() {
         mockStatic(StaticClass.class);
         when(StaticClass.staticMethod()).thenReturn("mocked");
         assertThat(StaticClass.staticMethod(), equalTo("mocked"));
-	}
-	
-	@Test
-	public void testFailure() {
+    }
+    
+    @Test
+    public void testFailure() {
         mockStatic(StaticClass.class);
         when(StaticClass.staticMethod()).thenReturn("mocked");
         assertThat(StaticClass.staticMethod(), nullValue());
-	}
+    }
 
-	static class StaticClass {
-		public static String staticMethod() {
-			return null;
-		}
-	}
+    static class StaticClass {
+        public static String staticMethod() {
+            return null;
+        }
+    }
 }

@@ -19,8 +19,8 @@ public class PowerMockTest {
         assertFalse(result.wasSuccessful());
         
         assertEquals(rla.getPassedTests().size(), 1, "Incorrect passed test count");
-		assertEquals(rla.getPassedTests().get(0).getDisplayName(),
-				"testHappyPath(com.nordstrom.automation.junit.PowerMockCases)", "Incorrect passed test name");
+        assertEquals(rla.getPassedTests().get(0).getDisplayName(),
+                "testHappyPath(com.nordstrom.automation.junit.PowerMockCases)", "Incorrect passed test name");
         assertEquals(rla.getFailedTests().size(), 1, "Incorrect failed test count");
         assertEquals(rla.getIgnoredTests().size(), 0, "Incorrect ignored test count");
     }

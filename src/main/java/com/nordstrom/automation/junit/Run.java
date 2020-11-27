@@ -138,7 +138,7 @@ public class Run {
      */
     static boolean fireRunStarted(Object runner) {
         if (startNotified.add(runner.toString())) {
-        	JUnitConfig.getConfig();
+            JUnitConfig.getConfig();
             List<?> grandchildren = LifecycleHooks.invoke(runner, "getChildren");
             for (Object grandchild : grandchildren) {
                 CHILD_TO_PARENT.put(grandchild, runner);
