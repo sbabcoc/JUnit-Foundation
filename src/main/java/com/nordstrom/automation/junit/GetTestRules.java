@@ -10,9 +10,13 @@ import net.bytebuddy.implementation.bind.annotation.RuntimeType;
 import net.bytebuddy.implementation.bind.annotation.SuperCall;
 import net.bytebuddy.implementation.bind.annotation.This;
 
+/**
+ * This class declares an interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#getTestRules
+ * getTestRules} method.
+ */
 public class GetTestRules {
     /**
-     * Interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#getTestRules(Object)}  getTestRules} method.
+     * Interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#getTestRules getTestRules} method.
      *
      * @param runner target {@link org.junit.runners.BlockJUnit4ClassRunner BlockJUnit4ClassRunner} object
      * @param proxy callable proxy for the intercepted method

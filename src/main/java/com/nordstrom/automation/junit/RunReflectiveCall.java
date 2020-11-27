@@ -22,7 +22,8 @@ import net.bytebuddy.implementation.bind.annotation.SuperCall;
 import net.bytebuddy.implementation.bind.annotation.This;
 
 /**
- * This class declares the interceptor for the {@link org.junit.internal.runners.model.ReflectiveCallable#runReflectiveCall
+ * This class declares the interceptor for the
+ * {@link org.junit.internal.runners.model.ReflectiveCallable#runReflectiveCall
  * runReflectiveCall} method.
  */
 @SuppressWarnings("squid:S1118")
@@ -59,7 +60,7 @@ public class RunReflectiveCall {
      */
     @RuntimeType
     public static Object intercept(@This final ReflectiveCallable callable, @SuperCall final Callable<?> proxy)
-                    throws Exception {
+            throws Exception {
         
         Object child = null;
 
