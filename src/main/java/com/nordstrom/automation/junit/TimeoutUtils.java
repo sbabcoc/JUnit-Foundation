@@ -1,7 +1,5 @@
 package com.nordstrom.automation.junit;
 
-import static com.nordstrom.automation.junit.LifecycleHooks.getFieldValue;
-
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.util.Arrays;
@@ -194,11 +192,11 @@ class TimeoutUtils {
         } else {
             try {
                 // get object that created this runner
-                Object anchor = getFieldValue(runner, "this$0");
+                Object anchor = LifecycleHooks.getFieldValue(runner, "this$0");
                 // if created by TheoryAnchor
                 if (anchor instanceof TheoryAnchor) {
                     // get Theory method
-                    method = getFieldValue(anchor, "testMethod");
+                    method = LifecycleHooks.getFieldValue(anchor, "testMethod");
                 }
             } catch (IllegalAccessException | NoSuchFieldException | SecurityException | IllegalArgumentException e) {
                 // nothing to do here
