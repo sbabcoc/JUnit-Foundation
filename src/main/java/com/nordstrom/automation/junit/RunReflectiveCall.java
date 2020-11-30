@@ -1,7 +1,5 @@
 package com.nordstrom.automation.junit;
 
-import static com.nordstrom.automation.junit.LifecycleHooks.getFieldValue;
-
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Callable;
@@ -65,7 +63,7 @@ public class RunReflectiveCall {
         Object child = null;
 
         try {
-            child = getFieldValue(callable, "this$0");
+            child = LifecycleHooks.getFieldValue(callable, "this$0");
         } catch (IllegalAccessException | NoSuchFieldException | SecurityException | IllegalArgumentException e) {
             // handled below
         }
