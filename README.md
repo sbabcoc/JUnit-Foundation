@@ -7,7 +7,7 @@
 
 ## Notes on Test Runner Compatibility
 
-**JUnit Foundation** is specifically designed to add test lifecycle events to runners associated with **`BlockJUnit4ClassRunner`**. Any test runner that extends from the standard **JUnit 4** test execution API should work just fine with **JUnit Foundation**. We've specifically verified compatibility with the following runners:
+**JUnit Foundation** is specifically designed to add test lifecycle events to test runners associated with **`BlockJUnit4ClassRunner`**. Any test runner that extends from the standard **JUnit 4** test execution API should work just fine with **JUnit Foundation**. We've specifically verified compatibility with the following runners:
 
 * **Parameterized**
 * **JUnitParamsRunner**
