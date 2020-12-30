@@ -1,8 +1,55 @@
+
 [![Maven Central](https://img.shields.io/maven-central/v/com.nordstrom.tools/junit-foundation.svg)](https://mvnrepository.com/artifact/com.nordstrom.tools/junit-foundation)
 
 # INTRODUCTION
 
 **JUnit Foundation** is a lightweight collection of JUnit watchers, interfaces, and static utility classes that supplement and augment the functionality provided by the JUnit API. The facilities provided by **JUnit Foundation** include method invocation hooks, test method timeout management, automatic retry of failed tests, shutdown hook installation, and test artifact capture.
+
+## Notes on Test Runner Compatibility
+
+**JUnit Foundation** is specifically designed to add test lifecycle events to runners associated with **`BlockJUnit4ClassRunner`**. Any test runner that extends from the standard **JUnit 4** test execution API should work just fine with **JUnit Foundation**. We've specifically verified compatibility with the following runners:
+
+* **Parameterized**
+* **JUnitParamsRunner**
+* **Theories**
+* **PowerMockRunner** (requires delegation)
+
+The native implementation of **PowerMockRunner** uses a deprecated JUnit runner model that **JUnit Foundation** doesn't support. You need to delegate test execution to the standard **BlockJUnit4ClassRunner** (or subclasses thereof) to enable reporting of test lifecycle events. This is specified via the **`@PowerMockRunnerDelegate`** annotation, as shown below:
+
+```
+package com.nordstrom.automation.junit;
+
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Mockito.when;
+import static org.powermock.api.mockito.PowerMockito.mockStatic;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.BlockJUnit4ClassRunner;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+import org.powermock.modules.junit4.PowerMockRunnerDelegate;
+
+@RunWith(PowerMockRunner.class)
+@PowerMockRunnerDelegate(BlockJUnit4ClassRunner.class)
+@PrepareForTest(PowerMockCases.StaticClass.class)
+public class PowerMockCases {
+    
+    @Test
+    public void testHappyPath() {
+        mockStatic(StaticClass.class);
+        when(StaticClass.staticMethod()).thenReturn("mocked");
+        assertThat(StaticClass.staticMethod(), equalTo("mocked"));
+    }
+    
+    static class StaticClass {
+        public static String staticMethod() {
+            return null;
+        }
+    }
+}
+```
 
 ## Test Lifecycle Notifications
 
@@ -443,9 +490,9 @@ public class ExampleTest implements ArtifactParams {
     @Test
     public void parameterized() {
         System.out.println("invoking: " + getDescription().getMethodName());
-    	Optional<Map<String, Object>> params = identity.getParameters();
-    	assertTrue(params.isPresent());
-    	assertTrue(params.get().containsKey("input"));
+        Optional<Map<String, Object>> params = identity.getParameters();
+        assertTrue(params.isPresent());
+        assertTrue(params.get().containsKey("input"));
         assertEquals(input, params.get().get("input"));
     }
 }
