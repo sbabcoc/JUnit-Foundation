@@ -85,16 +85,16 @@ package com.nordstrom.example;
 import com.nordstrom.automation.junit.LifecycleHooks;
 import com.nordstrom.automation.junit.MethodWatcher;
 import com.nordstrom.automation.junit.RunReflectiveCall;
-import com.nordstrom.automation.junit.TestClassWatcher;
+import com.nordstrom.automation.junit.TestObjectWatcher;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.TestClass;
 
-public class ExploringWatcher implements TestClassWatcher, MethodWatcher<FrameworkMethod> {
+public class ExploringWatcher implements TestObjectWatcher, MethodWatcher<FrameworkMethod> {
 
     // ...
 
     @Override
-    public void testClassStarted(TestClass testClass, Object runner) {
+    public void testObjectCreated(Object testObj, Object runner) {
         // if this is a Suite runner
         if (runner instanceof org.junit.runners.Suite) {
             // get the parent of this runner
