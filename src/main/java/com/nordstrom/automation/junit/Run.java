@@ -48,7 +48,8 @@ public class Run {
     public static void intercept(@This final Object runner, @SuperCall final Callable<?> proxy,
                     @Argument(0) final RunNotifier notifier) throws Exception {
         
-        RUNNER_TO_NOTIFIER.put(runner, notifier);
+        JUnitConfig.getConfig();
+    	RUNNER_TO_NOTIFIER.put(runner, notifier);
         
         attachRunListeners(runner, notifier);
         
@@ -138,7 +139,6 @@ public class Run {
      */
     static boolean fireRunStarted(Object runner) {
         if (startNotified.add(runner.toString())) {
-            JUnitConfig.getConfig();
             List<?> grandchildren = LifecycleHooks.invoke(runner, "getChildren");
             for (Object grandchild : grandchildren) {
                 CHILD_TO_PARENT.put(grandchild, runner);
