@@ -49,7 +49,7 @@ public class Run {
                     @Argument(0) final RunNotifier notifier) throws Exception {
         
         JUnitConfig.getConfig();
-    	RUNNER_TO_NOTIFIER.put(runner, notifier);
+        RUNNER_TO_NOTIFIER.put(runner, notifier);
         
         attachRunListeners(runner, notifier);
         
