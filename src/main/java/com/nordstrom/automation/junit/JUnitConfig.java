@@ -57,8 +57,7 @@ public class JUnitConfig extends SettingsCore<JUnitConfig.JUnitSettings> {
         protected JUnitConfig initialValue() {
             final ClassLoader original = Thread.currentThread().getContextClassLoader();
             try {
-                final ClassLoader specific = LifecycleHooks.class.getClassLoader();
-                Thread.currentThread().setContextClassLoader(specific);
+                Thread.currentThread().setContextClassLoader(LifecycleHooks.class.getClassLoader());
                 return new JUnitConfig();
             } catch (ConfigurationException | IOException e) {
                 throw UncheckedThrow.throwUnchecked(e);
