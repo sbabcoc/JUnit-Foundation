@@ -55,10 +55,15 @@ public class JUnitConfig extends SettingsCore<JUnitConfig.JUnitSettings> {
     private static final ThreadLocal<JUnitConfig> junitConfig = new InheritableThreadLocal<JUnitConfig>() {
         @Override
         protected JUnitConfig initialValue() {
+            final ClassLoader original = Thread.currentThread().getContextClassLoader();
             try {
+                final ClassLoader specific = LifecycleHooks.class.getClassLoader();
+                Thread.currentThread().setContextClassLoader(specific);
                 return new JUnitConfig();
             } catch (ConfigurationException | IOException e) {
                 throw UncheckedThrow.throwUnchecked(e);
+            } finally {
+                Thread.currentThread().setContextClassLoader(original);
             }
         }
     };
