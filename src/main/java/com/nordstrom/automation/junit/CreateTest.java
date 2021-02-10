@@ -16,9 +16,9 @@ import net.bytebuddy.implementation.bind.annotation.This;
  */
 @SuppressWarnings("squid:S1118")
 public class CreateTest {
-    
-    private static final Map<Object, Object> TARGET_TO_RUNNER = new ConcurrentHashMap<>();
-    private static final Map<Object, Object> RUNNER_TO_TARGET = new ConcurrentHashMap<>();
+
+    /*Using ConcurrentHashMap as a cheap & fast thread-safe HashSet. Does have a bit of memory overhead.*/
+    private static final Map<String, String> TARGETS = new ConcurrentHashMap<>();
     private static final Logger LOGGER = LoggerFactory.getLogger(CreateTest.class);
     
     /**
@@ -36,11 +36,11 @@ public class CreateTest {
         Object target = LifecycleHooks.callProxy(proxy);
         // apply parameter-based global timeout
         TimeoutUtils.applyTestTimeout(runner, target);
-        
-        if (null == TARGET_TO_RUNNER.put(target, runner)) {
+
+        String targetHash = hash(target);
+        if (null == TARGETS.put(targetHash, targetHash)) {
             LOGGER.debug("testObjectCreated: {}", target);
-            RUNNER_TO_TARGET.put(runner, target);
-            
+
             for (TestObjectWatcher watcher : LifecycleHooks.getObjectWatchers()) {
                 watcher.testObjectCreated(target, runner);
             }
@@ -48,24 +48,9 @@ public class CreateTest {
         
         return target;
     }
-    
-    /**
-     * Get the class runner associated with the specified instance.
-     * 
-     * @param target instance of JUnit test class
-     * @return {@link org.junit.runners.BlockJUnit4ClassRunner BlockJUnit4ClassRunner} for specified instance
-     */
-    static Object getRunnerForTarget(Object target) {
-        return TARGET_TO_RUNNER.get(target);
+
+    private static String hash(Object o) {
+        return o.getClass().getCanonicalName() + "-" + System.identityHashCode(o);
     }
     
-    /**
-     * Get the JUnit test class instance for the specified class runner.
-     * 
-     * @param runner JUnit class runner
-     * @return JUnit test class instance for specified runner
-     */
-    static Object getTargetForRunner(Object runner) {
-        return RUNNER_TO_TARGET.get(runner);
-    }
 }

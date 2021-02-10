@@ -250,26 +250,6 @@ public class LifecycleHooks {
     }
     
     /**
-     * Get the class runner associated with the specified instance.
-     * 
-     * @param target instance of JUnit test class
-     * @return {@link org.junit.runners.BlockJUnit4ClassRunner BlockJUnit4ClassRunner} for specified instance
-     */
-    public static Object getRunnerForTarget(Object target) {
-        return CreateTest.getRunnerForTarget(target);
-    }
-    
-    /**
-     * Get the JUnit test class instance for the specified class runner.
-     * 
-     * @param runner JUnit class runner
-     * @return JUnit test class instance for specified runner
-     */
-    public static Object getTargetForRunner(Object runner) {
-        return CreateTest.getTargetForRunner(runner);
-    }
-    
-    /**
      * Get the parent runner that owns specified child runner or framework method.
      * 
      * @param child {@code ParentRunner} or {@code FrameworkMethod} object
@@ -321,17 +301,6 @@ public class LifecycleHooks {
     }
 
     /**
-     * Get the {@link ReflectiveCallable} object for the specified class runner or method description.
-     *
-     * @param runner JUnit class runner
-     * @param child JUnit child object (runner or framework method)
-     * @return <b>ReflectiveCallable</b> object (may be {@code null})
-     */
-    public static ReflectiveCallable getCallableOf(Object runner, Object child) {
-        return RunReflectiveCall.getCallableOf(runner, child);
-    }
-
-    /**
      * Synthesize a {@link ReflectiveCallable} closure with the specified parameters.
      *
      * @param method {@link Method} object to be invoked
@@ -348,18 +317,6 @@ public class LifecycleHooks {
         };
     }
 
-    /**
-     * Get the description of the indicated child object from the runner for the specified test class instance.
-     * 
-     * @param target test class instance
-     * @param child child object
-     * @return {@link Description} object for the indicated child
-     */
-    public static Description describeChild(Object target, Object child) {
-        Object runner = getRunnerForTarget(target);
-        return invoke(runner, "describeChild", child);
-    }
-    
     /**
      * Get class of specified test class instance.
      * 

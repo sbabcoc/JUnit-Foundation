@@ -27,7 +27,6 @@ import net.bytebuddy.implementation.bind.annotation.This;
 @SuppressWarnings("squid:S1118")
 public class RunReflectiveCall {
 
-    private static final Map<Object, ReflectiveCallable> CHILD_TO_CALLABLE = new ConcurrentHashMap<>();
     private static final ThreadLocal<ConcurrentMap<Integer, DepthGauge>> methodDepth;
     private static final Function<Integer, DepthGauge> newInstance;
     private static final Logger LOGGER = LoggerFactory.getLogger(RunReflectiveCall.class);
@@ -73,8 +72,6 @@ public class RunReflectiveCall {
             runner = Run.getThreadRunner();
         }
 
-        CHILD_TO_CALLABLE.put(Objects.hash(runner, child), callable);
-
         Object result = null;
         Throwable thrown = null;
 
@@ -92,17 +89,6 @@ public class RunReflectiveCall {
         }
 
         return result;
-    }
-
-    /**
-     * Get the {@link ReflectiveCallable} object for the specified class runner or method description.
-     *
-     * @param runner JUnit class runner
-     * @param child JUnit child object (runner or framework method)
-     * @return <b>ReflectiveCallable</b> object (may be {@code null})
-     */
-    static ReflectiveCallable getCallableOf(Object runner, Object child) {
-        return CHILD_TO_CALLABLE.get(Objects.hash(runner, child));
     }
 
     /**
