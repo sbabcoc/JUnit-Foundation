@@ -140,9 +140,9 @@ public class Run {
      */
     static boolean fireRunStarted(Object runner) {
         if (START_NOTIFIED.add(toMapKey(runner))) {
-            List<?> grandchildren = LifecycleHooks.invoke(runner, "getChildren");
-            for (Object grandchild : grandchildren) {
-                CHILD_TO_PARENT.put(toMapKey(grandchild), runner);
+            List<?> children = LifecycleHooks.invoke(runner, "getChildren");
+            for (Object child : children) {
+                CHILD_TO_PARENT.put(toMapKey(child), runner);
             }
             LOGGER.debug("runStarted: {}", runner);
             for (RunnerWatcher watcher : LifecycleHooks.getRunnerWatchers()) {
@@ -170,5 +170,17 @@ public class Run {
             return true;
         }
         return false;
+    }
+    
+    /**
+     * Release runner/child mappings.
+     * 
+     * @param runner JUnit test runner
+     */
+    static void releaseChidrenOf(Object runner) {
+        List<?> children = LifecycleHooks.invoke(runner, "getChildren");
+        for (Object child : children) {
+            CHILD_TO_PARENT.remove(toMapKey(child));
+        }
     }
 }

@@ -21,6 +21,9 @@ public class ReferenceRemover implements RunnerWatcher, RunWatcher<Object> {
             RunAnnouncer.releaseAtomicTestOf(atomicTest.getDescription());
         }
         
+        // release runner/child mappings
+        Run.releaseChidrenOf(runner);
+        
         // release runner/target mappings
         CreateTest.releaseMappingsFor(runner);
     }
