@@ -62,6 +62,8 @@ public class Run {
             fireRunFinished(runner);
             popThreadRunner();
         }
+        
+        RUNNER_TO_NOTIFIER.remove(toMapKey(runner));
     }
     
     /**
