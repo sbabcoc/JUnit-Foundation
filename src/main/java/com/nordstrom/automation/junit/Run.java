@@ -15,21 +15,23 @@ import net.bytebuddy.implementation.bind.annotation.Argument;
 import net.bytebuddy.implementation.bind.annotation.SuperCall;
 import net.bytebuddy.implementation.bind.annotation.This;
 
+import static com.nordstrom.automation.junit.LifecycleHooks.toMapKey;
+
 /**
  * This class declares the interceptor for the {@link org.junit.runners.ParentRunner#run run} method.
  */
 @SuppressWarnings("squid:S1118")
 public class Run {
-    private static final ThreadLocal<Deque<Object>> runnerStack;
-    private static final Set<String> startNotified = new CopyOnWriteArraySet<>();
-    private static final Set<String> finishNotified = new CopyOnWriteArraySet<>();
-    private static final Map<Object, Object> CHILD_TO_PARENT = new ConcurrentHashMap<>();
-    private static final Map<Object, RunNotifier> RUNNER_TO_NOTIFIER = new ConcurrentHashMap<>();
-    private static final Set<RunNotifier> NOTIFIERS = new CopyOnWriteArraySet<>();
+    private static final ThreadLocal<Deque<Object>> RUNNER_STACK;
+    private static final Set<String> START_NOTIFIED = new CopyOnWriteArraySet<>();
+    private static final Set<String> FINISH_NOTIFIED = new CopyOnWriteArraySet<>();
+    private static final Map<String, Object> CHILD_TO_PARENT = new ConcurrentHashMap<>();
+    private static final Map<String, RunNotifier> RUNNER_TO_NOTIFIER = new ConcurrentHashMap<>();
+    private static final Set<String> NOTIFIERS = new CopyOnWriteArraySet<>();
     private static final Logger LOGGER = LoggerFactory.getLogger(Run.class);
     
     static {
-        runnerStack = new ThreadLocal<Deque<Object>>() {
+        RUNNER_STACK = new ThreadLocal<Deque<Object>>() {
             @Override
             protected Deque<Object> initialValue() {
                 return new ArrayDeque<>();
@@ -48,7 +50,7 @@ public class Run {
     public static void intercept(@This final Object runner, @SuperCall final Callable<?> proxy,
                     @Argument(0) final RunNotifier notifier) throws Exception {
         
-        RUNNER_TO_NOTIFIER.put(runner, notifier);
+        RUNNER_TO_NOTIFIER.put(toMapKey(runner), notifier);
         
         attachRunListeners(runner, notifier);
         
@@ -69,7 +71,7 @@ public class Run {
      * @return {@code ParentRunner} object that owns the specified child ({@code null} for root objects)
      */
     static Object getParentOf(final Object child) {
-        return CHILD_TO_PARENT.get(child);
+        return CHILD_TO_PARENT.get(toMapKey(child));
     }
     
     /**
@@ -79,7 +81,7 @@ public class Run {
      * @return <b>RunNotifier</b> object (may be {@code null})
      */
     static RunNotifier getNotifierOf(final Object runner) {
-        return RUNNER_TO_NOTIFIER.get(runner);
+        return RUNNER_TO_NOTIFIER.get(toMapKey(runner));
     }
     
     /**
@@ -92,7 +94,7 @@ public class Run {
      * @throws Exception if {@code run-started} notification 
      */
     static void attachRunListeners(Object runner, final RunNotifier notifier) throws Exception {
-        if (NOTIFIERS.add(notifier)) {
+        if (NOTIFIERS.add(toMapKey(notifier))) {
             Description description = LifecycleHooks.invoke(runner, "getDescription");
             for (RunListener listener : LifecycleHooks.getRunListeners()) {
                 notifier.addListener(listener);
@@ -107,7 +109,7 @@ public class Run {
      * @param runner JUnit test runner
      */
     static void pushThreadRunner(final Object runner) {
-        runnerStack.get().push(runner);
+        RUNNER_STACK.get().push(runner);
     }
     
     /**
@@ -117,7 +119,7 @@ public class Run {
      * @throws EmptyStackException if called outside the scope of an active runner
      */
     static Object popThreadRunner() {
-        return runnerStack.get().pop();
+        return RUNNER_STACK.get().pop();
     }
     
     /**
@@ -126,7 +128,7 @@ public class Run {
      * @return active {@code ParentRunner} object
      */
     static Object getThreadRunner() {
-        return runnerStack.get().peek();
+        return RUNNER_STACK.get().peek();
     }
     
     /**
@@ -137,10 +139,10 @@ public class Run {
      * @return {@code true} if event the {@code runStarted} was fired; otherwise {@code false}
      */
     static boolean fireRunStarted(Object runner) {
-        if (startNotified.add(runner.toString())) {
+        if (START_NOTIFIED.add(toMapKey(runner))) {
             List<?> grandchildren = LifecycleHooks.invoke(runner, "getChildren");
             for (Object grandchild : grandchildren) {
-                CHILD_TO_PARENT.put(grandchild, runner);
+                CHILD_TO_PARENT.put(toMapKey(grandchild), runner);
             }
             LOGGER.debug("runStarted: {}", runner);
             for (RunnerWatcher watcher : LifecycleHooks.getRunnerWatchers()) {
@@ -160,7 +162,7 @@ public class Run {
      * @return {@code true} if event the {@code runFinished} was fired; otherwise {@code false}
      */
     static boolean fireRunFinished(Object runner) {
-        if (finishNotified.add(runner.toString())) {
+        if (FINISH_NOTIFIED.add(toMapKey(runner))) {
             LOGGER.debug("runFinished: {}", runner);
             for (RunnerWatcher watcher : LifecycleHooks.getRunnerWatchers()) {
                 watcher.runFinished(runner);
