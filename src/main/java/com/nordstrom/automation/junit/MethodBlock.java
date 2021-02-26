@@ -14,6 +14,8 @@ import net.bytebuddy.implementation.bind.annotation.SuperCall;
 import net.bytebuddy.implementation.bind.annotation.This;
 import net.bytebuddy.implementation.bind.annotation.Argument;
 
+import static com.nordstrom.automation.junit.LifecycleHooks.toMapKey;
+
 /**
  * This class declares the interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#methodBlock
  * methodBlock} method.
@@ -21,7 +23,7 @@ import net.bytebuddy.implementation.bind.annotation.Argument;
 public class MethodBlock {
     private static final ThreadLocal<ConcurrentMap<Integer, DepthGauge>> methodDepth;
     private static final Function<Integer, DepthGauge> newInstance;
-    private static final Map<Object, Statement> RUNNER_TO_STATEMENT = new ConcurrentHashMap<>();
+    private static final Map<String, Statement> RUNNER_TO_STATEMENT = new ConcurrentHashMap<>();
     
     static {
         methodDepth = new ThreadLocal<ConcurrentMap<Integer, DepthGauge>>() {
@@ -68,7 +70,7 @@ public class MethodBlock {
                 // if child of TheoryAnchor statement
                 if (parent instanceof TheoryAnchor) {
                     // store actual statement of test runner
-                    RUNNER_TO_STATEMENT.put(runner, statement);
+                    RUNNER_TO_STATEMENT.put(toMapKey(runner), statement);
                     // create lifecycle catalyst
                     statement = new Statement() {
                         final Object threadRunner = runner;
@@ -98,6 +100,6 @@ public class MethodBlock {
      * @return {@link Statement} for the specified runner; may be {@code null}
      */
     static Statement getStatementOf(final Object runner) {
-        return RUNNER_TO_STATEMENT.get(runner);
+        return RUNNER_TO_STATEMENT.remove(toMapKey(runner));
     }
 }

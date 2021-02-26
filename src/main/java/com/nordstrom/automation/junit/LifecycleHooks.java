@@ -576,6 +576,19 @@ public class LifecycleHooks {
     }
     
     /**
+     * Create a unique map key string to represent the specified object.
+     * <p>
+     * <b>NOTE</b>: The string returned by this method matches the output of
+     *              the default {@link Object#toString()} implementation.
+     * 
+     * @param obj target object
+     * @return map key string
+     */
+    static String toMapKey(Object obj) {
+        return obj.getClass().getName() + "@" + Integer.toHexString(System.identityHashCode(obj));
+    }
+    
+    /**
      * This class encapsulates the process of retrieving watcher objects of the target type from the collection of all
      * attached watcher objects. This is a private nested class that directly accesses the main collection. It is also
      * unmodifiable. Any attempts to alter the collection will trigger an {@link UnsupportedOperationException}.
