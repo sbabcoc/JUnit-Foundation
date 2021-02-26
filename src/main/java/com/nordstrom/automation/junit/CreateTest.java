@@ -10,6 +10,8 @@ import net.bytebuddy.implementation.bind.annotation.RuntimeType;
 import net.bytebuddy.implementation.bind.annotation.SuperCall;
 import net.bytebuddy.implementation.bind.annotation.This;
 
+import static com.nordstrom.automation.junit.LifecycleHooks.toMapKey;
+
 /**
  * This class declares the interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#createTest
  * createTest} method.
@@ -17,8 +19,8 @@ import net.bytebuddy.implementation.bind.annotation.This;
 @SuppressWarnings("squid:S1118")
 public class CreateTest {
     
-    private static final Map<Object, Object> TARGET_TO_RUNNER = new ConcurrentHashMap<>();
-    private static final Map<Object, Object> RUNNER_TO_TARGET = new ConcurrentHashMap<>();
+    private static final Map<String, Object> TARGET_TO_RUNNER = new ConcurrentHashMap<>();
+    private static final Map<String, Object> RUNNER_TO_TARGET = new ConcurrentHashMap<>();
     private static final Logger LOGGER = LoggerFactory.getLogger(CreateTest.class);
     
     /**
@@ -37,9 +39,9 @@ public class CreateTest {
         // apply parameter-based global timeout
         TimeoutUtils.applyTestTimeout(runner, target);
         
-        if (null == TARGET_TO_RUNNER.put(target, runner)) {
+        if (null == TARGET_TO_RUNNER.put(toMapKey(target), runner)) {
             LOGGER.debug("testObjectCreated: {}", target);
-            RUNNER_TO_TARGET.put(runner, target);
+            RUNNER_TO_TARGET.put(toMapKey(runner), target);
             
             for (TestObjectWatcher watcher : LifecycleHooks.getObjectWatchers()) {
                 watcher.testObjectCreated(target, runner);
@@ -56,7 +58,7 @@ public class CreateTest {
      * @return {@link org.junit.runners.BlockJUnit4ClassRunner BlockJUnit4ClassRunner} for specified instance
      */
     static Object getRunnerForTarget(Object target) {
-        return TARGET_TO_RUNNER.get(target);
+        return TARGET_TO_RUNNER.get(toMapKey(target));
     }
     
     /**
@@ -66,6 +68,18 @@ public class CreateTest {
      * @return JUnit test class instance for specified runner
      */
     static Object getTargetForRunner(Object runner) {
-        return RUNNER_TO_TARGET.get(runner);
+        return RUNNER_TO_TARGET.get(toMapKey(runner));
+    }
+    
+    /**
+     * Release runner/target mappings.
+     * 
+     * @param runner JUnit class runner
+     */
+    static void releaseMappingsFor(Object runner) {
+        Object target = RUNNER_TO_TARGET.remove(toMapKey(runner));
+        if (target != null) {
+            TARGET_TO_RUNNER.remove(toMapKey(target));
+        }
     }
 }

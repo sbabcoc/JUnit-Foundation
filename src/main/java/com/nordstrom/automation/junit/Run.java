@@ -155,6 +155,7 @@ public class Run {
      * Fire the {@link RunnerWatcher#runFinished(Object)} event for the specified runner.
      * <p>
      * <b>NOTE</b>: If {@code runFinished} for the specified runner has already been fired, do nothing.
+     * 
      * @param runner JUnit test runner
      * @return {@code true} if event the {@code runFinished} was fired; otherwise {@code false}
      */

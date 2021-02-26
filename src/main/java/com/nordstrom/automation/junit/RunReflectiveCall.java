@@ -1,11 +1,13 @@
 package com.nordstrom.automation.junit;
 
+import static com.nordstrom.automation.junit.LifecycleHooks.invoke;
+
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.lang.IllegalAccessException;
 
 import org.junit.internal.runners.model.ReflectiveCallable;
 import org.junit.runner.Description;
@@ -27,7 +29,7 @@ import net.bytebuddy.implementation.bind.annotation.This;
 @SuppressWarnings("squid:S1118")
 public class RunReflectiveCall {
 
-    private static final Map<Object, ReflectiveCallable> CHILD_TO_CALLABLE = new ConcurrentHashMap<>();
+    private static final Map<Integer, ReflectiveCallable> CHILD_TO_CALLABLE = new ConcurrentHashMap<>();
     private static final ThreadLocal<ConcurrentMap<Integer, DepthGauge>> methodDepth;
     private static final Function<Integer, DepthGauge> newInstance;
     private static final Logger LOGGER = LoggerFactory.getLogger(RunReflectiveCall.class);
@@ -63,6 +65,7 @@ public class RunReflectiveCall {
         Object child = null;
 
         try {
+            // get child object (class runner or framework method)
             child = LifecycleHooks.getFieldValue(callable, "this$0");
         } catch (IllegalAccessException | NoSuchFieldException | SecurityException | IllegalArgumentException e) {
             // handled below
@@ -172,5 +175,31 @@ public class RunReflectiveCall {
             }
         }
         return false;
+    }
+    
+    /**
+     * Release the {@link ReflectiveCallable} objects for the children of the specified runner.
+     * 
+     * @param runner JUnit test runner
+     */
+    static void releaseCallablesOf(Object runner) {
+        if (CHILD_TO_CALLABLE.isEmpty()) return;
+        AtomicTest<Object> atomicTest = RunAnnouncer.getAtomicTestOf(runner);
+        if (atomicTest != null) {
+            for (Object child : atomicTest.getParticles()) {
+                releaseCallablesOf(child);
+                releaseCallableOf(runner, atomicTest.getIdentity());
+            }
+        }
+    }
+    
+    /**
+     * Release the {@link ReflectiveCallable} object for the specified runner's child.
+     * 
+     * @param runner JUnit class runner
+     * @param child JUnit child object (runner or framework method)
+     */
+    static void releaseCallableOf(Object runner, Object child) {
+        CHILD_TO_CALLABLE.remove(Objects.hash(runner, child));
     }
 }

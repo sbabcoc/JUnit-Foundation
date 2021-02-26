@@ -10,6 +10,8 @@ import org.junit.runner.notification.RunListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.nordstrom.automation.junit.LifecycleHooks.toMapKey;
+
 /**
  * This class implements a notification-enhancing extension of the standard {@link RunListener} class. This run
  * announcer is the source of notifications sent to attached implementations of the {@link RunWatcher} interface.
@@ -21,7 +23,7 @@ import org.slf4j.LoggerFactory;
  */
 public class RunAnnouncer extends RunListener implements JUnitWatcher {
     
-    private static final Map<Object, AtomicTest<?>> RUNNER_TO_ATOMICTEST = new ConcurrentHashMap<>();
+    private static final Map<String, AtomicTest<?>> RUNNER_TO_ATOMICTEST = new ConcurrentHashMap<>();
     private static final Logger LOGGER = LoggerFactory.getLogger(RunAnnouncer.class);
     
     /**
@@ -115,10 +117,18 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
      * @param identity identity for this atomic test
      * @return {@link AtomicTest} object
      */
+    @SuppressWarnings("unchecked")
     static <T> AtomicTest<T> newAtomicTest(Object runner, T identity) {
         AtomicTest<T> atomicTest = new AtomicTest<>(runner, identity);
-        RUNNER_TO_ATOMICTEST.put(runner, atomicTest);
-        RUNNER_TO_ATOMICTEST.put(atomicTest.getDescription(), atomicTest);
+        // map parent runner to new atomic test, retaining prior mapping
+        AtomicTest<T> priorValue = (AtomicTest<T>) RUNNER_TO_ATOMICTEST.put(toMapKey(runner), atomicTest);
+        // if prior mapping found
+        if (priorValue != null) {
+            // release prior method description mapping
+            releaseAtomicTestOf(priorValue.getDescription());
+        }
+        // map method description to atomic test
+        RUNNER_TO_ATOMICTEST.put(toMapKey(atomicTest.getDescription()), atomicTest);
         return atomicTest;
     }
     
@@ -135,7 +145,7 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
         
         if (original != null) {
             atomicTest = new AtomicTest<>(original, description);
-            RUNNER_TO_ATOMICTEST.put(description, atomicTest);
+            RUNNER_TO_ATOMICTEST.put(toMapKey(description), atomicTest);
         }
         
         return atomicTest;
@@ -153,7 +163,23 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
         AtomicTest<T> atomicTest = null;
         if (testKey != null) {
             // get atomic test for this runner/description
-            atomicTest = (AtomicTest<T>) RUNNER_TO_ATOMICTEST.get(testKey);
+            atomicTest = (AtomicTest<T>) RUNNER_TO_ATOMICTEST.get(toMapKey(testKey));
+        }
+        return atomicTest;
+    }
+    
+    /**
+     * Release the atomic test object for the specified class runner or method description.
+     * 
+     * @param <T> atomic test child object type
+     * @param testKey JUnit class runner or method description
+     */
+    @SuppressWarnings("unchecked")
+    static <T> AtomicTest<T> releaseAtomicTestOf(Object testKey) {
+        AtomicTest<T> atomicTest = null;
+        if (testKey != null) {
+            // get atomic test for this runner/description
+            atomicTest = (AtomicTest<T>) RUNNER_TO_ATOMICTEST.remove(toMapKey(testKey));
         }
         return atomicTest;
     }
