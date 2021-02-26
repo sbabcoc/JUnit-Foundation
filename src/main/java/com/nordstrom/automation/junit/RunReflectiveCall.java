@@ -1,8 +1,5 @@
 package com.nordstrom.automation.junit;
 
-import static com.nordstrom.automation.junit.LifecycleHooks.invoke;
-
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Callable;
