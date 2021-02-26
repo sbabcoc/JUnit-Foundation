@@ -50,20 +50,18 @@ public class Run {
     public static void intercept(@This final Object runner, @SuperCall final Callable<?> proxy,
                     @Argument(0) final RunNotifier notifier) throws Exception {
         
-        RUNNER_TO_NOTIFIER.put(toMapKey(runner), notifier);
-        
         attachRunListeners(runner, notifier);
         
         try {
+            RUNNER_TO_NOTIFIER.put(toMapKey(runner), notifier);
             pushThreadRunner(runner);
             fireRunStarted(runner);
             LifecycleHooks.callProxy(proxy);
         } finally {
             fireRunFinished(runner);
             popThreadRunner();
+            RUNNER_TO_NOTIFIER.remove(toMapKey(runner));
         }
-        
-        RUNNER_TO_NOTIFIER.remove(toMapKey(runner));
     }
     
     /**
