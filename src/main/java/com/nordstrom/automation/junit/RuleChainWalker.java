@@ -7,13 +7,16 @@ import org.junit.rules.RuleChain;
 import org.junit.rules.TestRule;
 
 import com.google.common.base.Optional;
-import com.nordstrom.automation.junit.JUnitConfig.JUnitSettings;
 import com.nordstrom.common.base.UncheckedThrow;
 
 /**
  * This is a static utility class that uses reflection to access the list of {@link TestRule} objects inside a
  * {@link RuleChain}.
+ * 
+ * @deprecated Use the <a href='https://junit.org/junit4/javadoc/4.13.1/org/junit/Rule.html#order()'>order</a>
+ *             parameter of the {@literal @}Rule annotation instead of {@link RuleChain}.
  */
+@Deprecated
 public class RuleChainWalker {
     
     private RuleChainWalker() {
@@ -48,8 +51,7 @@ public class RuleChainWalker {
     private static List<TestRule> getRuleList(RuleChain ruleChain) {
         Field ruleChainList;
         try {
-            String fieldName = JUnitConfig.getConfig().getString(JUnitSettings.RULE_CHAIN_LIST.key());
-            ruleChainList = RuleChain.class.getDeclaredField(fieldName);
+            ruleChainList = RuleChain.class.getDeclaredField("rulesStartingWithInnerMost");
             ruleChainList.setAccessible(true);
             return (List<TestRule>) ruleChainList.get(ruleChain);
         } catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
