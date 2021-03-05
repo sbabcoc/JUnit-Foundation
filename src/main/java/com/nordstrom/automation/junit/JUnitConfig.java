@@ -24,13 +24,28 @@ public class JUnitConfig extends SettingsCore<JUnitConfig.JUnitSettings> {
      * the {@code junit.properties} file and System property declarations.
      */
     public enum JUnitSettings implements SettingsCore.SettingsAPI {
-        /** name: <b>junit.rule.chain.list</b> <br> default: {@code rulesStartingWithInnerMost} */
-        RULE_CHAIN_LIST("junit.rule.chain.list", "rulesStartingWithInnerMost"),
-        /** name: <b>junit.timeout.test</b> <br> default: {@code null} */
+        /**
+         * Global per-test timeout interval in milliseconds.
+         * <p>
+         * name: <b>junit.timeout.test</b><br>
+         * default: {@code null}
+         */
         TEST_TIMEOUT("junit.timeout.test", null),
-        /** name: <b>junit.timeout.rule</b> <br> default: {@code null} */
+        
+        /**
+         * Global per-class timeout interval in milliseconds.
+         * <p>
+         * name: <b>junit.timeout.rule</b><br>
+         * default: {@code null}
+         */
         TIMEOUT_RULE("junit.timeout.rule", null),
-        /** name: <b>junit.max.retry</b> <br> default: <b>0</b> */
+        
+        /**
+         * Maximum retry attempts for failed test methods.
+         * <p>
+         * name: <b>junit.max.retry</b><br>
+         * default: <b>0</b>
+         */
         MAX_RETRY("junit.max.retry", "0");
 
         private String propertyName;
