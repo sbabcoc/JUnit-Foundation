@@ -17,7 +17,6 @@ import java.util.concurrent.ConcurrentMap;
 
 import org.apache.commons.lang3.reflect.MethodUtils;
 import org.junit.internal.runners.model.ReflectiveCallable;
-import org.junit.runner.Description;
 import org.junit.runner.notification.RunListener;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.TestClass;
@@ -44,7 +43,7 @@ public class LifecycleHooks {
     private static JUnitConfig config;
     private static final List<JUnitWatcher> watchers;
     private static final List<RunListener> runListeners;
-    private static final List<RunWatcher<?>> runWatchers;
+    private static final List<RunWatcher> runWatchers;
     private static final List<RunnerWatcher> runnerWatchers;
     private static final List<TestObjectWatcher> objectWatchers;
     private static final List<MethodWatcher<?>> methodWatchers;
@@ -72,7 +71,7 @@ public class LifecycleHooks {
             classifier.add(watcher);
         }
         
-        for (RunWatcher<?> watcher : ServiceLoader.load(RunWatcher.class)) {
+        for (RunWatcher watcher : ServiceLoader.load(RunWatcher.class)) {
             classifier.add(watcher);
         }
         
@@ -174,6 +173,9 @@ public class LifecycleHooks {
         final TypeDescription runNotifier = TypePool.Default.ofSystemLoader().describe("org.junit.runner.notification.RunNotifier").resolve();
         final SignatureToken runToken = new SignatureToken("run", TypeDescription.VOID, Arrays.asList(runNotifier));
         
+        final TypeDescription frameworkMethod = TypePool.Default.ofSystemLoader().describe("org.junit.runners.model.FrameworkMethod").resolve();
+        final SignatureToken createTestToken = new SignatureToken("createTest", TypeDescription.OBJECT, Arrays.asList(frameworkMethod));
+        
         return new AgentBuilder.Default()
                 .type(hasSuperType(named("org.junit.internal.runners.model.ReflectiveCallable")))
                 .transform(new Transformer() {
@@ -205,7 +207,7 @@ public class LifecycleHooks {
                                       //       are defined in BlockJUnit4ClassRunner, but I've been unable
                                       //       to transform this ParentRunner subclass.
                                       .method(named("methodBlock")).intercept(MethodDelegation.to(methodBlock))
-                                      .method(named("createTest").and(takesArguments(0))).intercept(MethodDelegation.to(createTest))
+                                      .method(hasSignature(createTestToken)).intercept(MethodDelegation.to(createTest))
                                       .method(named("getTestRules")).intercept(MethodDelegation.to(getTestRules))
                                       .implement(Hooked.class);
                     }
@@ -250,26 +252,6 @@ public class LifecycleHooks {
     }
     
     /**
-     * Get the class runner associated with the specified instance.
-     * 
-     * @param target instance of JUnit test class
-     * @return {@link org.junit.runners.BlockJUnit4ClassRunner BlockJUnit4ClassRunner} for specified instance
-     */
-    public static Object getRunnerForTarget(Object target) {
-        return CreateTest.getRunnerForTarget(target);
-    }
-    
-    /**
-     * Get the JUnit test class instance for the specified class runner.
-     * 
-     * @param runner JUnit class runner
-     * @return JUnit test class instance for specified runner
-     */
-    public static Object getTargetForRunner(Object runner) {
-        return CreateTest.getTargetForRunner(runner);
-    }
-    
-    /**
      * Get the parent runner that owns specified child runner or framework method.
      * 
      * @param child {@code ParentRunner} or {@code FrameworkMethod} object
@@ -277,7 +259,7 @@ public class LifecycleHooks {
      *         objects)
      */
     public static Object getParentOf(Object child) {
-        return Run.getParentOf(child);
+        return RunAnnouncer.getParentOf(child);
     }
 
     /**
@@ -310,17 +292,6 @@ public class LifecycleHooks {
     }
     
     /**
-     * Get the atomic test object for the specified class runner.
-     * 
-     * @param <T> data type of runner's children
-     * @param runner JUnit class runner
-     * @return {@link AtomicTest} object (may be {@code null})
-     */
-    public static <T> AtomicTest<T> getAtomicTestOf(Object runner) {
-        return RunAnnouncer.getAtomicTestOf(runner);
-    }
-
-    /**
      * Get the {@link ReflectiveCallable} object for the specified class runner or method description.
      *
      * @param runner JUnit class runner
@@ -348,18 +319,6 @@ public class LifecycleHooks {
         };
     }
 
-    /**
-     * Get the description of the indicated child object from the runner for the specified test class instance.
-     * 
-     * @param target test class instance
-     * @param child child object
-     * @return {@link Description} object for the indicated child
-     */
-    public static Description describeChild(Object target, Object child) {
-        Object runner = getRunnerForTarget(target);
-        return invoke(runner, "describeChild", child);
-    }
-    
     /**
      * Get class of specified test class instance.
      * 
@@ -544,7 +503,7 @@ public class LifecycleHooks {
      * 
      * @return run watcher list
      */
-    static List<RunWatcher<?>> getRunWatchers() {
+    static List<RunWatcher> getRunWatchers() {
         return runWatchers;
     }
     

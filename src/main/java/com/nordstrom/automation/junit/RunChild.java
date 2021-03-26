@@ -10,6 +10,8 @@ import net.bytebuddy.implementation.bind.annotation.Argument;
 import net.bytebuddy.implementation.bind.annotation.SuperCall;
 import net.bytebuddy.implementation.bind.annotation.This;
 
+import static com.nordstrom.automation.junit.LifecycleHooks.toMapKey;
+
 /**
  * This class declares the interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#runChild
  * runChild} method.
@@ -17,7 +19,7 @@ import net.bytebuddy.implementation.bind.annotation.This;
 @SuppressWarnings("squid:S1118")
 public class RunChild {
     
-    private static final Map<String, Boolean> notifyMap = new HashMap<>();
+    private static final Map<String, Boolean> NOTIFY_MAP = new HashMap<>();
     
     /**
      * Interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#runChild runChild} method.
@@ -37,10 +39,10 @@ public class RunChild {
         
         Run.attachRunListeners(runner, notifier);
         
-        synchronized(notifyMap) {
-            String key = runner.toString();
-            if (!notifyMap.containsKey(key)) {
-                notifyMap.put(key, Run.fireRunStarted(runner));
+        synchronized(NOTIFY_MAP) {
+            String key = toMapKey(runner);
+            if (!NOTIFY_MAP.containsKey(key)) {
+                NOTIFY_MAP.put(key, RunAnnouncer.fireRunStarted(runner));
             }
         }
         
@@ -75,9 +77,9 @@ public class RunChild {
      */
     static void finished() {
         Object runner = Run.getThreadRunner();
-        synchronized(notifyMap) {
-            if (Boolean.TRUE == notifyMap.get(runner.toString())) {
-                Run.fireRunFinished(runner);
+        synchronized(NOTIFY_MAP) {
+            if (Boolean.TRUE == NOTIFY_MAP.get(toMapKey(runner))) {
+                RunAnnouncer.fireRunFinished(runner);
             }
         }
     }

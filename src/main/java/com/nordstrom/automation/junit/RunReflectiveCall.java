@@ -68,7 +68,7 @@ public class RunReflectiveCall {
             // handled below
         }
         
-        Object runner = Run.getParentOf(child);
+        Object runner = RunAnnouncer.getParentOf(child);
         if (runner == null) {
             runner = Run.getThreadRunner();
         }
@@ -190,8 +190,8 @@ public class RunReflectiveCall {
             for (Object child : atomicTest.getParticles()) {
                 // release next generation
                 releaseCallablesOf(child);
-                // release callable for this atomic test
-                releaseCallableOf(runner, atomicTest.getIdentity());
+                // release callable for this child
+                releaseCallableOf(runner, child);
             }
         }
     }

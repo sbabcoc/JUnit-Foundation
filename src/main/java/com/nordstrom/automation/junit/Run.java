@@ -23,9 +23,6 @@ import static com.nordstrom.automation.junit.LifecycleHooks.toMapKey;
 @SuppressWarnings("squid:S1118")
 public class Run {
     private static final ThreadLocal<Deque<Object>> RUNNER_STACK;
-    private static final Set<String> START_NOTIFIED = new CopyOnWriteArraySet<>();
-    private static final Set<String> FINISH_NOTIFIED = new CopyOnWriteArraySet<>();
-    private static final Map<String, Object> CHILD_TO_PARENT = new ConcurrentHashMap<>();
     private static final Map<String, RunNotifier> RUNNER_TO_NOTIFIER = new ConcurrentHashMap<>();
     private static final Set<String> NOTIFIERS = new CopyOnWriteArraySet<>();
     private static final Logger LOGGER = LoggerFactory.getLogger(Run.class);
@@ -55,23 +52,11 @@ public class Run {
         try {
             RUNNER_TO_NOTIFIER.put(toMapKey(runner), notifier);
             pushThreadRunner(runner);
-            fireRunStarted(runner);
             LifecycleHooks.callProxy(proxy);
         } finally {
-            fireRunFinished(runner);
             popThreadRunner();
             RUNNER_TO_NOTIFIER.remove(toMapKey(runner));
         }
-    }
-    
-    /**
-     * Get the parent runner that owns specified child runner or framework method.
-     * 
-     * @param child {@code ParentRunner} or {@code FrameworkMethod} object
-     * @return {@code ParentRunner} object that owns the specified child ({@code null} for root objects)
-     */
-    static Object getParentOf(final Object child) {
-        return CHILD_TO_PARENT.get(toMapKey(child));
     }
     
     /**
@@ -129,58 +114,5 @@ public class Run {
      */
     static Object getThreadRunner() {
         return RUNNER_STACK.get().peek();
-    }
-    
-    /**
-     * Fire the {@link RunnerWatcher#runStarted(Object)} event for the specified runner.
-     * <p>
-     * <b>NOTE</b>: If {@code runStarted} for the specified runner has already been fired, do nothing.
-     * @param runner JUnit test runner
-     * @return {@code true} if event the {@code runStarted} was fired; otherwise {@code false}
-     */
-    static boolean fireRunStarted(Object runner) {
-        if (START_NOTIFIED.add(toMapKey(runner))) {
-            List<?> children = LifecycleHooks.invoke(runner, "getChildren");
-            for (Object child : children) {
-                CHILD_TO_PARENT.put(toMapKey(child), runner);
-            }
-            LOGGER.debug("runStarted: {}", runner);
-            for (RunnerWatcher watcher : LifecycleHooks.getRunnerWatchers()) {
-                watcher.runStarted(runner);
-            }
-            return true;
-        }
-        return false;
-    }
-    
-    /**
-     * Fire the {@link RunnerWatcher#runFinished(Object)} event for the specified runner.
-     * <p>
-     * <b>NOTE</b>: If {@code runFinished} for the specified runner has already been fired, do nothing.
-     * 
-     * @param runner JUnit test runner
-     * @return {@code true} if event the {@code runFinished} was fired; otherwise {@code false}
-     */
-    static boolean fireRunFinished(Object runner) {
-        if (FINISH_NOTIFIED.add(toMapKey(runner))) {
-            LOGGER.debug("runFinished: {}", runner);
-            for (RunnerWatcher watcher : LifecycleHooks.getRunnerWatchers()) {
-                watcher.runFinished(runner);
-            }
-            return true;
-        }
-        return false;
-    }
-    
-    /**
-     * Release runner/child mappings.
-     * 
-     * @param runner JUnit test runner
-     */
-    static void releaseChidrenOf(Object runner) {
-        List<?> children = LifecycleHooks.invoke(runner, "getChildren");
-        for (Object child : children) {
-            CHILD_TO_PARENT.remove(toMapKey(child));
-        }
     }
 }

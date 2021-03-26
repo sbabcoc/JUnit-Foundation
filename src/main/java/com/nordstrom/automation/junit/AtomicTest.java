@@ -2,6 +2,7 @@ package com.nordstrom.automation.junit;
 
 import static com.nordstrom.automation.junit.LifecycleHooks.invoke;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -12,6 +13,7 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.Description;
+import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.TestClass;
 
 /**
@@ -21,27 +23,20 @@ import org.junit.runners.model.TestClass;
  */
 @Ignore
 @SuppressWarnings("all")
-public class AtomicTest<T> {
+public class AtomicTest {
     private final Object runner;
     private final Description description;
-    private final T identity;
-    private final List<T> particles;
+    private final FrameworkMethod identity;
+    private final List<FrameworkMethod> particles;
     private Throwable thrown;
 
-    public AtomicTest(Object runner, T identity) {
-        this.runner = runner;
-        this.identity = identity;
-        this.description = invoke(runner, "describeChild", identity);
-        this.particles = invoke(runner, "getChildren");
+    public AtomicTest(Description description) {
+        this.runner = Run.getThreadRunner();
+        this.description = description;
+        this.particles = getParticles(description);
+        this.identity = this.particles.get(0);
     }
     
-    public AtomicTest(AtomicTest<T> original, Description description) {
-        this.runner = original.runner;
-        this.identity = original.identity;
-        this.description = description;
-        this.particles = original.particles;
-    }
-
     /**
      * Get the runner for this atomic test.
      * 
@@ -65,7 +60,7 @@ public class AtomicTest<T> {
      * 
      * @return core method associated with this atomic test
      */
-    public T getIdentity() {
+    public FrameworkMethod getIdentity() {
         return identity;
     }
     
@@ -74,7 +69,7 @@ public class AtomicTest<T> {
      * 
      * @return list of methods that compose this atomic test
      */
-    public List<T> getParticles() {
+    public List<FrameworkMethod> getParticles() {
         return particles;
     }
 
@@ -111,7 +106,7 @@ public class AtomicTest<T> {
      * @param method method object
      * @return {@code true} if this atomic test includes the specified method; otherwise {@code false}
      */
-    public boolean includes(T method) {
+    public boolean includes(FrameworkMethod method) {
         return particles.contains(method);
     }
     
@@ -130,7 +125,7 @@ public class AtomicTest<T> {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        AtomicTest<T> that = (AtomicTest<T>) o;
+        AtomicTest that = (AtomicTest) o;
         return Objects.equals(runner, that.runner) &&
                 Objects.equals(identity, that.identity);
     }
@@ -141,5 +136,26 @@ public class AtomicTest<T> {
     @Override
     public int hashCode() {
         return Objects.hash(runner, identity);
+    }
+    
+    private List<FrameworkMethod> getParticles(Description description) {
+        List<FrameworkMethod> particles = new ArrayList<>();
+        if (description.isTest()) {
+            String methodName = description.getMethodName();
+            TestClass testClass = new TestClass(description.getTestClass());
+            for (FrameworkMethod method : testClass.getAnnotatedMethods(Test.class)) {
+                if (method.getName().equals(methodName)) {
+                    particles.add(method);
+                    break;
+                }
+            }
+            
+            if (particles.isEmpty()) throw new IllegalStateException("Identity method not found: " + methodName);
+            
+            particles.addAll(testClass.getAnnotatedMethods(Before.class));
+            particles.addAll(testClass.getAnnotatedMethods(After.class));
+        }
+        
+        return particles;
     }
 }
