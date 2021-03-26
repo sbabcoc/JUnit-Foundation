@@ -22,7 +22,7 @@ public class ArtifactCollectorJUnitParams extends TestBase {
         // get runner for this target
         Object runner = LifecycleHooks.getRunnerForTarget(this);
         // get atomic test of target runner
-        AtomicTest<FrameworkMethod> test = LifecycleHooks.getAtomicTestOf(runner);
+        AtomicTest test = LifecycleHooks.getAtomicTestOf(runner);
         // get "callable" closure of test method
         ReflectiveCallable callable = LifecycleHooks.getCallableOf(runner, test.getIdentity());
         // get test method parameters

@@ -30,7 +30,7 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
     private static final Set<String> START_NOTIFIED = new CopyOnWriteArraySet<>();
     private static final Set<String> FINISH_NOTIFIED = new CopyOnWriteArraySet<>();
     private static final Map<String, Object> CHILD_TO_PARENT = new ConcurrentHashMap<>();
-    private static final Map<String, AtomicTest<?>> DESCRIPTION_TO_ATOMICTEST = new ConcurrentHashMap<>();
+    private static final Map<String, AtomicTest> DESCRIPTION_TO_ATOMICTEST = new ConcurrentHashMap<>();
     private static final Logger LOGGER = LoggerFactory.getLogger(RunAnnouncer.class);
     
     /**
@@ -77,14 +77,11 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
      * {@inheritDoc}
      */
     @Override
-    @SuppressWarnings({"rawtypes", "unchecked"})
     public void testStarted(Description description) throws Exception {
         LOGGER.debug("testStarted: {}", description);
-        AtomicTest<?> atomicTest = newAtomicTest(description);
+        AtomicTest atomicTest = newAtomicTest(description);
         for (RunWatcher watcher : LifecycleHooks.getRunWatchers()) {
-            if (isSupported(watcher, atomicTest)) {
-                watcher.testStarted(atomicTest);
-            }
+            watcher.testStarted(atomicTest);
         }
     }
 
@@ -92,14 +89,11 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
      * {@inheritDoc}
      */
     @Override
-    @SuppressWarnings({"rawtypes", "unchecked"})
     public void testFinished(Description description) throws Exception {
         LOGGER.debug("testFinished: {}", description);
-        AtomicTest<?> atomicTest = getAtomicTestOf(description);
+        AtomicTest atomicTest = getAtomicTestOf(description);
         for (RunWatcher watcher : LifecycleHooks.getRunWatchers()) {
-            if (isSupported(watcher, atomicTest)) {
-                watcher.testFinished(atomicTest);
-            }
+            watcher.testFinished(atomicTest);
         }
         
         // release atomic test for this description
@@ -110,14 +104,11 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
      * {@inheritDoc}
      */
     @Override
-    @SuppressWarnings({"rawtypes", "unchecked"})
     public void testFailure(Failure failure) throws Exception {
         LOGGER.debug("testFailure: {}", failure);
-        AtomicTest<?> atomicTest = setTestFailure(failure);
+        AtomicTest atomicTest = setTestFailure(failure);
         for (RunWatcher watcher : LifecycleHooks.getRunWatchers()) {
-            if (isSupported(watcher, atomicTest)) {
-                watcher.testFailure(atomicTest, failure.getException());
-            }
+            watcher.testFailure(atomicTest, failure.getException());
         }
     }
 
@@ -125,14 +116,11 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
      * {@inheritDoc}
      */
     @Override
-    @SuppressWarnings({"rawtypes", "unchecked"})
     public void testAssumptionFailure(Failure failure) {
         LOGGER.debug("testAssumptionFailure: {}", failure);
-        AtomicTest<?> atomicTest = setTestFailure(failure);
+        AtomicTest atomicTest = setTestFailure(failure);
         for (RunWatcher watcher : LifecycleHooks.getRunWatchers()) {
-            if (isSupported(watcher, atomicTest)) {
-                watcher.testAssumptionFailure(atomicTest, (AssumptionViolatedException) failure.getException());
-            }
+            watcher.testAssumptionFailure(atomicTest, (AssumptionViolatedException) failure.getException());
         }
     }
 
@@ -140,11 +128,10 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
      * {@inheritDoc}
      */
     @Override
-    @SuppressWarnings({"rawtypes", "unchecked"})
     public void testIgnored(Description description) throws Exception {
         LOGGER.debug("testIgnored: {}", description);
         // determine if retrying a failed invocation
-        AtomicTest<?> atomicTest = getAtomicTestOf(description);
+        AtomicTest atomicTest = getAtomicTestOf(description);
 
         // if actually ignored
         if (atomicTest == null) {
@@ -153,9 +140,7 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
         }
 
         for (RunWatcher watcher : LifecycleHooks.getRunWatchers()) {
-            if (isSupported(watcher, atomicTest)) {
-                watcher.testIgnored(atomicTest);
-            }
+            watcher.testIgnored(atomicTest);
         }
     }
     
@@ -165,8 +150,8 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
      * @param description JUnit method description
      * @return {@link AtomicTest} object (may be {@code null})
      */
-    static AtomicTest<?> getAtomicTestOf(Description description) {
-      AtomicTest<?> atomicTest = null;
+    static AtomicTest getAtomicTestOf(Description description) {
+      AtomicTest atomicTest = null;
       if (description != null) {
           // get atomic test for this description
           atomicTest = DESCRIPTION_TO_ATOMICTEST.get(toMapKey(description));
@@ -209,10 +194,12 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
             for (Object child : children) {
                 CHILD_TO_PARENT.put(toMapKey(child), runner);
             }
+            
             LOGGER.debug("runStarted: {}", runner);
             for (RunnerWatcher watcher : LifecycleHooks.getRunnerWatchers()) {
                 watcher.runStarted(runner);
             }
+            
             return true;
         }
         return false;
@@ -243,8 +230,8 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
      * @param description description of the test that is about to be run
      * @return {@link AtomicTest} object (may be {@code null})
      */
-    static AtomicTest<?> newAtomicTest(Description description) {
-        AtomicTest<?> atomicTest = null;
+    static AtomicTest newAtomicTest(Description description) {
+        AtomicTest atomicTest = null;
         if (description.isTest()) {
             atomicTest = new AtomicTest(description);
         }
@@ -256,8 +243,8 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
      * 
      * @param description JUnit method description
      */
-    static AtomicTest<?> releaseAtomicTestOf(Description description) {
-        AtomicTest<?> atomicTest = null;
+    static AtomicTest releaseAtomicTestOf(Description description) {
+        AtomicTest atomicTest = null;
         if (description != null) {
             // get atomic test for this runner/description
             atomicTest = DESCRIPTION_TO_ATOMICTEST.remove(toMapKey(description));
@@ -271,22 +258,11 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
      * @param failure {@link Failure} object
      * @return {@link AtomicTest} object
      */
-    private static AtomicTest<?> setTestFailure(Failure failure) {
-        AtomicTest<?> atomicTest = getAtomicTestOf(failure.getDescription());
+    private static AtomicTest setTestFailure(Failure failure) {
+        AtomicTest atomicTest = getAtomicTestOf(failure.getDescription());
         if (atomicTest != null) {
             atomicTest.setThrowable(failure.getException());
         }
         return atomicTest;
-    }
-    
-    /**
-     * Determine if the run watcher in question supports the data type of specified atomic test.
-     * 
-     * @param watcher {@link RunWatcher} object
-     * @param atomicTest {@link AtomicTest} object
-     * @return {@code true} if the specified run watcher supports the indicated data type; otherwise {@code false}
-     */
-    private static boolean isSupported(RunWatcher<?> watcher, AtomicTest<?> atomicTest) {
-        return (atomicTest == null) ? false : watcher.supportedType().isInstance(atomicTest.getIdentity());
     }
 }

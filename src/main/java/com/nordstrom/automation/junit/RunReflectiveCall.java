@@ -23,7 +23,6 @@ import net.bytebuddy.implementation.bind.annotation.This;
  * {@link org.junit.internal.runners.model.ReflectiveCallable#runReflectiveCall
  * runReflectiveCall} method.
  */
-@SuppressWarnings("squid:S1118")
 public class RunReflectiveCall {
 
     private static final Map<Integer, ReflectiveCallable> CHILD_TO_CALLABLE = new ConcurrentHashMap<>();
@@ -182,18 +181,18 @@ public class RunReflectiveCall {
     static void releaseCallablesOf(Object runner) {
         // if no mappings exist, bail out now
         if (CHILD_TO_CALLABLE.isEmpty()) return;
-        // get atomic test for specified runner
-        AtomicTest<Object> atomicTest = RunAnnouncer.getAtomicTestOf(runner);
-        // if atomic test found
-        if (atomicTest != null) {
-            // iterate particles of atomic test
-            for (Object child : atomicTest.getParticles()) {
-                // release next generation
-                releaseCallablesOf(child);
-                // release callable for this child
-                releaseCallableOf(runner, child);
-            }
-        }
+//        // get atomic test for specified runner
+//        AtomicTest<Object> atomicTest = RunAnnouncer.getAtomicTestOf(runner);
+//        // if atomic test found
+//        if (atomicTest != null) {
+//            // iterate particles of atomic test
+//            for (Object child : atomicTest.getParticles()) {
+//                // release next generation
+//                releaseCallablesOf(child);
+//                // release callable for this child
+//                releaseCallableOf(runner, child);
+//            }
+//        }
     }
     
     /**

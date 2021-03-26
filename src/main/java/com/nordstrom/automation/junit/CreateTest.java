@@ -1,6 +1,10 @@
 package com.nordstrom.automation.junit;
 
+import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.junit.internal.runners.model.ReflectiveCallable;
 import org.junit.runners.model.FrameworkMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,9 +18,9 @@ import net.bytebuddy.implementation.bind.annotation.This;
  * This class declares the interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#createTest
  * createTest} method.
  */
-@SuppressWarnings("squid:S1118")
 public class CreateTest {
     
+    private static final Map<Integer, FrameworkMethod> TARGET_TO_METHOD = new ConcurrentHashMap<>();
     private static final Logger LOGGER = LoggerFactory.getLogger(CreateTest.class);
 
     /**

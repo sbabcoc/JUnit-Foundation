@@ -22,7 +22,7 @@ public class ArtifactCollectorTheories extends TestBase {
         // get runner for this target
         Object runner = LifecycleHooks.getRunnerForTarget(this);
         // get atomic test of target runner
-        AtomicTest<FrameworkMethod> test = LifecycleHooks.getAtomicTestOf(runner);
+        AtomicTest test = LifecycleHooks.getAtomicTestOf(runner);
         // get test method parameters
         Class<?>[] paramTypes = test.getIdentity().getMethod().getParameterTypes();
 

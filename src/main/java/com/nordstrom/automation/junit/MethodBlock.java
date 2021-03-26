@@ -5,6 +5,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.junit.experimental.theories.Theories.TheoryAnchor;
+import org.junit.runner.Description;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
 
@@ -81,7 +82,8 @@ public class MethodBlock {
                             // attach class runner to thread
                             Run.pushThreadRunner(threadRunner);
                             // create new atomic test for target method
-                            RunAnnouncer.newAtomicTest(threadRunner, testMethod);
+                            Description description = LifecycleHooks.invoke(threadRunner, "describeChild", testMethod);
+                            RunAnnouncer.newAtomicTest(description);
                         }
                     };
                 }

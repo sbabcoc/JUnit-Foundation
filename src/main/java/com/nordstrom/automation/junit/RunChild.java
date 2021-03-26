@@ -16,7 +16,6 @@ import static com.nordstrom.automation.junit.LifecycleHooks.toMapKey;
  * This class declares the interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#runChild
  * runChild} method.
  */
-@SuppressWarnings("squid:S1118")
 public class RunChild {
     
     private static final Map<String, Boolean> NOTIFY_MAP = new HashMap<>();
@@ -48,7 +47,7 @@ public class RunChild {
         
         try {
             Run.pushThreadRunner(runner);
-            RunAnnouncer.newAtomicTest(runner, child);
+//            RunAnnouncer.newAtomicTest(runner, child);
             
             if (child instanceof FrameworkMethod) {
                 FrameworkMethod method = (FrameworkMethod) child;

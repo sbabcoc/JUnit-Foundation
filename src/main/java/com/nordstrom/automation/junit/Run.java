@@ -20,7 +20,6 @@ import static com.nordstrom.automation.junit.LifecycleHooks.toMapKey;
 /**
  * This class declares the interceptor for the {@link org.junit.runners.ParentRunner#run run} method.
  */
-@SuppressWarnings("squid:S1118")
 public class Run {
     private static final ThreadLocal<Deque<Object>> RUNNER_STACK;
     private static final Map<String, RunNotifier> RUNNER_TO_NOTIFIER = new ConcurrentHashMap<>();
