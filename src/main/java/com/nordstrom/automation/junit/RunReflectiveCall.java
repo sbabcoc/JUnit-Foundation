@@ -1,13 +1,13 @@
 package com.nordstrom.automation.junit;
 
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.junit.internal.runners.model.ReflectiveCallable;
 import org.junit.runner.Description;
+import org.junit.runners.model.FrameworkMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,6 +18,8 @@ import net.bytebuddy.implementation.bind.annotation.RuntimeType;
 import net.bytebuddy.implementation.bind.annotation.SuperCall;
 import net.bytebuddy.implementation.bind.annotation.This;
 
+import static com.nordstrom.automation.junit.LifecycleHooks.toMapKey;
+
 /**
  * This class declares the interceptor for the
  * {@link org.junit.internal.runners.model.ReflectiveCallable#runReflectiveCall
@@ -25,7 +27,8 @@ import net.bytebuddy.implementation.bind.annotation.This;
  */
 public class RunReflectiveCall {
 
-    private static final Map<Integer, ReflectiveCallable> CHILD_TO_CALLABLE = new ConcurrentHashMap<>();
+    private static final Map<Integer, ReflectiveCallable> DESCRIPTION_TO_CALLABLE = new ConcurrentHashMap<>();
+    private static final Map<String, Integer> TARGET_TO_DESCRIPTION = new ConcurrentHashMap<>();
     private static final ThreadLocal<ConcurrentMap<Integer, DepthGauge>> methodDepth;
     private static final Function<Integer, DepthGauge> newInstance;
     private static final Logger LOGGER = LoggerFactory.getLogger(RunReflectiveCall.class);
@@ -61,7 +64,7 @@ public class RunReflectiveCall {
         Object child = null;
 
         try {
-            // get child object (class runner or framework method)
+            // get child object
             child = LifecycleHooks.getFieldValue(callable, "this$0");
         } catch (IllegalAccessException | NoSuchFieldException | SecurityException | IllegalArgumentException e) {
             // handled below
@@ -72,8 +75,12 @@ public class RunReflectiveCall {
             runner = Run.getThreadRunner();
         }
 
-        CHILD_TO_CALLABLE.put(Objects.hash(runner, child), callable);
+        if (child instanceof FrameworkMethod) {
+            Description description = LifecycleHooks.describeChild(runner, (FrameworkMethod) child);
+            DESCRIPTION_TO_CALLABLE.put(description.hashCode(), callable);
+        }
 
+        
         Object result = null;
         Throwable thrown = null;
 
@@ -92,16 +99,46 @@ public class RunReflectiveCall {
 
         return result;
     }
+    
+    static Object getTargetFor(Object runner, FrameworkMethod method) {
+        Object target = null;
+        ReflectiveCallable callable = getCallableOf(runner, method);
+        if (callable != null) {
+            try {
+                // get child object (class runner or framework method)
+                target = LifecycleHooks.getFieldValue(callable, "val$target");
+            } catch (IllegalAccessException | NoSuchFieldException | SecurityException | IllegalArgumentException e) {
+                // handled below
+            }
+        }
+        return target;
+    }
+    
+    static Integer getDescriptionHashFor(Object target) {
+        return TARGET_TO_DESCRIPTION.get(toMapKey(target));
+    }
 
     /**
-     * Get the {@link ReflectiveCallable} object for the specified class runner or method description.
+     * Get the {@link ReflectiveCallable} object for the specified method description.
      *
-     * @param runner JUnit class runner
-     * @param child JUnit child object (runner or framework method)
+     * @param runner target {@link org.junit.runners.ParentRunner ParentRunner} object
+     * @param method {@link FrameworkMethod} object
      * @return <b>ReflectiveCallable</b> object (may be {@code null})
      */
-    static ReflectiveCallable getCallableOf(Object runner, Object child) {
-        return CHILD_TO_CALLABLE.get(Objects.hash(runner, child));
+    static ReflectiveCallable getCallableOf(Object runner, FrameworkMethod method) {
+        Description description = LifecycleHooks.describeChild(runner, method);
+        return (description != null) ? DESCRIPTION_TO_CALLABLE.get(description.hashCode()) : null;
+    }
+    
+    /**
+     * Release the {@link ReflectiveCallable} object for the specified class runner or method description.
+     *
+     * @param runner target {@link org.junit.runners.ParentRunner ParentRunner} object
+     * @param method {@link FrameworkMethod} object
+     */
+    static void releaseCallableOf(Object runner, FrameworkMethod method) {
+        Description description = LifecycleHooks.describeChild(runner, method);
+        DESCRIPTION_TO_CALLABLE.remove(description.hashCode());
     }
 
     /**
@@ -171,37 +208,5 @@ public class RunReflectiveCall {
             }
         }
         return false;
-    }
-    
-    /**
-     * Release the {@link ReflectiveCallable} objects for the children of the specified runner.
-     * 
-     * @param runner JUnit test runner
-     */
-    static void releaseCallablesOf(Object runner) {
-        // if no mappings exist, bail out now
-        if (CHILD_TO_CALLABLE.isEmpty()) return;
-//        // get atomic test for specified runner
-//        AtomicTest<Object> atomicTest = RunAnnouncer.getAtomicTestOf(runner);
-//        // if atomic test found
-//        if (atomicTest != null) {
-//            // iterate particles of atomic test
-//            for (Object child : atomicTest.getParticles()) {
-//                // release next generation
-//                releaseCallablesOf(child);
-//                // release callable for this child
-//                releaseCallableOf(runner, child);
-//            }
-//        }
-    }
-    
-    /**
-     * Release the {@link ReflectiveCallable} object for the specified runner's child.
-     * 
-     * @param runner JUnit class runner
-     * @param child JUnit child object (runner or framework method)
-     */
-    static void releaseCallableOf(Object runner, Object child) {
-        CHILD_TO_CALLABLE.remove(Objects.hash(runner, child));
     }
 }

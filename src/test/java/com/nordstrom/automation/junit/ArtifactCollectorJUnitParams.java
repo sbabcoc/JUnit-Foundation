@@ -19,14 +19,14 @@ public class ArtifactCollectorJUnitParams extends TestBase {
 
     @Override
     public Optional<Map<String, Object>> getParameters() {
-        // get runner for this target
-        Object runner = LifecycleHooks.getRunnerForTarget(this);
-        // get atomic test of target runner
-        AtomicTest test = LifecycleHooks.getAtomicTestOf(runner);
-        // get "callable" closure of test method
-        ReflectiveCallable callable = LifecycleHooks.getCallableOf(runner, test.getIdentity());
+        // get runner associated with this instance
+        Object runner = LifecycleHooks.getRunnerOf(this);
+        // get framework method associated with this instance
+        FrameworkMethod method = LifecycleHooks.getMethodOf(this);
+        // get "callable" closure of framework method
+        ReflectiveCallable callable = LifecycleHooks.getCallableOf(runner, method);
         // get test method parameters
-        Class<?>[] paramTypes = test.getIdentity().getMethod().getParameterTypes();
+        Class<?>[] paramTypes = method.getMethod().getParameterTypes();
 
         try {
             // extract execution parameters from "callable" closure

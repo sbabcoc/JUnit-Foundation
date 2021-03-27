@@ -4,7 +4,6 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.junit.internal.runners.model.ReflectiveCallable;
 import org.junit.runners.model.FrameworkMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,13 +13,16 @@ import net.bytebuddy.implementation.bind.annotation.RuntimeType;
 import net.bytebuddy.implementation.bind.annotation.SuperCall;
 import net.bytebuddy.implementation.bind.annotation.This;
 
+import static com.nordstrom.automation.junit.LifecycleHooks.toMapKey;
+
 /**
  * This class declares the interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#createTest
  * createTest} method.
  */
 public class CreateTest {
     
-    private static final Map<Integer, FrameworkMethod> TARGET_TO_METHOD = new ConcurrentHashMap<>();
+    private static final Map<String, Object> TARGET_TO_RUNNER = new ConcurrentHashMap<>();
+    private static final Map<String, FrameworkMethod> TARGET_TO_METHOD = new ConcurrentHashMap<>();
     private static final Logger LOGGER = LoggerFactory.getLogger(CreateTest.class);
 
     /**
@@ -40,11 +42,47 @@ public class CreateTest {
         TimeoutUtils.applyTestTimeout(runner, method, target);
         
         LOGGER.debug("testObjectCreated: {}", target);
+        TARGET_TO_RUNNER.put(toMapKey(target), runner);
+        TARGET_TO_METHOD.put(toMapKey(target), method);
         
         for (TestObjectWatcher watcher : LifecycleHooks.getObjectWatchers()) {
             watcher.testObjectCreated(runner, method, target);
         }
         
         return target;
+    }
+    
+    /**
+     * Get the class runner associated with the specified instance.
+     * 
+     * @param target instance of JUnit test class
+     * @return {@link org.junit.runners.BlockJUnit4ClassRunner BlockJUnit4ClassRunner} for specified instance
+     */
+    static Object getRunnerOf(Object target) {
+        return TARGET_TO_RUNNER.get(toMapKey(target));
+    }
+
+    /**
+     * Get the framework method associated with the specified instance.
+     * 
+     * @param target instance of JUnit test class
+     * @return {@link FrameworkMethod} for specified instance
+     */
+    static FrameworkMethod getMethodOf(Object target) {
+        return TARGET_TO_METHOD.get(toMapKey(target));
+    }
+    
+    /**
+     * Release runner/target/method mappings.
+     * 
+     * @param runner JUnit class runner
+     * @param method JUnit framework method
+     */
+    static void releaseMappingsFor(Object runner, FrameworkMethod method) {
+        Object target = RunReflectiveCall.getTargetFor(runner, method);
+        if (target != null) {
+            TARGET_TO_RUNNER.remove(target);
+            TARGET_TO_METHOD.remove(target);
+        }
     }
 }

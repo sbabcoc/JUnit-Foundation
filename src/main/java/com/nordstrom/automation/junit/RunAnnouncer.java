@@ -6,11 +6,14 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
+import org.junit.Test;
 import org.junit.internal.AssumptionViolatedException;
 import org.junit.runner.Description;
 import org.junit.runner.Result;
 import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
+import org.junit.runners.model.FrameworkMethod;
+import org.junit.runners.model.TestClass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,11 +69,8 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
         Object runner = Run.getThreadRunner();
         fireRunFinished(runner);
         
-        // release callables associated with runner
-        RunReflectiveCall.releaseCallablesOf(runner);
-        
-        // release runner/child mappings
-        releaseChidrenOf(runner);
+        // release runner mappings
+        releaseMappingsFor(runner);
     }
     
     /**
@@ -174,10 +174,14 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
      * 
      * @param runner JUnit test runner
      */
-    static void releaseChidrenOf(Object runner) {
-        List<?> children = LifecycleHooks.invoke(runner, "getChildren");
-        for (Object child : children) {
-            CHILD_TO_PARENT.remove(toMapKey(child));
+    static void releaseMappingsFor(Object runner) {
+        TestClass testClass = LifecycleHooks.getTestClassOf(runner);
+        if (testClass != null) {
+            for (FrameworkMethod method : testClass.getAnnotatedMethods(Test.class)) {
+                RunReflectiveCall.releaseCallableOf(runner, method);
+                CreateTest.releaseMappingsFor(runner, method);
+                CHILD_TO_PARENT.remove(toMapKey(method));
+            }
         }
     }
     

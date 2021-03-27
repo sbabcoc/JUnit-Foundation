@@ -19,12 +19,12 @@ public class ArtifactCollectorTheories extends TestBase {
 
     @Override
     public Optional<Map<String, Object>> getParameters() {
-        // get runner for this target
-        Object runner = LifecycleHooks.getRunnerForTarget(this);
-        // get atomic test of target runner
-        AtomicTest test = LifecycleHooks.getAtomicTestOf(runner);
+        // get runner associated with this instance
+        Object runner = LifecycleHooks.getRunnerOf(this);
+        // get framework method associated with this instance
+        FrameworkMethod method = LifecycleHooks.getMethodOf(this);
         // get test method parameters
-        Class<?>[] paramTypes = test.getIdentity().getMethod().getParameterTypes();
+        Class<?>[] paramTypes = method.getMethod().getParameterTypes();
 
         try {
             // get parameters assigned to this iteration of the theory

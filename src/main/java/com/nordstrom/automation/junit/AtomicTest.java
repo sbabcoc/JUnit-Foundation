@@ -141,17 +141,8 @@ public class AtomicTest {
     private List<FrameworkMethod> getParticles(Description description) {
         List<FrameworkMethod> particles = new ArrayList<>();
         if (description.isTest()) {
-            String methodName = description.getMethodName();
             TestClass testClass = new TestClass(description.getTestClass());
-            for (FrameworkMethod method : testClass.getAnnotatedMethods(Test.class)) {
-                if (method.getName().equals(methodName)) {
-                    particles.add(method);
-                    break;
-                }
-            }
-            
-            if (particles.isEmpty()) throw new IllegalStateException("Identity method not found: " + methodName);
-            
+            particles.add(CreateTest.getMethodOf(description));
             particles.addAll(testClass.getAnnotatedMethods(Before.class));
             particles.addAll(testClass.getAnnotatedMethods(After.class));
         }

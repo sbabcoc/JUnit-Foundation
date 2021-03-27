@@ -227,7 +227,7 @@ public class RunListenerAdapter extends RunListener {
      * @return {@code true} if description represents a theory; otherwise {@code false}
      */
     private boolean isTheory(Description description) {
-        AtomicTest<?> atomicTest = LifecycleHooks.getAtomicTestOf(description);
+        AtomicTest atomicTest = LifecycleHooks.getAtomicTestOf(description);
         if (atomicTest != null) {
             return (atomicTest.getRunner() instanceof Theories);
         }
