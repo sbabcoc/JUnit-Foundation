@@ -47,7 +47,6 @@ public class RunChild {
         
         try {
             Run.pushThreadRunner(runner);
-//            RunAnnouncer.newAtomicTest(runner, child);
             
             if (child instanceof FrameworkMethod) {
                 FrameworkMethod method = (FrameworkMethod) child;

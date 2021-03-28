@@ -159,6 +159,8 @@ public class ArtifactCollectorTest {
         assertEquals(rla.getPassedTests().size(), 1, "Incorrect passed test count");
         assertEquals(rla.getFailedTests().size(), 1, "Incorrect failed test count");
         assertEquals(rla.getIgnoredTests().size(), 0, "Incorrect ignored test count");
+        assertEquals(rla.getPassedTheories().size(), 1, "Incorrect passed theory count");
+        assertEquals(rla.getFailedTheories().size(), 1, "Incorrect failed theory count");
 
         Description description = rla.getFailedTests().get(0);
         UnitTestCapture watcher = ArtifactCollector.getWatcher(description, UnitTestCapture.class).get();

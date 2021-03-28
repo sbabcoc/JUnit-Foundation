@@ -5,6 +5,8 @@ import static com.nordstrom.automation.junit.LifecycleHooks.invoke;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -29,11 +31,13 @@ public class AtomicTest {
     private final FrameworkMethod identity;
     private final List<FrameworkMethod> particles;
     private Throwable thrown;
+    
+    private static final Pattern PARAM = Pattern.compile("[(\\[]");
 
     public AtomicTest(Description description) {
         this.runner = Run.getThreadRunner();
         this.description = description;
-        this.particles = getParticles(description);
+        this.particles = getParticles(runner, description);
         this.identity = this.particles.get(0);
     }
     
@@ -138,13 +142,32 @@ public class AtomicTest {
         return Objects.hash(runner, identity);
     }
     
-    private List<FrameworkMethod> getParticles(Description description) {
+    private List<FrameworkMethod> getParticles(Object runner, Description description) {
         List<FrameworkMethod> particles = new ArrayList<>();
         if (description.isTest()) {
-            TestClass testClass = new TestClass(description.getTestClass());
-            particles.add(CreateTest.getMethodOf(description));
-            particles.addAll(testClass.getAnnotatedMethods(Before.class));
-            particles.addAll(testClass.getAnnotatedMethods(After.class));
+            TestClass testClass = LifecycleHooks.getTestClassOf(runner);
+            
+            String methodName = description.getMethodName();
+            Matcher matcher = PARAM.matcher(methodName);
+            if (matcher.find()) {
+                methodName = methodName.substring(0, matcher.start());
+            }
+            
+            FrameworkMethod identity = null;
+            for (FrameworkMethod method : testClass.getAnnotatedMethods()) {
+                if (method.getName().equals(methodName)) {
+                    identity = method;
+                    break;
+                }
+            }
+            
+            if (identity != null) {
+                particles.add(identity);
+                particles.addAll(testClass.getAnnotatedMethods(Before.class));
+                particles.addAll(testClass.getAnnotatedMethods(After.class));
+            } else {
+                throw new IllegalStateException("Identity method not found");
+            }
         }
         
         return particles;

@@ -110,10 +110,11 @@ public class RunListenerAdapter extends RunListener {
     public List<Description> getPassedTests() {
         m_passedTests.clear();
         m_passedTests.addAll(m_allTestMethods);
-        for (Description description : m_failedTests) { m_passedTests.remove(description); } 
-        for (Description description : m_failedAssumptions) { m_passedTests.remove(description); } 
-        for (Description description : m_ignoredTests) { m_passedTests.remove(description); } 
-        for (Description description : m_retriedTests) { m_passedTests.remove(description); } 
+        for (Description description : m_failedTests) { m_passedTests.remove(description); }
+        for (Description description : m_failedTheories) { m_passedTests.remove(description); }
+        for (Description description : m_failedAssumptions) { m_passedTests.remove(description); }
+        for (Description description : m_ignoredTests) { m_passedTests.remove(description); }
+        for (Description description : m_retriedTests) { m_passedTests.remove(description); }
         return m_passedTests;
     }
     
