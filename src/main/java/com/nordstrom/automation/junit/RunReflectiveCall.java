@@ -1,10 +1,12 @@
 package com.nordstrom.automation.junit;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import org.junit.Test;
 import org.junit.internal.runners.model.ReflectiveCallable;
 import org.junit.runner.Description;
 import org.junit.runners.model.FrameworkMethod;
@@ -18,8 +20,6 @@ import net.bytebuddy.implementation.bind.annotation.RuntimeType;
 import net.bytebuddy.implementation.bind.annotation.SuperCall;
 import net.bytebuddy.implementation.bind.annotation.This;
 
-import static com.nordstrom.automation.junit.LifecycleHooks.toMapKey;
-
 /**
  * This class declares the interceptor for the
  * {@link org.junit.internal.runners.model.ReflectiveCallable#runReflectiveCall
@@ -27,8 +27,7 @@ import static com.nordstrom.automation.junit.LifecycleHooks.toMapKey;
  */
 public class RunReflectiveCall {
 
-    private static final Map<Integer, ReflectiveCallable> DESCRIPTION_TO_CALLABLE = new ConcurrentHashMap<>();
-    private static final Map<String, Integer> TARGET_TO_DESCRIPTION = new ConcurrentHashMap<>();
+    private static final Map<Integer, ReflectiveCallable> CHILD_TO_CALLABLE = new ConcurrentHashMap<>();
     private static final ThreadLocal<ConcurrentMap<Integer, DepthGauge>> methodDepth;
     private static final Function<Integer, DepthGauge> newInstance;
     private static final Logger LOGGER = LoggerFactory.getLogger(RunReflectiveCall.class);
@@ -75,12 +74,6 @@ public class RunReflectiveCall {
             runner = Run.getThreadRunner();
         }
 
-        if (child instanceof FrameworkMethod) {
-            Description description = LifecycleHooks.describeChild(runner, (FrameworkMethod) child);
-            DESCRIPTION_TO_CALLABLE.put(description.hashCode(), callable);
-        }
-
-        
         Object result = null;
         Throwable thrown = null;
 
@@ -114,10 +107,6 @@ public class RunReflectiveCall {
         return target;
     }
     
-    static Integer getDescriptionHashFor(Object target) {
-        return TARGET_TO_DESCRIPTION.get(toMapKey(target));
-    }
-
     /**
      * Get the {@link ReflectiveCallable} object for the specified method description.
      *
@@ -126,8 +115,7 @@ public class RunReflectiveCall {
      * @return <b>ReflectiveCallable</b> object (may be {@code null})
      */
     static ReflectiveCallable getCallableOf(Object runner, FrameworkMethod method) {
-        Description description = LifecycleHooks.describeChild(runner, method);
-        return (description != null) ? DESCRIPTION_TO_CALLABLE.get(description.hashCode()) : null;
+        return CHILD_TO_CALLABLE.get(hashCode(runner, method));
     }
     
     /**
@@ -137,8 +125,7 @@ public class RunReflectiveCall {
      * @param method {@link FrameworkMethod} object
      */
     static void releaseCallableOf(Object runner, FrameworkMethod method) {
-        Description description = LifecycleHooks.describeChild(runner, method);
-        DESCRIPTION_TO_CALLABLE.remove(description.hashCode());
+        CHILD_TO_CALLABLE.remove(hashCode(runner, method));
     }
 
     /**
@@ -156,6 +143,12 @@ public class RunReflectiveCall {
         if ((runner != null) && (child != null)) {
             DepthGauge depthGauge = LifecycleHooks.computeIfAbsent(methodDepth.get(), callable.hashCode(), newInstance);
             if (0 == depthGauge.increaseDepth()) {
+                if (child instanceof FrameworkMethod) {
+                    FrameworkMethod method = (FrameworkMethod) child;
+                    if (null != method.getAnnotation(Test.class)) {
+                        CHILD_TO_CALLABLE.put(hashCode(runner, method), callable);
+                    }
+                }
                 if (LOGGER.isDebugEnabled()) {
                     try {
                         LOGGER.debug("beforeInvocation: {}",
@@ -191,6 +184,7 @@ public class RunReflectiveCall {
         if ((runner != null) && (child != null)) {
             DepthGauge depthGauge = LifecycleHooks.computeIfAbsent(methodDepth.get(), callable.hashCode(), newInstance);
             if (0 == depthGauge.decreaseDepth()) {
+                methodDepth.remove();
                 if (LOGGER.isDebugEnabled()) {
                     try {
                         LOGGER.debug("afterInvocation: {}",
@@ -208,5 +202,9 @@ public class RunReflectiveCall {
             }
         }
         return false;
+    }
+    
+    private static int hashCode(Object runner, FrameworkMethod method) {
+        return Objects.hash(runner, method);
     }
 }

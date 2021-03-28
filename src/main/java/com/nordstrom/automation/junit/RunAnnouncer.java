@@ -238,6 +238,7 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
         AtomicTest atomicTest = null;
         if (description.isTest()) {
             atomicTest = new AtomicTest(description);
+            DESCRIPTION_TO_ATOMICTEST.put(toMapKey(description), atomicTest);
         }
         return atomicTest;
     }
