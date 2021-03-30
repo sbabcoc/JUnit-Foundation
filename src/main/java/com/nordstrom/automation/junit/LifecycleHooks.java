@@ -324,14 +324,14 @@ public class LifecycleHooks {
     }
     
     /**
-     * Get the description for the specified framework method.
+     * Get the description for the specified child object.
      * 
      * @param runner target {@link org.junit.runners.ParentRunner ParentRunner} object
-     * @param method {@link FrameworkMethod} object
+     * @param child child object
      * @return {@link Description} for the specified framework method
      */
-    public static Description describeChild(Object runner, FrameworkMethod method) {
-        return invoke(runner, "describeChild", method);
+    public static Description describeChild(Object runner, Object child) {
+        return invoke(runner, "describeChild", child);
     }
     
     

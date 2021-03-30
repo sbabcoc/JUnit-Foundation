@@ -6,7 +6,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
-import org.junit.Test;
 import org.junit.internal.AssumptionViolatedException;
 import org.junit.runner.Description;
 import org.junit.runner.Result;
@@ -33,7 +32,8 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
     private static final Set<String> START_NOTIFIED = new CopyOnWriteArraySet<>();
     private static final Set<String> FINISH_NOTIFIED = new CopyOnWriteArraySet<>();
     private static final Map<String, Object> CHILD_TO_PARENT = new ConcurrentHashMap<>();
-    private static final Map<String, AtomicTest> DESCRIPTION_TO_ATOMICTEST = new ConcurrentHashMap<>();
+    private static final Map<Integer, Object> DESCRIPTION_TO_RUNNER = new ConcurrentHashMap<>();
+    private static final Map<Integer, AtomicTest> DESCRIPTION_TO_ATOMICTEST = new ConcurrentHashMap<>();
     private static final Logger LOGGER = LoggerFactory.getLogger(RunAnnouncer.class);
     
     /**
@@ -68,9 +68,6 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
         LOGGER.debug("testSuiteFinished: {}", description);
         Object runner = Run.getThreadRunner();
         fireRunFinished(runner);
-        
-        // release runner mappings
-        releaseMappingsFor(runner);
     }
     
     /**
@@ -96,8 +93,7 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
             watcher.testFinished(atomicTest);
         }
         
-        // release atomic test for this description
-        RunAnnouncer.releaseAtomicTestOf(description);
+        releaseMappingsFor(atomicTest);
     }
 
     /**
@@ -154,7 +150,7 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
       AtomicTest atomicTest = null;
       if (description != null) {
           // get atomic test for this description
-          atomicTest = DESCRIPTION_TO_ATOMICTEST.get(toMapKey(description));
+          atomicTest = DESCRIPTION_TO_ATOMICTEST.get(description.hashCode());
       }
       return atomicTest;
     }
@@ -170,22 +166,6 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
     }
     
     /**
-     * Release runner/child mappings.
-     * 
-     * @param runner JUnit test runner
-     */
-    static void releaseMappingsFor(Object runner) {
-        TestClass testClass = LifecycleHooks.getTestClassOf(runner);
-        if (testClass != null) {
-            for (FrameworkMethod method : testClass.getAnnotatedMethods(Test.class)) {
-                RunReflectiveCall.releaseCallableOf(runner, method);
-                CreateTest.releaseMappingsFor(runner, method);
-                CHILD_TO_PARENT.remove(toMapKey(method));
-            }
-        }
-    }
-    
-    /**
      * Fire the {@link RunnerWatcher#runStarted(Object)} event for the specified runner.
      * <p>
      * <b>NOTE</b>: If {@code runStarted} for the specified runner has already been fired, do nothing.
@@ -197,6 +177,9 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
             List<?> children = LifecycleHooks.invoke(runner, "getChildren");
             for (Object child : children) {
                 CHILD_TO_PARENT.put(toMapKey(child), runner);
+                Description description = LifecycleHooks.describeChild(runner, child);
+                DESCRIPTION_TO_RUNNER.put(description.hashCode(), runner);
+                newAtomicTest(description);
             }
             
             LOGGER.debug("runStarted: {}", runner);
@@ -223,6 +206,16 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
             for (RunnerWatcher watcher : LifecycleHooks.getRunnerWatchers()) {
                 watcher.runFinished(runner);
             }
+            
+            TestClass testClass = LifecycleHooks.getTestClassOf(runner);
+            
+            if (testClass != null) {
+                for (FrameworkMethod method : testClass.getAnnotatedMethods()) {
+                    RunReflectiveCall.releaseCallableOf(runner, method);
+                    CHILD_TO_PARENT.remove(toMapKey(method));
+                }
+            }
+            
             return true;
         }
         return false;
@@ -238,7 +231,7 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
         AtomicTest atomicTest = null;
         if (description.isTest()) {
             atomicTest = new AtomicTest(description);
-            DESCRIPTION_TO_ATOMICTEST.put(toMapKey(description), atomicTest);
+            DESCRIPTION_TO_ATOMICTEST.put(description.hashCode(), atomicTest);
         }
         return atomicTest;
     }
@@ -246,15 +239,15 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
     /**
      * Release the atomic test object for the specified method description.
      * 
-     * @param description JUnit method description
+     * @param atomicTest atomic test object
      */
-    static AtomicTest releaseAtomicTestOf(Description description) {
-        AtomicTest atomicTest = null;
-        if (description != null) {
-            // get atomic test for this runner/description
-            atomicTest = DESCRIPTION_TO_ATOMICTEST.remove(toMapKey(description));
+    static void releaseMappingsFor(AtomicTest atomicTest) {
+        if (atomicTest != null) {
+            CHILD_TO_PARENT.remove(toMapKey(atomicTest.getIdentity()));
+            DESCRIPTION_TO_RUNNER.remove(atomicTest.getDescription().hashCode());
+            DESCRIPTION_TO_ATOMICTEST.remove(atomicTest.getDescription().hashCode());
+            CreateTest.releaseMappingsFor(atomicTest.getDescription(), atomicTest.getIdentity());
         }
-        return atomicTest;
     }
     
     /**
