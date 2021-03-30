@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.junit.experimental.theories.Theories;
 import org.junit.runner.Description;
 import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
@@ -229,10 +228,7 @@ public class RunListenerAdapter extends RunListener {
      */
     private boolean isTheory(Description description) {
         AtomicTest atomicTest = LifecycleHooks.getAtomicTestOf(description);
-        if (atomicTest != null) {
-            return (atomicTest.getRunner() instanceof Theories);
-        }
-        return false;
+        return ((atomicTest != null) && (atomicTest.isTheory()));
     }
 
 }

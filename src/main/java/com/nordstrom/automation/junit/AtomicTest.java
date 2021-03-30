@@ -114,6 +114,15 @@ public class AtomicTest {
         return particles.contains(method);
     }
     
+    public boolean isTheory() {
+        try {
+            String uniqueId = LifecycleHooks.getFieldValue(description, "fUniqueId");
+            return ((uniqueId != null) && (uniqueId.startsWith("theory-id: ")));
+        } catch (IllegalAccessException | NoSuchFieldException | SecurityException e) {
+            return false;
+        }
+    }
+    
     /**
      * {@inheritDoc}
      */

@@ -76,7 +76,7 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
     @Override
     public void testStarted(Description description) throws Exception {
         LOGGER.debug("testStarted: {}", description);
-        AtomicTest atomicTest = newAtomicTest(description);
+        AtomicTest atomicTest = createMappingsFor(description, Run.getThreadRunner());
         for (RunWatcher watcher : LifecycleHooks.getRunWatchers()) {
             watcher.testStarted(atomicTest);
         }
@@ -126,15 +126,7 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
     @Override
     public void testIgnored(Description description) throws Exception {
         LOGGER.debug("testIgnored: {}", description);
-        // determine if retrying a failed invocation
-        AtomicTest atomicTest = getAtomicTestOf(description);
-
-        // if actually ignored
-        if (atomicTest == null) {
-            // create new atomic test object
-            atomicTest = newAtomicTest(description);
-        }
-
+        AtomicTest atomicTest = createMappingsFor(description, Run.getThreadRunner());
         for (RunWatcher watcher : LifecycleHooks.getRunWatchers()) {
             watcher.testIgnored(atomicTest);
         }
@@ -177,9 +169,7 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
             List<?> children = LifecycleHooks.invoke(runner, "getChildren");
             for (Object child : children) {
                 CHILD_TO_PARENT.put(toMapKey(child), runner);
-                Description description = LifecycleHooks.describeChild(runner, child);
-                DESCRIPTION_TO_RUNNER.put(description.hashCode(), runner);
-                newAtomicTest(description);
+                createMappingsFor(runner, child);
             }
             
             LOGGER.debug("runStarted: {}", runner);
@@ -190,6 +180,19 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
             return true;
         }
         return false;
+    }
+
+    static AtomicTest createMappingsFor(Object runner, Object child) {
+        return createMappingsFor(LifecycleHooks.describeChild(runner, child), runner);
+    }
+
+    static AtomicTest createMappingsFor(Description description, Object runner) {
+        if ( ! DESCRIPTION_TO_RUNNER.containsKey(description.hashCode())) {
+            DESCRIPTION_TO_RUNNER.put(description.hashCode(), runner);
+            return newAtomicTest(description);
+        } else {
+            return getAtomicTestOf(description);
+        }
     }
     
     /**

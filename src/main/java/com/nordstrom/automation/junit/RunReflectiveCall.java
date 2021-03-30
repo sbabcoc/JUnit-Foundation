@@ -115,7 +115,7 @@ public class RunReflectiveCall {
      * @return <b>ReflectiveCallable</b> object (may be {@code null})
      */
     static ReflectiveCallable getCallableOf(Object runner, FrameworkMethod method) {
-        return CHILD_TO_CALLABLE.get(hashCode(runner, method));
+        return CHILD_TO_CALLABLE.get(Objects.hash(runner, method));
     }
     
     /**
@@ -125,7 +125,7 @@ public class RunReflectiveCall {
      * @param method {@link FrameworkMethod} object
      */
     static void releaseCallableOf(Object runner, FrameworkMethod method) {
-        CHILD_TO_CALLABLE.remove(hashCode(runner, method));
+        CHILD_TO_CALLABLE.remove(Objects.hash(runner, method));
     }
 
     /**
@@ -145,16 +145,14 @@ public class RunReflectiveCall {
             if (0 == depthGauge.increaseDepth()) {
                 if (child instanceof FrameworkMethod) {
                     FrameworkMethod method = (FrameworkMethod) child;
-                    if (null != method.getAnnotation(Test.class)) {
-                        CHILD_TO_CALLABLE.put(hashCode(runner, method), callable);
-                    }
-                }
-                if (LOGGER.isDebugEnabled()) {
-                    try {
-                        LOGGER.debug("beforeInvocation: {}",
-                                (Description) LifecycleHooks.invoke(runner, "describeChild", child));
-                    } catch (Throwable t) {
-                        // nothing to do here
+                    CHILD_TO_CALLABLE.put(Objects.hash(runner, method), callable);
+                    if (LOGGER.isDebugEnabled()) {
+                        try {
+                            LOGGER.debug("beforeInvocation: {}",
+                                    (Description) LifecycleHooks.invoke(runner, "describeChild", child));
+                        } catch (Throwable t) {
+                            // nothing to do here
+                        }
                     }
                 }
                 for (MethodWatcher watcher : LifecycleHooks.getMethodWatchers()) {
@@ -185,12 +183,14 @@ public class RunReflectiveCall {
             DepthGauge depthGauge = LifecycleHooks.computeIfAbsent(methodDepth.get(), callable.hashCode(), newInstance);
             if (0 == depthGauge.decreaseDepth()) {
                 methodDepth.remove();
-                if (LOGGER.isDebugEnabled()) {
-                    try {
-                        LOGGER.debug("afterInvocation: {}",
-                                (Description) LifecycleHooks.invoke(runner, "describeChild", child));
-                    } catch (Throwable t) {
-                        // nothing to do here
+                if (child instanceof FrameworkMethod) {
+                    if (LOGGER.isDebugEnabled()) {
+                        try {
+                            LOGGER.debug("afterInvocation: {}",
+                                    (Description) LifecycleHooks.invoke(runner, "describeChild", child));
+                        } catch (Throwable t) {
+                            // nothing to do here
+                        }
                     }
                 }
                 for (MethodWatcher watcher : LifecycleHooks.getMethodWatchers()) {
@@ -202,9 +202,5 @@ public class RunReflectiveCall {
             }
         }
         return false;
-    }
-    
-    private static int hashCode(Object runner, FrameworkMethod method) {
-        return Objects.hash(runner, method);
     }
 }
