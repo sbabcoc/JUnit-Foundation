@@ -32,7 +32,6 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
     private static final Set<String> START_NOTIFIED = new CopyOnWriteArraySet<>();
     private static final Set<String> FINISH_NOTIFIED = new CopyOnWriteArraySet<>();
     private static final Map<String, Object> CHILD_TO_PARENT = new ConcurrentHashMap<>();
-    private static final Map<Integer, Object> DESCRIPTION_TO_RUNNER = new ConcurrentHashMap<>();
     private static final Map<Integer, AtomicTest> DESCRIPTION_TO_ATOMICTEST = new ConcurrentHashMap<>();
     private static final Logger LOGGER = LoggerFactory.getLogger(RunAnnouncer.class);
     
@@ -76,7 +75,7 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
     @Override
     public void testStarted(Description description) throws Exception {
         LOGGER.debug("testStarted: {}", description);
-        AtomicTest atomicTest = createMappingsFor(description, Run.getThreadRunner());
+        AtomicTest atomicTest = createMappingsFor(description);
         for (RunWatcher watcher : LifecycleHooks.getRunWatchers()) {
             watcher.testStarted(atomicTest);
         }
@@ -126,7 +125,7 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
     @Override
     public void testIgnored(Description description) throws Exception {
         LOGGER.debug("testIgnored: {}", description);
-        AtomicTest atomicTest = createMappingsFor(description, Run.getThreadRunner());
+        AtomicTest atomicTest = createMappingsFor(description);
         for (RunWatcher watcher : LifecycleHooks.getRunWatchers()) {
             watcher.testIgnored(atomicTest);
         }
@@ -183,12 +182,11 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
     }
 
     static AtomicTest createMappingsFor(Object runner, Object child) {
-        return createMappingsFor(LifecycleHooks.describeChild(runner, child), runner);
+        return createMappingsFor(LifecycleHooks.describeChild(runner, child));
     }
 
-    static AtomicTest createMappingsFor(Description description, Object runner) {
-        if ( ! DESCRIPTION_TO_RUNNER.containsKey(description.hashCode())) {
-            DESCRIPTION_TO_RUNNER.put(description.hashCode(), runner);
+    static AtomicTest createMappingsFor(Description description) {
+        if ( ! DESCRIPTION_TO_ATOMICTEST.containsKey(description.hashCode())) {
             return newAtomicTest(description);
         } else {
             return getAtomicTestOf(description);
@@ -247,7 +245,6 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
     static void releaseMappingsFor(AtomicTest atomicTest) {
         if (atomicTest != null) {
             CHILD_TO_PARENT.remove(toMapKey(atomicTest.getIdentity()));
-            DESCRIPTION_TO_RUNNER.remove(atomicTest.getDescription().hashCode());
             DESCRIPTION_TO_ATOMICTEST.remove(atomicTest.getDescription().hashCode());
             CreateTest.releaseMappingsFor(atomicTest.getDescription(), atomicTest.getIdentity());
         }
