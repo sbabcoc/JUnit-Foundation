@@ -112,8 +112,8 @@ public class CreateTest {
     static void releaseMappingsFor(Object runner, FrameworkMethod method) {
         Object target = RunReflectiveCall.getTargetFor(runner, method);
         if (target != null) {
-            TARGET_TO_RUNNER.remove(target);
-            TARGET_TO_METHOD.remove(target);
+            TARGET_TO_RUNNER.remove(toMapKey(target));
+            TARGET_TO_METHOD.remove(toMapKey(target));
         }
     }
 }

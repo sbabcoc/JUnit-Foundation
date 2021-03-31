@@ -207,16 +207,7 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
             for (RunnerWatcher watcher : LifecycleHooks.getRunnerWatchers()) {
                 watcher.runFinished(runner);
             }
-            
-            TestClass testClass = LifecycleHooks.getTestClassOf(runner);
-            
-            if (testClass != null) {
-                for (FrameworkMethod method : testClass.getAnnotatedMethods()) {
-                    RunReflectiveCall.releaseCallableOf(runner, method);
-                    CHILD_TO_PARENT.remove(toMapKey(method));
-                }
-            }
-            
+            CHILD_TO_PARENT.remove(toMapKey(runner));
             return true;
         }
         return false;
@@ -246,7 +237,7 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
         if (atomicTest != null) {
             CHILD_TO_PARENT.remove(toMapKey(atomicTest.getIdentity()));
             DESCRIPTION_TO_ATOMICTEST.remove(atomicTest.getDescription().hashCode());
-            CreateTest.releaseMappingsFor(atomicTest.getDescription(), atomicTest.getIdentity());
+            CreateTest.releaseMappingsFor(atomicTest.getRunner(), atomicTest.getIdentity());
         }
     }
     
