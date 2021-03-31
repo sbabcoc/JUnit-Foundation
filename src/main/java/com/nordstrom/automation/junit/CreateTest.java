@@ -50,6 +50,7 @@ public class CreateTest {
      * Interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#createTest createTest} method.
      * 
      * @param runner target {@link org.junit.runners.BlockJUnit4ClassRunner BlockJUnit4ClassRunner} object
+     * @param method {@link FrameworkMethod} for which this test class instance is being created
      * @param proxy callable proxy for the intercepted method
      * @return {@code anything} - JUnit test class instance
      * @throws Exception {@code anything} (exception thrown by the intercepted method)
