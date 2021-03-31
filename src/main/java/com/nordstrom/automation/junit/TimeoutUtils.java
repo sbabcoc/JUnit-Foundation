@@ -124,11 +124,12 @@ class TimeoutUtils {
      * If configured for rule-based global timeout, apply timeout to specified test rules list.
      * 
      * @param runner underlying test runner
+     * @param method target test method
      * @param testRules test rules of associated test class
      */
-    static void applyRuleTimeout(final Object runner, final List<TestRule> testRules) {
+    static void applyRuleTimeout(final Object runner, final FrameworkMethod method, final List<TestRule> testRules) {
         // get "identity" method
-        FrameworkMethod identity = getIdentity(runner, null);
+        FrameworkMethod identity = getIdentity(runner, method);
         // get @Test annotation
         Test annotation = (identity != null) ? identity.getAnnotation(Test.class) : null;
         // get test method timeout interval
