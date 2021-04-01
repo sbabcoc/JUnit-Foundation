@@ -21,8 +21,7 @@ import net.bytebuddy.implementation.bind.annotation.SuperCall;
 import net.bytebuddy.implementation.bind.annotation.This;
 
 /**
- * This class declares the interceptor for the {@link org.junit.runners.ParentRunner#runChildren
- * runChildren} method.
+ * This class declares the interceptor for the {@link org.junit.runners.ParentRunner#runChildren runChildren} method.
  */
 public class RunChildren {
 

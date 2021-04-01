@@ -6,8 +6,8 @@ import net.bytebuddy.implementation.bind.annotation.SuperCall;
 import net.bytebuddy.implementation.bind.annotation.This;
 
 /**
- * This class declares the interceptor for the {@link org.junit.runners.model.RunnerScheduler#finished
- * finished} method.
+ * This class declares the interceptor for the {@link org.junit.runners.model.RunnerScheduler#finished finished}
+ * method.
  */
 public class Finished {
     
