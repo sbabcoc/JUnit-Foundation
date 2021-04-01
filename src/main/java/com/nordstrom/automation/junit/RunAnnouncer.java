@@ -74,7 +74,7 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
     @Override
     public void testIgnored(Description description) throws Exception {
         LOGGER.debug("testIgnored: {}", description);
-        AtomicTest atomicTest = RunChildren.createMappingsFor(description);
+        AtomicTest atomicTest = RunChildren.ensureAtomicTestOf(description);
         for (RunWatcher watcher : LifecycleHooks.getRunWatchers()) {
             watcher.testIgnored(atomicTest);
         }

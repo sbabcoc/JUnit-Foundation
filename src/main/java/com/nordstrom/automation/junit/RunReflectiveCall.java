@@ -92,6 +92,13 @@ public class RunReflectiveCall {
         return result;
     }
     
+    /**
+     * Get the test class instance for the specified runner/method pair.
+     *
+     * @param runner target {@link org.junit.runners.ParentRunner ParentRunner} object
+     * @param method {@link FrameworkMethod} object
+     * @return <b>ReflectiveCallable</b> object (may be {@code null})
+     */
     static Object getTargetFor(Object runner, FrameworkMethod method) {
         Object target = null;
         ReflectiveCallable callable = getCallableOf(runner, method);
@@ -107,7 +114,7 @@ public class RunReflectiveCall {
     }
     
     /**
-     * Get the {@link ReflectiveCallable} object for the specified method description.
+     * Get the {@link ReflectiveCallable} object for the specified runner/method pair.
      *
      * @param runner target {@link org.junit.runners.ParentRunner ParentRunner} object
      * @param method {@link FrameworkMethod} object
@@ -118,7 +125,7 @@ public class RunReflectiveCall {
     }
     
     /**
-     * Release the {@link ReflectiveCallable} object for the specified class runner or method description.
+     * Release the {@link ReflectiveCallable} object for the specified runner/method pair.
      *
      * @param runner target {@link org.junit.runners.ParentRunner ParentRunner} object
      * @param method {@link FrameworkMethod} object

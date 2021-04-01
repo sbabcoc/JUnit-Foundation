@@ -7,13 +7,10 @@ import java.util.Deque;
 import java.util.EmptyStackException;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
 
 import org.junit.runner.Description;
-import org.junit.runner.notification.RunListener;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.FrameworkMethod;
 import org.slf4j.Logger;
@@ -23,10 +20,13 @@ import net.bytebuddy.implementation.bind.annotation.Argument;
 import net.bytebuddy.implementation.bind.annotation.SuperCall;
 import net.bytebuddy.implementation.bind.annotation.This;
 
+/**
+ * This class declares the interceptor for the {@link org.junit.runners.ParentRunner#runChildren
+ * runChildren} method.
+ */
 public class RunChildren {
 
     private static final ThreadLocal<Deque<Object>> RUNNER_STACK;
-    private static final Set<String> NOTIFIERS = new CopyOnWriteArraySet<>();
     private static final Map<String, Object> CHILD_TO_PARENT = new ConcurrentHashMap<>();
     private static final Map<Integer, AtomicTest> DESCRIPTION_TO_ATOMICTEST = new ConcurrentHashMap<>();
     private static final Logger LOGGER = LoggerFactory.getLogger(RunChildren.class);
@@ -40,6 +40,14 @@ public class RunChildren {
         };
     }
     
+    /**
+     * Interceptor for the {@link org.junit.runners.ParentRunner#runChildren runChildren} method.
+     * 
+     * @param runner underlying test runner
+     * @param proxy callable proxy for the intercepted method
+     * @param notifier run notifier through which events are published
+     * @throws Exception {@code anything} (exception thrown by the intercepted method)
+     */
     public static void intercept(@This final Object runner, @SuperCall final Callable<?> proxy,
             @Argument(0) final RunNotifier notifier) throws Exception {
         
@@ -52,7 +60,7 @@ public class RunChildren {
     }
     
     /**
-     * 
+     * Fire the {@link RunnerWatcher#runStarted(Object)} event for the current runner.
      */
     static void started() {
         fireRunStarted(getThreadRunner());
@@ -60,13 +68,11 @@ public class RunChildren {
     
     /**
      * Fire the {@link RunnerWatcher#runStarted(Object)} event for the specified runner.
-     * <p>
-     * <b>NOTE</b>: If {@code runStarted} for the specified runner has already been fired, do nothing.
+     * 
      * @param runner JUnit test runner
      */
     static void fireRunStarted(Object runner) {
         for (Object child : (List<?>) LifecycleHooks.invoke(runner, "getChildren")) {
-            CHILD_TO_PARENT.put(toMapKey(child), runner);
             createMappingsFor(runner, child);
         }
         
@@ -77,7 +83,7 @@ public class RunChildren {
     }
 
     /**
-     * 
+     * Fire the {@link RunnerWatcher#runFinished(Object)} event for the current runner.
      */
     static void finished() {
         fireRunFinished(getThreadRunner());
@@ -85,8 +91,6 @@ public class RunChildren {
     
     /**
      * Fire the {@link RunnerWatcher#runFinished(Object)} event for the specified runner.
-     * <p>
-     * <b>NOTE</b>: If {@code runFinished} for the specified runner has already been fired, do nothing.
      * 
      * @param runner JUnit test runner
      */
@@ -103,21 +107,23 @@ public class RunChildren {
     }
     
     /**
+     * Create mappings for the specified runner/child pair.
      * 
-     * @param runner
-     * @param child
-     * @return
+     * @param runner JUnit test runner
+     * @param child {@code ParentRunner} or {@code FrameworkMethod} object
      */
-    static AtomicTest createMappingsFor(Object runner, Object child) {
-        return createMappingsFor(LifecycleHooks.describeChild(runner, child));
+    static void createMappingsFor(Object runner, Object child) {
+        CHILD_TO_PARENT.put(toMapKey(child), runner);
+        ensureAtomicTestOf(LifecycleHooks.describeChild(runner, child));
     }
 
     /**
-     * 
-     * @param description
-     * @return
-     */
-    static AtomicTest createMappingsFor(Description description) {
+    * Get the atomic test object for the specified method description; create if absent.
+    * 
+    * @param description JUnit method description
+    * @return {@link AtomicTest} object (may be {@code null})
+    */
+    static AtomicTest ensureAtomicTestOf(Description description) {
         if (DESCRIPTION_TO_ATOMICTEST.containsKey(description.hashCode())) {
             return DESCRIPTION_TO_ATOMICTEST.get(description.hashCode());
         } else {
@@ -147,12 +153,12 @@ public class RunChildren {
      * @return {@link AtomicTest} object (may be {@code null})
      */
     static AtomicTest getAtomicTestOf(Description description) {
-      AtomicTest atomicTest = null;
-      if (description != null) {
-          // get atomic test for this description
-          atomicTest = DESCRIPTION_TO_ATOMICTEST.get(description.hashCode());
-      }
-      return atomicTest;
+        AtomicTest atomicTest = null;
+        if (description != null) {
+            // get atomic test for this description
+            atomicTest = DESCRIPTION_TO_ATOMICTEST.get(description.hashCode());
+        }
+        return atomicTest;
     }
     
     /**
@@ -165,6 +171,12 @@ public class RunChildren {
         return CHILD_TO_PARENT.get(toMapKey(child));
     }
     
+    /**
+     * Release mappings for the specified runner/child pair.
+     * 
+     * @param runner JUnit test runner
+     * @param child {@code ParentRunner} or {@code FrameworkMethod} object
+     */
     private static void releaseMappingsFor(Object runner, Object child) {
         if (child instanceof FrameworkMethod) {
             releaseMappingsFor(getAtomicTestOf(LifecycleHooks.describeChild(runner, child)));
@@ -172,7 +184,7 @@ public class RunChildren {
     }
 
     /**
-     * Release the atomic test object for the specified method description.
+     * Release mappings for the atomic test object.
      * 
      * @param atomicTest atomic test object
      */
@@ -181,27 +193,6 @@ public class RunChildren {
             CHILD_TO_PARENT.remove(toMapKey(atomicTest.getIdentity()));
             DESCRIPTION_TO_ATOMICTEST.remove(atomicTest.getDescription().hashCode());
             CreateTest.releaseMappingsFor(atomicTest.getRunner(), atomicTest.getIdentity());
-        }
-    }
-    
-    /**
-     * Attach registered run listeners to the specified run notifier.
-     * <p>
-     * <b>NOTE</b>: If the specified run notifier has already been seen, do nothing.
-     *  
-     * @param runner JUnit test runner
-     * @param notifier JUnit {@link RunNotifier} object
-     * @throws Exception if {@code run-started} notification 
-     */
-    static void attachRunListeners(Object runner, final RunNotifier notifier) throws Exception {
-        if (NOTIFIERS.add(toMapKey(notifier))) {
-            Description description = LifecycleHooks.invoke(runner, "getDescription");
-            for (RunListener listener : LifecycleHooks.getRunListeners()) {
-                // prevent potential duplicates
-                notifier.removeListener(listener);
-                notifier.addListener(listener);
-                listener.testRunStarted(description);
-            }
         }
     }
     

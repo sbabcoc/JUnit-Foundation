@@ -40,7 +40,7 @@ public class AtomicTest {
         this.particles = getParticles(runner, description);
         this.identity = this.particles.get(0);
     }
-    
+
     /**
      * Get the runner for this atomic test.
      * 
@@ -114,6 +114,11 @@ public class AtomicTest {
         return particles.contains(method);
     }
     
+    /**
+     * Determine if this atomic test represents a "theory" method.
+     * 
+     * @return {@code true} if this atomic test represents a "theory" method; otherwise {@code false}
+     */
     public boolean isTheory() {
         try {
             String uniqueId = LifecycleHooks.getFieldValue(description, "fUniqueId");
@@ -151,6 +156,13 @@ public class AtomicTest {
         return Objects.hash(runner, identity);
     }
     
+    /**
+     * Get the "particle" method for this atomic test.
+     * 
+     * @param runner JUnit test runner
+     * @param description JUnit method description
+     * @return list of "particle" methods
+     */
     private List<FrameworkMethod> getParticles(Object runner, Description description) {
         List<FrameworkMethod> particles = new ArrayList<>();
         if (description.isTest()) {
