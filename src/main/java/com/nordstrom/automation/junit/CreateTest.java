@@ -74,7 +74,7 @@ public class CreateTest {
             
             TARGET_TO_RUNNER.put(toMapKey(target), runner);
             TARGET_TO_METHOD.put(toMapKey(target), method);
-            RunAnnouncer.createMappingsFor(runner, method);
+            RunChildren.createMappingsFor(runner, method);
             
             for (TestObjectWatcher watcher : LifecycleHooks.getObjectWatchers()) {
                 watcher.testObjectCreated(runner, method, target);

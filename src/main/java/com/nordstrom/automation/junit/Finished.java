@@ -20,6 +20,6 @@ public class Finished {
      */
     public static void intercept(@This final Object scheduler, @SuperCall final Callable<?> proxy) throws Exception {
         LifecycleHooks.callProxy(proxy);
-        RunChild.finished();
+        RunChildren.finished();
     }
 }

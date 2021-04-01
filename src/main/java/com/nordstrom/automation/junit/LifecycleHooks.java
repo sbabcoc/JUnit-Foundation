@@ -19,7 +19,6 @@ import org.apache.commons.lang3.reflect.MethodUtils;
 import org.junit.internal.runners.model.ReflectiveCallable;
 import org.junit.runner.Description;
 import org.junit.runner.notification.RunListener;
-import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.TestClass;
 
@@ -164,6 +163,8 @@ public class LifecycleHooks {
     public static ClassFileTransformer installTransformer(Instrumentation instrumentation) {
         final TypeDescription runReflectiveCall = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.RunReflectiveCall").resolve();
         final TypeDescription finished = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.Finished").resolve();
+        final TypeDescription schedule = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.Schedule").resolve();
+        final TypeDescription runChildren = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.RunChildren").resolve();
         final TypeDescription runChild = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.RunChild").resolve();
         final TypeDescription run = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.Run").resolve();
         final TypeDescription describeChild = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.DescribeChild").resolve();
@@ -171,8 +172,10 @@ public class LifecycleHooks {
         final TypeDescription createTest = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.CreateTest").resolve();
         final TypeDescription getTestRules = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.GetTestRules").resolve();
         final TypeDescription runWithCompleteAssignment = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.RunWithCompleteAssignment").resolve();
+        final TypeDescription fireTestFailure = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.FireTestFailure").resolve();
         
         final TypeDescription runNotifier = TypePool.Default.ofSystemLoader().describe("org.junit.runner.notification.RunNotifier").resolve();
+        final SignatureToken runChildrenToken = new SignatureToken("runChildren", TypeDescription.VOID, Arrays.asList(runNotifier));
         final SignatureToken runToken = new SignatureToken("run", TypeDescription.VOID, Arrays.asList(runNotifier));
         
         final TypeDescription frameworkMethod = TypePool.Default.ofSystemLoader().describe("org.junit.runners.model.FrameworkMethod").resolve();
@@ -193,7 +196,8 @@ public class LifecycleHooks {
                     @Override
                     public Builder<?> transform(Builder<?> builder, TypeDescription type,
                                     ClassLoader classloader, JavaModule module) {
-                        return builder.method(named("finished")).intercept(MethodDelegation.to(finished))
+                        return builder.method(named("schedule")).intercept(MethodDelegation.to(schedule))
+                                      .method(named("finished")).intercept(MethodDelegation.to(finished))
                                       .implement(Hooked.class);
                     }
                 })
@@ -203,6 +207,7 @@ public class LifecycleHooks {
                     public Builder<?> transform(Builder<?> builder, TypeDescription type,
                                     ClassLoader classloader, JavaModule module) {
                         return builder.method(named("runChild")).intercept(MethodDelegation.to(runChild))
+                                      .method(hasSignature(runChildrenToken)).intercept(MethodDelegation.to(runChildren))
                                       .method(hasSignature(runToken)).intercept(MethodDelegation.to(run))
                                       .method(named("describeChild")).intercept(MethodDelegation.to(describeChild))
                                       // NOTE: The 'methodBlock', 'createTest', and 'getTestRules' methods
@@ -220,6 +225,16 @@ public class LifecycleHooks {
                     public Builder<?> transform(Builder<?> builder, TypeDescription type,
                                     ClassLoader classloader, JavaModule module) {
                         return builder.method(named("runWithCompleteAssignment")).intercept(MethodDelegation.to(runWithCompleteAssignment))
+                                      .implement(Hooked.class);
+                    }
+                })
+                .type(hasSuperType(named("org.junit.runner.notification.RunNotifier")))
+                .transform(new Transformer() {
+                    @Override
+                    public Builder<?> transform(Builder<?> builder, TypeDescription type,
+                                    ClassLoader classloader, JavaModule module) {
+                        return builder.method(named("fireTestFailure")).intercept(MethodDelegation.to(fireTestFailure))
+                                      .method(named("fireTestAssumptionFailed")).intercept(MethodDelegation.to(fireTestFailure))
                                       .implement(Hooked.class);
                     }
                 })
@@ -281,16 +296,17 @@ public class LifecycleHooks {
      *         objects)
      */
     public static Object getParentOf(Object child) {
-        return RunAnnouncer.getParentOf(child);
+        return RunChildren.getParentOf(child);
     }
 
     /**
      * Get the run notifier associated with the specified parent runner.
      * 
      * @param runner JUnit parent runner
-     * @return {@link RunNotifier} object for the specified parent runner (may be {@code null})
+     * @return {@link org.junit.runner.notification.RunNotifier RunNotifier} object for the specified parent runner
+     *         (may be {@code null})
      */
-    public static RunNotifier getNotifierOf(final Object runner) {
+    public static Object getNotifierOf(final Object runner) {
         return Run.getNotifierOf(runner);
     }
     
@@ -300,7 +316,7 @@ public class LifecycleHooks {
      * @return active {@code ParentRunner} object (may be ({@code null})
      */
     public static Object getThreadRunner() {
-        return Run.getThreadRunner();
+        return RunChildren.getThreadRunner();
     }
     
     /**
@@ -320,7 +336,7 @@ public class LifecycleHooks {
      * @return {@link AtomicTest} object (may be {@code null})
      */
     public static AtomicTest getAtomicTestOf(Description description) {
-        return RunAnnouncer.getAtomicTestOf(description);
+        return RunChildren.getAtomicTestOf(description);
     }
     
     /**

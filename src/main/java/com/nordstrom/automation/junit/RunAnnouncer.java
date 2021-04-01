@@ -1,22 +1,11 @@
 package com.nordstrom.automation.junit;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
-
 import org.junit.internal.AssumptionViolatedException;
 import org.junit.runner.Description;
-import org.junit.runner.Result;
 import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
-import org.junit.runners.model.FrameworkMethod;
-import org.junit.runners.model.TestClass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static com.nordstrom.automation.junit.LifecycleHooks.toMapKey;
 
 /**
  * This class implements a notification-enhancing extension of the standard {@link RunListener} class. This run
@@ -29,45 +18,7 @@ import static com.nordstrom.automation.junit.LifecycleHooks.toMapKey;
  */
 public class RunAnnouncer extends RunListener implements JUnitWatcher {
     
-    private static final Set<String> START_NOTIFIED = new CopyOnWriteArraySet<>();
-    private static final Set<String> FINISH_NOTIFIED = new CopyOnWriteArraySet<>();
-    private static final Map<String, Object> CHILD_TO_PARENT = new ConcurrentHashMap<>();
-    private static final Map<Integer, AtomicTest> DESCRIPTION_TO_ATOMICTEST = new ConcurrentHashMap<>();
     private static final Logger LOGGER = LoggerFactory.getLogger(RunAnnouncer.class);
-    
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void testRunStarted(Description description) throws Exception {
-    }
-    
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void testRunFinished(Result result) throws Exception {
-    }
-    
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void testSuiteStarted(Description description) throws Exception {
-        LOGGER.debug("testSuiteStarted: {}", description);
-        Object runner = Run.getThreadRunner();
-        fireRunStarted(runner);
-    }
-    
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void testSuiteFinished(Description description) throws Exception {
-        LOGGER.debug("testSuiteFinished: {}", description);
-        Object runner = Run.getThreadRunner();
-        fireRunFinished(runner);
-    }
     
     /**
      * {@inheritDoc}
@@ -75,7 +26,7 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
     @Override
     public void testStarted(Description description) throws Exception {
         LOGGER.debug("testStarted: {}", description);
-        AtomicTest atomicTest = createMappingsFor(description);
+        AtomicTest atomicTest = RunChildren.getAtomicTestOf(description);
         for (RunWatcher watcher : LifecycleHooks.getRunWatchers()) {
             watcher.testStarted(atomicTest);
         }
@@ -87,12 +38,10 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
     @Override
     public void testFinished(Description description) throws Exception {
         LOGGER.debug("testFinished: {}", description);
-        AtomicTest atomicTest = getAtomicTestOf(description);
+        AtomicTest atomicTest = RunChildren.getAtomicTestOf(description);
         for (RunWatcher watcher : LifecycleHooks.getRunWatchers()) {
             watcher.testFinished(atomicTest);
         }
-        
-        releaseMappingsFor(atomicTest);
     }
 
     /**
@@ -101,7 +50,7 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
     @Override
     public void testFailure(Failure failure) throws Exception {
         LOGGER.debug("testFailure: {}", failure);
-        AtomicTest atomicTest = setTestFailure(failure);
+        AtomicTest atomicTest = RunChildren.getAtomicTestOf(failure.getDescription());
         for (RunWatcher watcher : LifecycleHooks.getRunWatchers()) {
             watcher.testFailure(atomicTest, failure.getException());
         }
@@ -113,7 +62,7 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
     @Override
     public void testAssumptionFailure(Failure failure) {
         LOGGER.debug("testAssumptionFailure: {}", failure);
-        AtomicTest atomicTest = setTestFailure(failure);
+        AtomicTest atomicTest = RunChildren.getAtomicTestOf(failure.getDescription());
         for (RunWatcher watcher : LifecycleHooks.getRunWatchers()) {
             watcher.testAssumptionFailure(atomicTest, (AssumptionViolatedException) failure.getException());
         }
@@ -125,133 +74,10 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
     @Override
     public void testIgnored(Description description) throws Exception {
         LOGGER.debug("testIgnored: {}", description);
-        AtomicTest atomicTest = createMappingsFor(description);
+        AtomicTest atomicTest = RunChildren.createMappingsFor(description);
         for (RunWatcher watcher : LifecycleHooks.getRunWatchers()) {
             watcher.testIgnored(atomicTest);
         }
     }
     
-    /**
-     * Get the atomic test object for the specified method description.
-     * 
-     * @param description JUnit method description
-     * @return {@link AtomicTest} object (may be {@code null})
-     */
-    static AtomicTest getAtomicTestOf(Description description) {
-      AtomicTest atomicTest = null;
-      if (description != null) {
-          // get atomic test for this description
-          atomicTest = DESCRIPTION_TO_ATOMICTEST.get(description.hashCode());
-      }
-      return atomicTest;
-    }
-    
-    /**
-     * Get the parent runner that owns specified child runner or framework method.
-     * 
-     * @param child {@code ParentRunner} or {@code FrameworkMethod} object
-     * @return {@code ParentRunner} object that owns the specified child ({@code null} for root objects)
-     */
-    static Object getParentOf(final Object child) {
-        return CHILD_TO_PARENT.get(toMapKey(child));
-    }
-    
-    /**
-     * Fire the {@link RunnerWatcher#runStarted(Object)} event for the specified runner.
-     * <p>
-     * <b>NOTE</b>: If {@code runStarted} for the specified runner has already been fired, do nothing.
-     * @param runner JUnit test runner
-     * @return {@code true} if the {@code runStarted} event was fired; otherwise {@code false}
-     */
-    static boolean fireRunStarted(Object runner) {
-        if (START_NOTIFIED.add(toMapKey(runner))) {
-            List<?> children = LifecycleHooks.invoke(runner, "getChildren");
-            for (Object child : children) {
-                CHILD_TO_PARENT.put(toMapKey(child), runner);
-                createMappingsFor(runner, child);
-            }
-            
-            LOGGER.debug("runStarted: {}", runner);
-            for (RunnerWatcher watcher : LifecycleHooks.getRunnerWatchers()) {
-                watcher.runStarted(runner);
-            }
-            
-            return true;
-        }
-        return false;
-    }
-
-    static AtomicTest createMappingsFor(Object runner, Object child) {
-        return createMappingsFor(LifecycleHooks.describeChild(runner, child));
-    }
-
-    static AtomicTest createMappingsFor(Description description) {
-        if ( ! DESCRIPTION_TO_ATOMICTEST.containsKey(description.hashCode())) {
-            return newAtomicTest(description);
-        } else {
-            return getAtomicTestOf(description);
-        }
-    }
-    
-    /**
-     * Fire the {@link RunnerWatcher#runFinished(Object)} event for the specified runner.
-     * <p>
-     * <b>NOTE</b>: If {@code runFinished} for the specified runner has already been fired, do nothing.
-     * 
-     * @param runner JUnit test runner
-     * @return {@code true} if event the {@code runFinished} was fired; otherwise {@code false}
-     */
-    static boolean fireRunFinished(Object runner) {
-        if (FINISH_NOTIFIED.add(toMapKey(runner))) {
-            LOGGER.debug("runFinished: {}", runner);
-            for (RunnerWatcher watcher : LifecycleHooks.getRunnerWatchers()) {
-                watcher.runFinished(runner);
-            }
-            CHILD_TO_PARENT.remove(toMapKey(runner));
-            return true;
-        }
-        return false;
-    }
-    
-    /**
-     * Create new atomic test object for the specified description.
-     * 
-     * @param description description of the test that is about to be run
-     * @return {@link AtomicTest} object (may be {@code null})
-     */
-    static AtomicTest newAtomicTest(Description description) {
-        AtomicTest atomicTest = null;
-        if (description.isTest()) {
-            atomicTest = new AtomicTest(description);
-            DESCRIPTION_TO_ATOMICTEST.put(description.hashCode(), atomicTest);
-        }
-        return atomicTest;
-    }
-    
-    /**
-     * Release the atomic test object for the specified method description.
-     * 
-     * @param atomicTest atomic test object
-     */
-    static void releaseMappingsFor(AtomicTest atomicTest) {
-        if (atomicTest != null) {
-            CHILD_TO_PARENT.remove(toMapKey(atomicTest.getIdentity()));
-            DESCRIPTION_TO_ATOMICTEST.remove(atomicTest.getDescription().hashCode());
-            CreateTest.releaseMappingsFor(atomicTest.getRunner(), atomicTest.getIdentity());
-        }
-    }
-    
-    /**
-     * Store the specified failure in the active atomic test.
-     * 
-     * @param failure {@link Failure} object
-     * @return {@link AtomicTest} object
-     */
-    private static AtomicTest setTestFailure(Failure failure) {
-        AtomicTest atomicTest = getAtomicTestOf(failure.getDescription());
-        if (atomicTest != null) {
-            atomicTest.setThrowable(failure.getException());
-        }
-        return atomicTest;
-    }
 }

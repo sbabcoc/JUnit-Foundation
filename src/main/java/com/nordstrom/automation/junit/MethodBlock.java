@@ -75,15 +75,14 @@ public class MethodBlock {
                     // create lifecycle catalyst
                     statement = new Statement() {
                         final Object threadRunner = runner;
-                        final FrameworkMethod testMethod = method;
+                        final Description description = LifecycleHooks.invoke(threadRunner, "describeChild", method);
                         
                         @Override
                         public void evaluate() throws Throwable {
                             // attach class runner to thread
-                            Run.pushThreadRunner(threadRunner);
-                            // create new atomic test for target method
-                            Description description = LifecycleHooks.invoke(threadRunner, "describeChild", testMethod);
-                            RunAnnouncer.newAtomicTest(description);
+                            RunChildren.pushThreadRunner(threadRunner);
+                            // create new atomic test
+                            RunChildren.newAtomicTest(description);
                         }
                     };
                 }

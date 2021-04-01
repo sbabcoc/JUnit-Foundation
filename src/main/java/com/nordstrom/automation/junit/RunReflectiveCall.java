@@ -68,9 +68,9 @@ public class RunReflectiveCall {
             // handled below
         }
         
-        Object runner = RunAnnouncer.getParentOf(child);
+        Object runner = RunChildren.getParentOf(child);
         if (runner == null) {
-            runner = Run.getThreadRunner();
+            runner = RunChildren.getThreadRunner();
         }
 
         Object result = null;
