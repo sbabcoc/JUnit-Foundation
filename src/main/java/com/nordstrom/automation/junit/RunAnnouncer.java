@@ -2,6 +2,7 @@ package com.nordstrom.automation.junit;
 
 import org.junit.internal.AssumptionViolatedException;
 import org.junit.runner.Description;
+import org.junit.runner.Result;
 import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
 import org.slf4j.Logger;
@@ -19,6 +20,17 @@ import org.slf4j.LoggerFactory;
 public class RunAnnouncer extends RunListener implements JUnitWatcher {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(RunAnnouncer.class);
+    
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void testRunFinished(Result result) throws Exception {
+        CreateTest.isEmpty();
+        MethodBlock.isEmpty();
+        RunChildren.isEmpty();
+        RunReflectiveCall.isEmpty();
+    }
     
     /**
      * {@inheritDoc}

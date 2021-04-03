@@ -110,10 +110,11 @@ public class RunChildren {
      * 
      * @param runner JUnit test runner
      * @param child {@code ParentRunner} or {@code FrameworkMethod} object
+     * @return 
      */
-    static void createMappingsFor(Object runner, Object child) {
+    static AtomicTest createMappingsFor(Object runner, Object child) {
         CHILD_TO_PARENT.put(toMapKey(child), runner);
-        ensureAtomicTestOf(LifecycleHooks.describeChild(runner, child));
+        return ensureAtomicTestOf(LifecycleHooks.describeChild(runner, child));
     }
 
     /**
@@ -189,9 +190,10 @@ public class RunChildren {
      */
     private static void releaseMappingsFor(AtomicTest atomicTest) {
         if (atomicTest != null) {
+            RunReflectiveCall.releaseCallableOf(atomicTest.getDescription());
+            CreateTest.releaseMappingsFor(atomicTest.getDescription());
             CHILD_TO_PARENT.remove(toMapKey(atomicTest.getIdentity()));
             DESCRIPTION_TO_ATOMICTEST.remove(atomicTest.getDescription().hashCode());
-            CreateTest.releaseMappingsFor(atomicTest.getRunner(), atomicTest.getIdentity());
         }
     }
     
@@ -221,5 +223,22 @@ public class RunChildren {
      */
     static Object getThreadRunner() {
         return RUNNER_STACK.get().peek();
+    }
+    
+    static boolean isEmpty() {
+        boolean isEmpty = true;
+        if (CHILD_TO_PARENT.isEmpty()) {
+            LOGGER.debug("CHILD_TO_PARENT is empty");
+        } else {
+            isEmpty = false;
+            LOGGER.debug("CHILD_TO_PARENT is not empty");
+        }
+        if (DESCRIPTION_TO_ATOMICTEST.isEmpty()) {
+            LOGGER.debug("DESCRIPTION_TO_ATOMICTEST is empty");
+        } else {
+            isEmpty = false;
+            LOGGER.debug("DESCRIPTION_TO_ATOMICTEST is not empty");
+        }
+        return isEmpty;
     }
 }

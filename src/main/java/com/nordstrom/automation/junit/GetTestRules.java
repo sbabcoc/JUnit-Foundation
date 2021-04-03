@@ -31,8 +31,8 @@ public class GetTestRules {
         @SuppressWarnings("unchecked")
         // get list of test rules for target class runner
         List<TestRule> testRules = (List<TestRule>) LifecycleHooks.callProxy(proxy);
-        // get method for target
-        FrameworkMethod method = CreateTest.getMethodOf(target);
+        // get description for target
+        FrameworkMethod method = CreateTest.getAtomicTestOf(target).getIdentity();
         // apply rule-based global timeout
         TimeoutUtils.applyRuleTimeout(runner, method, testRules);
         // return test rules

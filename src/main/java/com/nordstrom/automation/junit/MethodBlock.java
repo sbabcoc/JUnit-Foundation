@@ -8,6 +8,8 @@ import org.junit.experimental.theories.Theories.TheoryAnchor;
 import org.junit.runner.Description;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Function;
 
@@ -25,6 +27,7 @@ public class MethodBlock {
     private static final ThreadLocal<ConcurrentMap<Integer, DepthGauge>> methodDepth;
     private static final Function<Integer, DepthGauge> newInstance;
     private static final Map<String, Statement> RUNNER_TO_STATEMENT = new ConcurrentHashMap<>();
+    private static final Logger LOGGER = LoggerFactory.getLogger(MethodBlock.class);
     
     static {
         methodDepth = new ThreadLocal<ConcurrentMap<Integer, DepthGauge>>() {
@@ -65,6 +68,7 @@ public class MethodBlock {
         
         // if at ground level
         if (0 == depthGauge.decreaseDepth()) {
+            methodDepth.remove();
             try {
                 // get parent of test runner
                 Object parent = LifecycleHooks.getFieldValue(runner, "this$0");
@@ -102,5 +106,16 @@ public class MethodBlock {
      */
     static Statement getStatementOf(final Object runner) {
         return RUNNER_TO_STATEMENT.remove(toMapKey(runner));
+    }
+    
+    static boolean isEmpty() {
+        boolean isEmpty = true;
+        if (RUNNER_TO_STATEMENT.isEmpty()) {
+            LOGGER.debug("RUNNER_TO_STATEMENT is empty");
+        } else {
+            isEmpty = false;
+            LOGGER.debug("RUNNER_TO_STATEMENT is not empty");
+        }
+        return isEmpty;
     }
 }

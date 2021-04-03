@@ -7,8 +7,6 @@ import java.util.Map;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.internal.runners.model.ReflectiveCallable;
-import org.junit.runners.model.FrameworkMethod;
-
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 
@@ -19,14 +17,12 @@ public class ArtifactCollectorJUnitParams extends TestBase {
 
     @Override
     public Optional<Map<String, Object>> getParameters() {
-        // get runner associated with this instance
-        Object runner = LifecycleHooks.getRunnerOf(this);
-        // get framework method associated with this instance
-        FrameworkMethod method = LifecycleHooks.getMethodOf(this);
+        // get atomic test associated with this instance
+        AtomicTest atomicTest = LifecycleHooks.getAtomicTestOf(this);
         // get "callable" closure of framework method
-        ReflectiveCallable callable = LifecycleHooks.getCallableOf(runner, method);
+        ReflectiveCallable callable = LifecycleHooks.getCallableOf(atomicTest.getDescription());
         // get test method parameters
-        Class<?>[] paramTypes = method.getMethod().getParameterTypes();
+        Class<?>[] paramTypes = atomicTest.getIdentity().getMethod().getParameterTypes();
 
         try {
             // extract execution parameters from "callable" closure

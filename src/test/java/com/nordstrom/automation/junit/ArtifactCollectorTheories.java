@@ -10,8 +10,6 @@ import org.junit.experimental.theories.internal.Assignments;
 import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
-import org.junit.runners.model.FrameworkMethod;
-
 import com.google.common.base.Optional;
 
 @RunWith(Theories.class)
@@ -19,16 +17,14 @@ public class ArtifactCollectorTheories extends TestBase {
 
     @Override
     public Optional<Map<String, Object>> getParameters() {
-        // get runner associated with this instance
-        Object runner = LifecycleHooks.getRunnerOf(this);
-        // get framework method associated with this instance
-        FrameworkMethod method = LifecycleHooks.getMethodOf(this);
+        // get atomic test associated with this instance
+        AtomicTest atomicTest = LifecycleHooks.getAtomicTestOf(this);
         // get test method parameters
-        Class<?>[] paramTypes = method.getMethod().getParameterTypes();
+        Class<?>[] paramTypes = atomicTest.getIdentity().getMethod().getParameterTypes();
 
         try {
             // get parameters assigned to this iteration of the theory
-            Assignments assignments = LifecycleHooks.getFieldValue(runner, "val$complete");
+            Assignments assignments = LifecycleHooks.getFieldValue(atomicTest.getRunner(), "val$complete");
             // extract invocation parameters
             Object[] params = assignments.getMethodArguments();
 

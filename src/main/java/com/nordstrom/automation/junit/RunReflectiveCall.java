@@ -1,11 +1,12 @@
 package com.nordstrom.automation.junit;
 
 import java.util.Map;
-import java.util.Objects;
+import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import org.junit.Test;
 import org.junit.internal.runners.model.ReflectiveCallable;
 import org.junit.runner.Description;
 import org.junit.runners.model.FrameworkMethod;
@@ -26,7 +27,7 @@ import net.bytebuddy.implementation.bind.annotation.This;
  */
 public class RunReflectiveCall {
 
-    private static final Map<Integer, ReflectiveCallable> CHILD_TO_CALLABLE = new ConcurrentHashMap<>();
+    private static final Map<Integer, ReflectiveCallable> DESCRIPTION_TO_CALLABLE = new ConcurrentHashMap<>();
     private static final ThreadLocal<ConcurrentMap<Integer, DepthGauge>> methodDepth;
     private static final Function<Integer, DepthGauge> newInstance;
     private static final Logger LOGGER = LoggerFactory.getLogger(RunReflectiveCall.class);
@@ -93,15 +94,14 @@ public class RunReflectiveCall {
     }
     
     /**
-     * Get the test class instance for the specified runner/method pair.
+     * Get the test class instance for the specified description.
      *
-     * @param runner target {@link org.junit.runners.ParentRunner ParentRunner} object
-     * @param method {@link FrameworkMethod} object
+     * @param description 
      * @return <b>ReflectiveCallable</b> object (may be {@code null})
      */
-    static Object getTargetFor(Object runner, FrameworkMethod method) {
+    static Object getTargetFor(Description description) {
         Object target = null;
-        ReflectiveCallable callable = getCallableOf(runner, method);
+        ReflectiveCallable callable = getCallableOf(description);
         if (callable != null) {
             try {
                 // get child object (class runner or framework method)
@@ -114,24 +114,22 @@ public class RunReflectiveCall {
     }
     
     /**
-     * Get the {@link ReflectiveCallable} object for the specified runner/method pair.
+     * Get the {@link ReflectiveCallable} object for the specified description.
      *
-     * @param runner target {@link org.junit.runners.ParentRunner ParentRunner} object
-     * @param method {@link FrameworkMethod} object
+     * @param description 
      * @return <b>ReflectiveCallable</b> object (may be {@code null})
      */
-    static ReflectiveCallable getCallableOf(Object runner, FrameworkMethod method) {
-        return CHILD_TO_CALLABLE.get(Objects.hash(runner, method));
+    static ReflectiveCallable getCallableOf(Description description) {
+        return DESCRIPTION_TO_CALLABLE.get(description.hashCode());
     }
     
     /**
-     * Release the {@link ReflectiveCallable} object for the specified runner/method pair.
+     * Release the {@link ReflectiveCallable} object for the specified description.
      *
-     * @param runner target {@link org.junit.runners.ParentRunner ParentRunner} object
-     * @param method {@link FrameworkMethod} object
+     * @param description 
      */
-    static void releaseCallableOf(Object runner, FrameworkMethod method) {
-        CHILD_TO_CALLABLE.remove(Objects.hash(runner, method));
+    static void releaseCallableOf(Description description) {
+        DESCRIPTION_TO_CALLABLE.remove(description.hashCode());
     }
 
     /**
@@ -150,15 +148,16 @@ public class RunReflectiveCall {
             DepthGauge depthGauge = LifecycleHooks.computeIfAbsent(methodDepth.get(), callable.hashCode(), newInstance);
             if (0 == depthGauge.increaseDepth()) {
                 if (child instanceof FrameworkMethod) {
-                    FrameworkMethod method = (FrameworkMethod) child;
-                    CHILD_TO_CALLABLE.put(Objects.hash(runner, method), callable);
+                    Description description = LifecycleHooks.describeChild(runner, child);
                     if (LOGGER.isDebugEnabled()) {
                         try {
-                            LOGGER.debug("beforeInvocation: {}",
-                                    (Description) LifecycleHooks.invoke(runner, "describeChild", child));
+                            LOGGER.debug("beforeInvocation: {}", description);
                         } catch (Throwable t) {
                             // nothing to do here
                         }
+                    }
+                    if (null != ((FrameworkMethod) child).getAnnotation(Test.class)) {
+                        DESCRIPTION_TO_CALLABLE.put(description.hashCode(), callable);
                     }
                 }
                 for (MethodWatcher watcher : LifecycleHooks.getMethodWatchers()) {
@@ -190,10 +189,10 @@ public class RunReflectiveCall {
             if (0 == depthGauge.decreaseDepth()) {
                 methodDepth.remove();
                 if (child instanceof FrameworkMethod) {
+                    Description description = LifecycleHooks.describeChild(runner, child);
                     if (LOGGER.isDebugEnabled()) {
                         try {
-                            LOGGER.debug("afterInvocation: {}",
-                                    (Description) LifecycleHooks.invoke(runner, "describeChild", child));
+                            LOGGER.debug("afterInvocation: {}", description);
                         } catch (Throwable t) {
                             // nothing to do here
                         }
@@ -208,5 +207,19 @@ public class RunReflectiveCall {
             }
         }
         return false;
+    }
+    
+    static boolean isEmpty() {
+        boolean isEmpty = true;
+        if (DESCRIPTION_TO_CALLABLE.isEmpty()) {
+            LOGGER.debug("DESCRIPTION_TO_CALLABLE is empty");
+        } else {
+            isEmpty = false;
+            LOGGER.debug("DESCRIPTION_TO_CALLABLE is not empty");
+            for (Entry<Integer, ReflectiveCallable> entry : DESCRIPTION_TO_CALLABLE.entrySet()) {
+                LOGGER.debug("{}", entry);
+            }
+        }
+        return isEmpty;
     }
 }

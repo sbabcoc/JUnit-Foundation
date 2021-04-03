@@ -19,7 +19,6 @@ import org.apache.commons.lang3.reflect.MethodUtils;
 import org.junit.internal.runners.model.ReflectiveCallable;
 import org.junit.runner.Description;
 import org.junit.runner.notification.RunListener;
-import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.TestClass;
 
 import com.google.common.base.Function;
@@ -269,25 +268,15 @@ public class LifecycleHooks {
     }
     
     /**
-     * Get the class runner associated with the specified instance.
+     * Get the atomic test associated with the specified instance.
      * 
      * @param target instance of JUnit test class
      * @return {@link org.junit.runners.BlockJUnit4ClassRunner BlockJUnit4ClassRunner} for specified instance
      */
-    public static Object getRunnerOf(Object target) {
-        return CreateTest.getRunnerOf(target);
+    public static AtomicTest getAtomicTestOf(Object target) {
+        return CreateTest.getAtomicTestOf(target);
     }
     
-    /**
-     * Get the framework method associated with the specified instance.
-     * 
-     * @param target instance of JUnit test class
-     * @return {@link FrameworkMethod} for specified instance
-     */
-    public static FrameworkMethod getMethodOf(Object target) {
-        return CreateTest.getMethodOf(target);
-    }
-
     /**
      * Get the parent runner that owns specified child runner or framework method.
      * 
@@ -353,14 +342,13 @@ public class LifecycleHooks {
     
     
     /**
-     * Get the {@link ReflectiveCallable} object for the specified class runner or method description.
+     * Get the {@link ReflectiveCallable} object for the specified description.
      *
-     * @param runner JUnit class runner
-     * @param child JUnit framework method
+     * @param description 
      * @return <b>ReflectiveCallable</b> object (may be {@code null})
      */
-    public static ReflectiveCallable getCallableOf(Object runner, FrameworkMethod child) {
-        return RunReflectiveCall.getCallableOf(runner, child);
+    public static ReflectiveCallable getCallableOf(Description description) {
+        return RunReflectiveCall.getCallableOf(description);
     }
 
     /**

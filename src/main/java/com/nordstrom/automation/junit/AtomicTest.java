@@ -153,7 +153,7 @@ public class AtomicTest {
      */
     @Override
     public int hashCode() {
-        return Objects.hash(runner, identity);
+        return description.hashCode();
     }
     
     /**

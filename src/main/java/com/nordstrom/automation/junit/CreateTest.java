@@ -6,6 +6,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import org.junit.runner.Description;
 import org.junit.runners.model.FrameworkMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,8 +26,7 @@ import static com.nordstrom.automation.junit.LifecycleHooks.toMapKey;
  */
 public class CreateTest {
     
-    private static final Map<String, Object> TARGET_TO_RUNNER = new ConcurrentHashMap<>();
-    private static final Map<String, FrameworkMethod> TARGET_TO_METHOD = new ConcurrentHashMap<>();
+    private static final Map<String, AtomicTest> TARGET_TO_ATOMICTEST = new ConcurrentHashMap<>();
     private static final ThreadLocal<ConcurrentMap<Integer, DepthGauge>> methodDepth;
     private static final Function<Integer, DepthGauge> newInstance;
     private static final Logger LOGGER = LoggerFactory.getLogger(CreateTest.class);
@@ -72,9 +72,7 @@ public class CreateTest {
             // apply parameter-based global timeout
             TimeoutUtils.applyTestTimeout(runner, method, target);
             
-            TARGET_TO_RUNNER.put(toMapKey(target), runner);
-            TARGET_TO_METHOD.put(toMapKey(target), method);
-            RunChildren.createMappingsFor(runner, method);
+            TARGET_TO_ATOMICTEST.put(toMapKey(target), RunChildren.createMappingsFor(runner, method));
             
             for (TestObjectWatcher watcher : LifecycleHooks.getObjectWatchers()) {
                 watcher.testObjectCreated(runner, method, target);
@@ -85,36 +83,35 @@ public class CreateTest {
     }
     
     /**
-     * Get the class runner associated with the specified instance.
+     * Get the atomic test associated with the specified instance.
      * 
      * @param target instance of JUnit test class
-     * @return {@link org.junit.runners.BlockJUnit4ClassRunner BlockJUnit4ClassRunner} for specified instance
+     * @return {@link AtomicTest} for specified instance
      */
-    static Object getRunnerOf(Object target) {
-        return TARGET_TO_RUNNER.get(toMapKey(target));
+    static AtomicTest getAtomicTestOf(Object target) {
+        return TARGET_TO_ATOMICTEST.get(toMapKey(target));
     }
 
     /**
-     * Get the framework method associated with the specified instance.
-     * 
-     * @param target instance of JUnit test class
-     * @return {@link FrameworkMethod} for specified instance
-     */
-    static FrameworkMethod getMethodOf(Object target) {
-        return TARGET_TO_METHOD.get(toMapKey(target));
-    }
-    
-    /**
      * Release runner/target/method mappings.
      * 
-     * @param runner JUnit class runner
-     * @param method JUnit framework method
+     * @param description 
      */
-    static void releaseMappingsFor(Object runner, FrameworkMethod method) {
-        Object target = RunReflectiveCall.getTargetFor(runner, method);
+    static void releaseMappingsFor(Description description) {
+        Object target = RunReflectiveCall.getTargetFor(description);
         if (target != null) {
-            TARGET_TO_RUNNER.remove(toMapKey(target));
-            TARGET_TO_METHOD.remove(toMapKey(target));
+            TARGET_TO_ATOMICTEST.remove(toMapKey(target));
         }
+    }
+    
+    static boolean isEmpty() {
+        boolean isEmpty = true;
+        if (TARGET_TO_ATOMICTEST.isEmpty()) {
+            LOGGER.debug("TARGET_TO_ATOMICTEST is empty");
+        } else {
+            isEmpty = false;
+            LOGGER.debug("TARGET_TO_ATOMICTEST is not empty");
+        }
+        return isEmpty;
     }
 }
