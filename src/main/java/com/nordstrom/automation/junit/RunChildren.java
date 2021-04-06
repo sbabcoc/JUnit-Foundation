@@ -7,8 +7,10 @@ import java.util.Deque;
 import java.util.EmptyStackException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 import org.junit.runner.notification.RunNotifier;
 import org.slf4j.Logger;
@@ -24,6 +26,7 @@ import net.bytebuddy.implementation.bind.annotation.This;
 public class RunChildren {
 
     private static final ThreadLocal<Deque<Object>> RUNNER_STACK;
+    private static final Set<String> START_NOTIFIED = new CopyOnWriteArraySet<>();
     private static final Map<String, Object> CHILD_TO_PARENT = new ConcurrentHashMap<>();
     private static final Logger LOGGER = LoggerFactory.getLogger(RunChildren.class);
     
@@ -68,13 +71,15 @@ public class RunChildren {
      * @param runner JUnit test runner
      */
     static void fireRunStarted(Object runner) {
-        for (Object child : (List<?>) LifecycleHooks.invoke(runner, "getChildren")) {
-            CHILD_TO_PARENT.put(toMapKey(child), runner);
-        }
-        
-        LOGGER.debug("runStarted: {}", runner);
-        for (RunnerWatcher watcher : LifecycleHooks.getRunnerWatchers()) {
-            watcher.runStarted(runner);
+        if (START_NOTIFIED.add(toMapKey(runner))) {
+            for (Object child : (List<?>) LifecycleHooks.invoke(runner, "getChildren")) {
+                CHILD_TO_PARENT.put(toMapKey(child), runner);
+            }
+            
+            LOGGER.debug("runStarted: {}", runner);
+            for (RunnerWatcher watcher : LifecycleHooks.getRunnerWatchers()) {
+                watcher.runStarted(runner);
+            }
         }
     }
 
