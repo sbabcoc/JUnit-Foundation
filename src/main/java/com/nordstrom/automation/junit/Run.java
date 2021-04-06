@@ -30,10 +30,8 @@ public class Run {
         try {
             RUNNER_TO_NOTIFIER.put(toMapKey(runner), notifier);
             RunChildren.pushThreadRunner(runner);
-            // TODO: fireRunStarted(runner) used to be called from here
             LifecycleHooks.callProxy(proxy);
         } finally {
-            // TODO: fireRunFinished(runner) used to be called from here
             RunChildren.popThreadRunner();
             RUNNER_TO_NOTIFIER.remove(toMapKey(runner));
         }
