@@ -10,9 +10,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.junit.runner.Description;
 import org.junit.runner.notification.RunNotifier;
-import org.junit.runners.model.FrameworkMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +25,6 @@ public class RunChildren {
 
     private static final ThreadLocal<Deque<Object>> RUNNER_STACK;
     private static final Map<String, Object> CHILD_TO_PARENT = new ConcurrentHashMap<>();
-    private static final Map<Integer, AtomicTest> DESCRIPTION_TO_ATOMICTEST = new ConcurrentHashMap<>();
     private static final Logger LOGGER = LoggerFactory.getLogger(RunChildren.class);
     
     static {
@@ -72,7 +69,7 @@ public class RunChildren {
      */
     static void fireRunStarted(Object runner) {
         for (Object child : (List<?>) LifecycleHooks.invoke(runner, "getChildren")) {
-            createMappingsFor(runner, child);
+            CHILD_TO_PARENT.put(toMapKey(child), runner);
         }
         
         LOGGER.debug("runStarted: {}", runner);
@@ -100,65 +97,8 @@ public class RunChildren {
         }
         
         for (Object child : (List<?>) LifecycleHooks.invoke(runner, "getChildren")) {
-            releaseMappingsFor(runner, child);
             CHILD_TO_PARENT.remove(toMapKey(child));
         }
-    }
-    
-    /**
-     * Create mappings for the specified runner/child pair.
-     * 
-     * @param runner JUnit test runner
-     * @param child {@code ParentRunner} or {@code FrameworkMethod} object
-     * @return 
-     */
-    static AtomicTest createMappingsFor(Object runner, Object child) {
-        CHILD_TO_PARENT.put(toMapKey(child), runner);
-        return ensureAtomicTestOf(LifecycleHooks.describeChild(runner, child));
-    }
-
-    /**
-    * Get the atomic test object for the specified method description; create if absent.
-    * 
-    * @param description JUnit method description
-    * @return {@link AtomicTest} object (may be {@code null})
-    */
-    static AtomicTest ensureAtomicTestOf(Description description) {
-        if (DESCRIPTION_TO_ATOMICTEST.containsKey(description.hashCode())) {
-            return DESCRIPTION_TO_ATOMICTEST.get(description.hashCode());
-        } else {
-            return newAtomicTest(description);
-        }
-    }
-    
-    /**
-     * Create new atomic test object for the specified description.
-     * 
-     * @param description description of the test that is about to be run
-     * @return {@link AtomicTest} object (may be {@code null})
-     */
-    static AtomicTest newAtomicTest(Description description) {
-        AtomicTest atomicTest = null;
-        if (description.isTest()) {
-            atomicTest = new AtomicTest(description);
-            DESCRIPTION_TO_ATOMICTEST.put(description.hashCode(), atomicTest);
-        }
-        return atomicTest;
-    }
-    
-    /**
-     * Get the atomic test object for the specified method description.
-     * 
-     * @param description JUnit method description
-     * @return {@link AtomicTest} object (may be {@code null})
-     */
-    static AtomicTest getAtomicTestOf(Description description) {
-        AtomicTest atomicTest = null;
-        if (description != null) {
-            // get atomic test for this description
-            atomicTest = DESCRIPTION_TO_ATOMICTEST.get(description.hashCode());
-        }
-        return atomicTest;
     }
     
     /**
@@ -169,32 +109,6 @@ public class RunChildren {
      */
     static Object getParentOf(final Object child) {
         return CHILD_TO_PARENT.get(toMapKey(child));
-    }
-    
-    /**
-     * Release mappings for the specified runner/child pair.
-     * 
-     * @param runner JUnit test runner
-     * @param child {@code ParentRunner} or {@code FrameworkMethod} object
-     */
-    private static void releaseMappingsFor(Object runner, Object child) {
-        if (child instanceof FrameworkMethod) {
-            releaseMappingsFor(getAtomicTestOf(LifecycleHooks.describeChild(runner, child)));
-        }
-    }
-
-    /**
-     * Release mappings for the atomic test object.
-     * 
-     * @param atomicTest atomic test object
-     */
-    private static void releaseMappingsFor(AtomicTest atomicTest) {
-        if (atomicTest != null) {
-            RunReflectiveCall.releaseCallableOf(atomicTest.getDescription());
-            CreateTest.releaseMappingsFor(atomicTest.getDescription());
-            CHILD_TO_PARENT.remove(toMapKey(atomicTest.getIdentity()));
-            DESCRIPTION_TO_ATOMICTEST.remove(atomicTest.getDescription().hashCode());
-        }
     }
     
     /**
@@ -232,12 +146,6 @@ public class RunChildren {
         } else {
             isEmpty = false;
             LOGGER.debug("CHILD_TO_PARENT is not empty");
-        }
-        if (DESCRIPTION_TO_ATOMICTEST.isEmpty()) {
-            LOGGER.debug("DESCRIPTION_TO_ATOMICTEST is empty");
-        } else {
-            isEmpty = false;
-            LOGGER.debug("DESCRIPTION_TO_ATOMICTEST is not empty");
         }
         return isEmpty;
     }

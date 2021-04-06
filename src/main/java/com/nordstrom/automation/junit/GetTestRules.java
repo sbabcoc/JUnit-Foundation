@@ -5,7 +5,6 @@ import java.util.concurrent.Callable;
 
 import org.junit.rules.TestRule;
 import org.junit.runners.model.FrameworkMethod;
-
 import net.bytebuddy.implementation.bind.annotation.Argument;
 import net.bytebuddy.implementation.bind.annotation.RuntimeType;
 import net.bytebuddy.implementation.bind.annotation.SuperCall;
@@ -31,8 +30,8 @@ public class GetTestRules {
         @SuppressWarnings("unchecked")
         // get list of test rules for target class runner
         List<TestRule> testRules = (List<TestRule>) LifecycleHooks.callProxy(proxy);
-        // get description for target
-        FrameworkMethod method = CreateTest.getAtomicTestOf(target).getIdentity();
+        
+        FrameworkMethod method = CreateTest.getMethodFor(target);
         // apply rule-based global timeout
         TimeoutUtils.applyRuleTimeout(runner, method, testRules);
         // return test rules

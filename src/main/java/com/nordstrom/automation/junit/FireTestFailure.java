@@ -2,8 +2,8 @@ package com.nordstrom.automation.junit;
 
 import java.util.concurrent.Callable;
 
-import org.junit.runner.notification.Failure;
-import org.junit.runner.notification.RunNotifier;
+import org.junit.runners.model.MultipleFailureException;
+import org.junit.internal.runners.model.EachTestNotifier;
 
 import net.bytebuddy.implementation.bind.annotation.Argument;
 import net.bytebuddy.implementation.bind.annotation.SuperCall;
@@ -25,13 +25,16 @@ public class FireTestFailure {
      * @param failure the description of the test that failed and the exception thrown
      * @throws Exception {@code anything} (exception thrown by the intercepted method)
      */
-    public static void intercept(@This final RunNotifier notifier, @SuperCall final Callable<?> proxy,
-            @Argument(0) final Failure failure) throws Exception {
+    public static void intercept(@This final EachTestNotifier notifier, @SuperCall final Callable<?> proxy,
+            @Argument(0) final Throwable targetException) throws Exception {
         
-//        AtomicTest atomicTest = RunChildren.getAtomicTestOf(failure.getDescription());
-//        if (atomicTest != null) {
-//            atomicTest.setThrowable(failure.getException());
-//        }
+        if ( ! (targetException instanceof MultipleFailureException)) {
+            AtomicTest atomicTest = EachTestNotifierInit.getAtomicTestOf(notifier);
+            if (atomicTest != null) {
+                atomicTest.setThrowable(targetException);
+            }
+        }
+        
         LifecycleHooks.callProxy(proxy);
     }
 }

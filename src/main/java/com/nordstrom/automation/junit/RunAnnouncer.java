@@ -26,7 +26,6 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
      */
     @Override
     public void testRunFinished(Result result) throws Exception {
-        CreateTest.isEmpty();
         MethodBlock.isEmpty();
         RunChildren.isEmpty();
         RunReflectiveCall.isEmpty();
@@ -38,7 +37,7 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
     @Override
     public void testStarted(Description description) throws Exception {
         LOGGER.debug("testStarted: {}", description);
-        AtomicTest atomicTest = RunChildren.getAtomicTestOf(description);
+        AtomicTest atomicTest = EachTestNotifierInit.getAtomicTestOf(description);
         for (RunWatcher watcher : LifecycleHooks.getRunWatchers()) {
             watcher.testStarted(atomicTest);
         }
@@ -50,7 +49,7 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
     @Override
     public void testFinished(Description description) throws Exception {
         LOGGER.debug("testFinished: {}", description);
-        AtomicTest atomicTest = RunChildren.getAtomicTestOf(description);
+        AtomicTest atomicTest = EachTestNotifierInit.getAtomicTestOf(description);
         for (RunWatcher watcher : LifecycleHooks.getRunWatchers()) {
             watcher.testFinished(atomicTest);
         }
@@ -62,7 +61,7 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
     @Override
     public void testFailure(Failure failure) throws Exception {
         LOGGER.debug("testFailure: {}", failure);
-        AtomicTest atomicTest = RunChildren.getAtomicTestOf(failure.getDescription());
+        AtomicTest atomicTest = EachTestNotifierInit.getAtomicTestOf(failure.getDescription());
         for (RunWatcher watcher : LifecycleHooks.getRunWatchers()) {
             watcher.testFailure(atomicTest, failure.getException());
         }
@@ -74,7 +73,7 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
     @Override
     public void testAssumptionFailure(Failure failure) {
         LOGGER.debug("testAssumptionFailure: {}", failure);
-        AtomicTest atomicTest = RunChildren.getAtomicTestOf(failure.getDescription());
+        AtomicTest atomicTest = EachTestNotifierInit.getAtomicTestOf(failure.getDescription());
         for (RunWatcher watcher : LifecycleHooks.getRunWatchers()) {
             watcher.testAssumptionFailure(atomicTest, (AssumptionViolatedException) failure.getException());
         }
@@ -86,7 +85,7 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
     @Override
     public void testIgnored(Description description) throws Exception {
         LOGGER.debug("testIgnored: {}", description);
-        AtomicTest atomicTest = RunChildren.ensureAtomicTestOf(description);
+        AtomicTest atomicTest = EachTestNotifierInit.ensureAtomicTestOf(description);
         for (RunWatcher watcher : LifecycleHooks.getRunWatchers()) {
             watcher.testIgnored(atomicTest);
         }

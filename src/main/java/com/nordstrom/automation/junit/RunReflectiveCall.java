@@ -28,18 +28,18 @@ import net.bytebuddy.implementation.bind.annotation.This;
 public class RunReflectiveCall {
 
     private static final Map<Integer, ReflectiveCallable> DESCRIPTION_TO_CALLABLE = new ConcurrentHashMap<>();
-    private static final ThreadLocal<ConcurrentMap<Integer, DepthGauge>> methodDepth;
-    private static final Function<Integer, DepthGauge> newInstance;
+    private static final ThreadLocal<ConcurrentMap<Integer, DepthGauge>> METHOD_DEPTH;
+    private static final Function<Integer, DepthGauge> NEW_INSTANCE;
     private static final Logger LOGGER = LoggerFactory.getLogger(RunReflectiveCall.class);
     
     static {
-        methodDepth = new ThreadLocal<ConcurrentMap<Integer, DepthGauge>>() {
+        METHOD_DEPTH = new ThreadLocal<ConcurrentMap<Integer, DepthGauge>>() {
             @Override
             protected ConcurrentMap<Integer, DepthGauge> initialValue() {
                 return new ConcurrentHashMap<>();
             }
         };
-        newInstance = new Function<Integer, DepthGauge>() {
+        NEW_INSTANCE = new Function<Integer, DepthGauge>() {
             @Override
             public DepthGauge apply(Integer input) {
                 return new DepthGauge();
@@ -145,7 +145,7 @@ public class RunReflectiveCall {
     @SuppressWarnings({"rawtypes", "unchecked"})
     private static boolean fireBeforeInvocation(Object runner, Object child, ReflectiveCallable callable) {
         if ((runner != null) && (child != null)) {
-            DepthGauge depthGauge = LifecycleHooks.computeIfAbsent(methodDepth.get(), callable.hashCode(), newInstance);
+            DepthGauge depthGauge = LifecycleHooks.computeIfAbsent(METHOD_DEPTH.get(), callable.hashCode(), NEW_INSTANCE);
             if (0 == depthGauge.increaseDepth()) {
                 if (child instanceof FrameworkMethod) {
                     Description description = LifecycleHooks.describeChild(runner, child);
@@ -185,9 +185,9 @@ public class RunReflectiveCall {
     @SuppressWarnings({"rawtypes", "unchecked"})
     private static boolean fireAfterInvocation(Object runner, Object child, ReflectiveCallable callable, Throwable thrown) {
         if ((runner != null) && (child != null)) {
-            DepthGauge depthGauge = LifecycleHooks.computeIfAbsent(methodDepth.get(), callable.hashCode(), newInstance);
+            DepthGauge depthGauge = LifecycleHooks.computeIfAbsent(METHOD_DEPTH.get(), callable.hashCode(), NEW_INSTANCE);
             if (0 == depthGauge.decreaseDepth()) {
-                methodDepth.remove();
+                METHOD_DEPTH.remove();
                 if (child instanceof FrameworkMethod) {
                     Description description = LifecycleHooks.describeChild(runner, child);
                     if (LOGGER.isDebugEnabled()) {

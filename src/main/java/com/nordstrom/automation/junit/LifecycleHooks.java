@@ -32,6 +32,7 @@ import net.bytebuddy.description.method.MethodDescription.SignatureToken;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.DynamicType.Builder;
 import net.bytebuddy.implementation.MethodDelegation;
+import net.bytebuddy.implementation.SuperMethodCall;
 import net.bytebuddy.pool.TypePool;
 import net.bytebuddy.utility.JavaModule;
 
@@ -160,6 +161,10 @@ public class LifecycleHooks {
      * @return The installed class file transformer
      */
     public static ClassFileTransformer installTransformer(Instrumentation instrumentation) {
+        final TypeDescription eachTestNotifierInit = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.EachTestNotifierInit").resolve();
+        final TypeDescription fireTestStarted = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.FireTestStarted").resolve();
+        final TypeDescription fireTestFailure = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.FireTestFailure").resolve();
+        final TypeDescription fireTestFinished = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.FireTestFinished").resolve();
         final TypeDescription runReflectiveCall = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.RunReflectiveCall").resolve();
         final TypeDescription finished = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.Finished").resolve();
         final TypeDescription schedule = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.Schedule").resolve();
@@ -171,9 +176,9 @@ public class LifecycleHooks {
         final TypeDescription createTest = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.CreateTest").resolve();
         final TypeDescription getTestRules = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.GetTestRules").resolve();
         final TypeDescription runWithCompleteAssignment = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.RunWithCompleteAssignment").resolve();
-        final TypeDescription fireTestFailure = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.FireTestFailure").resolve();
         
         final TypeDescription runNotifier = TypePool.Default.ofSystemLoader().describe("org.junit.runner.notification.RunNotifier").resolve();
+        final TypeDescription description = TypePool.Default.ofSystemLoader().describe("org.junit.runner.Description").resolve();
         final SignatureToken runChildrenToken = new SignatureToken("runChildren", TypeDescription.VOID, Arrays.asList(runNotifier));
         final SignatureToken runToken = new SignatureToken("run", TypeDescription.VOID, Arrays.asList(runNotifier));
         
@@ -181,6 +186,18 @@ public class LifecycleHooks {
         final SignatureToken createTestToken = new SignatureToken("createTest", TypeDescription.OBJECT, Arrays.asList(frameworkMethod));
         
         return new AgentBuilder.Default()
+                .type(hasSuperType(named("org.junit.internal.runners.model.EachTestNotifier")))
+                .transform(new Transformer() {
+                    @Override
+                    public Builder<?> transform(Builder<?> builder, TypeDescription type,
+                                    ClassLoader classloader, JavaModule module) {
+                        return builder.constructor(takesArgument(0, runNotifier).and(takesArgument(1, description))).intercept(MethodDelegation.to(eachTestNotifierInit).andThen(SuperMethodCall.INSTANCE))
+                                      .method(named("fireTestStarted")).intercept(MethodDelegation.to(fireTestStarted))
+                                      .method(named("addFailure")).intercept(MethodDelegation.to(fireTestFailure))
+                                      .method(named("fireTestFinished")).intercept(MethodDelegation.to(fireTestFinished))
+                                      .implement(Hooked.class);
+                    }
+                })
                 .type(hasSuperType(named("org.junit.internal.runners.model.ReflectiveCallable")))
                 .transform(new Transformer() {
                     @Override
@@ -274,7 +291,7 @@ public class LifecycleHooks {
      * @return {@link org.junit.runners.BlockJUnit4ClassRunner BlockJUnit4ClassRunner} for specified instance
      */
     public static AtomicTest getAtomicTestOf(Object target) {
-        return CreateTest.getAtomicTestOf(target);
+        return EachTestNotifierInit.getAtomicTestOf(target);
     }
     
     /**
@@ -325,7 +342,7 @@ public class LifecycleHooks {
      * @return {@link AtomicTest} object (may be {@code null})
      */
     public static AtomicTest getAtomicTestOf(Description description) {
-        return RunChildren.getAtomicTestOf(description);
+        return EachTestNotifierInit.getAtomicTestOf(description);
     }
     
     /**
