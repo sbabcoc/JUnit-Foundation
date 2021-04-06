@@ -101,6 +101,7 @@ public class RunChildren {
             watcher.runFinished(runner);
         }
         
+        START_NOTIFIED.remove(toMapKey(runner));
         for (Object child : (List<?>) LifecycleHooks.invoke(runner, "getChildren")) {
             CHILD_TO_PARENT.remove(toMapKey(child));
         }
