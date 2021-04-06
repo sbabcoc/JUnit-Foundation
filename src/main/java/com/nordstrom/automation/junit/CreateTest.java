@@ -94,4 +94,28 @@ public class CreateTest {
     static FrameworkMethod getMethodFor(Object target) {
         return TARGET_TO_METHOD.get(toMapKey(target));
     }
+    
+    static void releaseMappingsFor(Object runner, FrameworkMethod method, Object target) {
+        HASHCODE_TO_TARGET.remove(Objects.hash(runner, method));
+        if (target != null) {
+            TARGET_TO_METHOD.remove(toMapKey(target));
+        }
+    }
+    
+    static boolean isEmpty() {
+        boolean isEmpty = true;
+        if (HASHCODE_TO_TARGET.isEmpty()) {
+            LOGGER.debug("HASHCODE_TO_TARGET is empty");
+        } else {
+            isEmpty = false;
+            LOGGER.debug("HASHCODE_TO_TARGET is not empty");
+        }
+        if (TARGET_TO_METHOD.isEmpty()) {
+            LOGGER.debug("TARGET_TO_METHOD is empty");
+        } else {
+            isEmpty = false;
+            LOGGER.debug("TARGET_TO_METHOD is not empty");
+        }
+        return isEmpty;
+    }
 }

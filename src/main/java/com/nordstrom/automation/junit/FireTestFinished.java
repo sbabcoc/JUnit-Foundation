@@ -22,5 +22,7 @@ public class FireTestFinished {
             throws Exception {
         
         LifecycleHooks.callProxy(proxy);
+        
+        EachTestNotifierInit.releaseMappingsFor(notifier);
     }
 }

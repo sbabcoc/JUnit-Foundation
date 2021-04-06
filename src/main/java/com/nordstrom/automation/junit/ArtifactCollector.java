@@ -20,12 +20,12 @@ import com.nordstrom.common.file.PathUtils;
  */
 public class ArtifactCollector<T extends ArtifactType> extends AtomIdentity {
     
-    private static final ConcurrentHashMap<Description, List<ArtifactCollector<? extends ArtifactType>>> watcherMap;
-    private static final Function<Description, List<ArtifactCollector<? extends ArtifactType>>> newInstance;
+    private static final ConcurrentHashMap<Description, List<ArtifactCollector<? extends ArtifactType>>> WATCHER_MAP;
+    private static final Function<Description, List<ArtifactCollector<? extends ArtifactType>>> NEW_INSTANCE;
     
     static {
-        watcherMap = new ConcurrentHashMap<>();
-        newInstance = new Function<Description, List<ArtifactCollector<? extends ArtifactType>>>() {
+        WATCHER_MAP = new ConcurrentHashMap<>();
+        NEW_INSTANCE = new Function<Description, List<ArtifactCollector<? extends ArtifactType>>>() {
             @Override
             public List<ArtifactCollector<? extends ArtifactType>> apply(Description input) {
                 return new ArrayList<>();
@@ -48,7 +48,7 @@ public class ArtifactCollector<T extends ArtifactType> extends AtomIdentity {
     public void starting(Description description) {
         super.starting(description);
         List<ArtifactCollector<? extends ArtifactType>> watcherList =
-                        LifecycleHooks.computeIfAbsent(watcherMap, description, newInstance);
+                        LifecycleHooks.computeIfAbsent(WATCHER_MAP, description, NEW_INSTANCE);
         watcherList.add(this);
     }
     
@@ -189,7 +189,7 @@ public class ArtifactCollector<T extends ArtifactType> extends AtomIdentity {
     @SuppressWarnings("unchecked")
     public static <S extends ArtifactCollector<? extends ArtifactType>> Optional<S>
                     getWatcher(Description description, Class<S> watcherType) {
-        List<ArtifactCollector<? extends ArtifactType>> watcherList = watcherMap.get(description);
+        List<ArtifactCollector<? extends ArtifactType>> watcherList = WATCHER_MAP.get(description);
         if (watcherList != null) {
             for (ArtifactCollector<? extends ArtifactType> watcher : watcherList) {
                 if (watcher.getClass() == watcherType) {

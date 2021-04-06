@@ -10,6 +10,8 @@ import org.junit.internal.runners.model.EachTestNotifier;
 import org.junit.runner.Description;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.FrameworkMethod;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.nordstrom.common.base.UncheckedThrow;
 
@@ -23,6 +25,7 @@ public class EachTestNotifierInit {
     private static final Map<String, Integer> TARGET_TO_DESCRIPTION = new ConcurrentHashMap<>();
     private static final Map<Integer, Object> DESCRIPTION_TO_TARGET = new ConcurrentHashMap<>();
     private static final Map<Integer, Integer> HASHCODE_TO_DESCRIPTION = new ConcurrentHashMap<>();
+    private static final Logger LOGGER = LoggerFactory.getLogger(EachTestNotifierInit.class);
     
     public static void interceptor(@Argument(0) final RunNotifier notifier,
                                    @Argument(1) final Description description) {
@@ -110,8 +113,12 @@ public class EachTestNotifierInit {
         return DESCRIPTION_TO_ATOMICTEST.get(getDescriptionOf(notifier).hashCode());
     }
     
+    static Object getTargetOf(EachTestNotifier notifier) {
+        return DESCRIPTION_TO_TARGET.get(getDescriptionOf(notifier).hashCode());
+    }
+    
     static Integer getDescriptionHashFor(Object runner, FrameworkMethod method) {
-        return HASHCODE_TO_DESCRIPTION.remove(Objects.hash(runner, method));
+        return HASHCODE_TO_DESCRIPTION.get(Objects.hash(runner, method));
     }
     
     static boolean setTestTarget(Object runner, FrameworkMethod method, Object target) {
@@ -126,6 +133,20 @@ public class EachTestNotifierInit {
     static void createMappingsFor(Integer descriptionHash, Object target) {
         TARGET_TO_DESCRIPTION.put(toMapKey(target), descriptionHash);
         DESCRIPTION_TO_TARGET.put(descriptionHash, target);
+    }
+    
+    static void releaseMappingsFor(EachTestNotifier notifier) {
+        
+        Description description = getDescriptionOf(notifier);
+        AtomicTest atomicTest = DESCRIPTION_TO_ATOMICTEST.remove(description.hashCode());
+        HASHCODE_TO_DESCRIPTION.remove(Objects.hash(atomicTest.getRunner(), atomicTest.getIdentity()));
+        Object target = DESCRIPTION_TO_TARGET.remove(description.hashCode());
+        if (target != null) {
+            TARGET_TO_DESCRIPTION.remove(toMapKey(target));
+        }
+        
+        RunReflectiveCall.releaseCallableOf(description);
+        CreateTest.releaseMappingsFor(atomicTest.getRunner(), atomicTest.getIdentity(), target);
     }
 
     private static Description getDescriptionOf(EachTestNotifier notifier) {
@@ -144,5 +165,34 @@ public class EachTestNotifierInit {
             }
         }
         return null;
+    }
+    
+    static boolean isEmpty() {
+        boolean isEmpty = true;
+        if (DESCRIPTION_TO_ATOMICTEST.isEmpty()) {
+            LOGGER.debug("DESCRIPTION_TO_ATOMICTEST is empty");
+        } else {
+            isEmpty = false;
+            LOGGER.debug("DESCRIPTION_TO_ATOMICTEST is not empty");
+        }
+        if (HASHCODE_TO_DESCRIPTION.isEmpty()) {
+            LOGGER.debug("HASHCODE_TO_DESCRIPTION is empty");
+        } else {
+            isEmpty = false;
+            LOGGER.debug("HASHCODE_TO_DESCRIPTION is not empty");
+        }
+        if (DESCRIPTION_TO_TARGET.isEmpty()) {
+            LOGGER.debug("DESCRIPTION_TO_TARGET is empty");
+        } else {
+            isEmpty = false;
+            LOGGER.debug("DESCRIPTION_TO_TARGET is not empty");
+        }
+        if (TARGET_TO_DESCRIPTION.isEmpty()) {
+            LOGGER.debug("TARGET_TO_DESCRIPTION is empty");
+        } else {
+            isEmpty = false;
+            LOGGER.debug("TARGET_TO_DESCRIPTION is not empty");
+        }
+        return isEmpty;
     }
 }

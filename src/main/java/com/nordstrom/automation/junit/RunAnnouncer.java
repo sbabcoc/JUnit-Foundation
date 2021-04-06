@@ -29,6 +29,8 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
         MethodBlock.isEmpty();
         RunChildren.isEmpty();
         RunReflectiveCall.isEmpty();
+        CreateTest.isEmpty();
+        EachTestNotifierInit.isEmpty();
     }
     
     /**

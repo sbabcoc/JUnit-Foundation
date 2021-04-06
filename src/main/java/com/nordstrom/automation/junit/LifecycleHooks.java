@@ -162,7 +162,6 @@ public class LifecycleHooks {
      */
     public static ClassFileTransformer installTransformer(Instrumentation instrumentation) {
         final TypeDescription eachTestNotifierInit = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.EachTestNotifierInit").resolve();
-        final TypeDescription fireTestStarted = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.FireTestStarted").resolve();
         final TypeDescription fireTestFailure = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.FireTestFailure").resolve();
         final TypeDescription fireTestFinished = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.FireTestFinished").resolve();
         final TypeDescription runReflectiveCall = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.RunReflectiveCall").resolve();
@@ -192,7 +191,6 @@ public class LifecycleHooks {
                     public Builder<?> transform(Builder<?> builder, TypeDescription type,
                                     ClassLoader classloader, JavaModule module) {
                         return builder.constructor(takesArgument(0, runNotifier).and(takesArgument(1, description))).intercept(MethodDelegation.to(eachTestNotifierInit).andThen(SuperMethodCall.INSTANCE))
-                                      .method(named("fireTestStarted")).intercept(MethodDelegation.to(fireTestStarted))
                                       .method(named("addFailure")).intercept(MethodDelegation.to(fireTestFailure))
                                       .method(named("fireTestFinished")).intercept(MethodDelegation.to(fireTestFinished))
                                       .implement(Hooked.class);
