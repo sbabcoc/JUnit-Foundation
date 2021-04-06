@@ -1,16 +1,11 @@
 package com.nordstrom.automation.junit;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.junit.internal.AssumptionViolatedException;
 import org.junit.runner.Description;
 import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static com.nordstrom.automation.junit.LifecycleHooks.toMapKey;
 
 /**
  * This class implements a notification-enhancing extension of the standard {@link RunListener} class. This run
@@ -23,21 +18,17 @@ import static com.nordstrom.automation.junit.LifecycleHooks.toMapKey;
  */
 public class RunAnnouncer extends RunListener implements JUnitWatcher {
     
-    private static final Map<String, AtomicTest<?>> RUNNER_TO_ATOMICTEST = new ConcurrentHashMap<>();
     private static final Logger LOGGER = LoggerFactory.getLogger(RunAnnouncer.class);
     
     /**
      * {@inheritDoc}
      */
     @Override
-    @SuppressWarnings({"rawtypes", "unchecked"})
     public void testStarted(Description description) throws Exception {
         LOGGER.debug("testStarted: {}", description);
-        AtomicTest<?> atomicTest = newAtomicTest(description);
+        AtomicTest atomicTest = EachTestNotifierInit.getAtomicTestOf(description);
         for (RunWatcher watcher : LifecycleHooks.getRunWatchers()) {
-            if (isSupported(watcher, atomicTest)) {
-                watcher.testStarted(atomicTest);
-            }
+            watcher.testStarted(atomicTest);
         }
     }
 
@@ -45,14 +36,11 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
      * {@inheritDoc}
      */
     @Override
-    @SuppressWarnings({"rawtypes", "unchecked"})
     public void testFinished(Description description) throws Exception {
         LOGGER.debug("testFinished: {}", description);
-        AtomicTest<?> atomicTest = getAtomicTestOf(description);
+        AtomicTest atomicTest = EachTestNotifierInit.getAtomicTestOf(description);
         for (RunWatcher watcher : LifecycleHooks.getRunWatchers()) {
-            if (isSupported(watcher, atomicTest)) {
-                watcher.testFinished(atomicTest);
-            }
+            watcher.testFinished(atomicTest);
         }
     }
 
@@ -60,14 +48,11 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
      * {@inheritDoc}
      */
     @Override
-    @SuppressWarnings({"rawtypes", "unchecked"})
     public void testFailure(Failure failure) throws Exception {
         LOGGER.debug("testFailure: {}", failure);
-        AtomicTest<?> atomicTest = setTestFailure(failure);
+        AtomicTest atomicTest = EachTestNotifierInit.getAtomicTestOf(failure.getDescription());
         for (RunWatcher watcher : LifecycleHooks.getRunWatchers()) {
-            if (isSupported(watcher, atomicTest)) {
-                watcher.testFailure(atomicTest, failure.getException());
-            }
+            watcher.testFailure(atomicTest, failure.getException());
         }
     }
 
@@ -75,14 +60,11 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
      * {@inheritDoc}
      */
     @Override
-    @SuppressWarnings({"rawtypes", "unchecked"})
     public void testAssumptionFailure(Failure failure) {
         LOGGER.debug("testAssumptionFailure: {}", failure);
-        AtomicTest<?> atomicTest = setTestFailure(failure);
+        AtomicTest atomicTest = EachTestNotifierInit.getAtomicTestOf(failure.getDescription());
         for (RunWatcher watcher : LifecycleHooks.getRunWatchers()) {
-            if (isSupported(watcher, atomicTest)) {
-                watcher.testAssumptionFailure(atomicTest, (AssumptionViolatedException) failure.getException());
-            }
+            watcher.testAssumptionFailure(atomicTest, (AssumptionViolatedException) failure.getException());
         }
     }
 
@@ -90,126 +72,15 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
      * {@inheritDoc}
      */
     @Override
-    @SuppressWarnings({"rawtypes", "unchecked"})
     public void testIgnored(Description description) throws Exception {
         LOGGER.debug("testIgnored: {}", description);
-        // determine if retrying a failed invocation
-        AtomicTest<?> atomicTest = getAtomicTestOf(description);
-
-        // if actually ignored
-        if (atomicTest == null) {
-            // create new atomic test object
-            atomicTest = newAtomicTest(description);
-        }
-
+        AtomicTest atomicTest = EachTestNotifierInit.ensureAtomicTestOf(description);
         for (RunWatcher watcher : LifecycleHooks.getRunWatchers()) {
-            if (isSupported(watcher, atomicTest)) {
-                watcher.testIgnored(atomicTest);
-            }
+            watcher.testIgnored(atomicTest);
         }
-    }
-    
-    /**
-     * Create new atomic test object for the specified runner/child pair.
-     * 
-     * @param <T> type of children associated with the specified runner
-     * @param runner parent runner
-     * @param identity identity for this atomic test
-     * @return {@link AtomicTest} object
-     */
-    @SuppressWarnings("unchecked")
-    static <T> AtomicTest<T> newAtomicTest(Object runner, T identity) {
-        AtomicTest<T> atomicTest = new AtomicTest<>(runner, identity);
-        // map parent runner to new atomic test, retaining prior mapping
-        AtomicTest<T> priorValue = (AtomicTest<T>) RUNNER_TO_ATOMICTEST.put(toMapKey(runner), atomicTest);
-        // if prior mapping found
-        if (priorValue != null) {
-            // release prior method description mapping
-            releaseAtomicTestOf(priorValue.getDescription());
+        // if this isn't a retried test
+        if (null == description.getAnnotation(RetriedTest.class)) {
+            EachTestNotifierInit.releaseAtomicTestOf(description);
         }
-        // map method description to atomic test
-        RUNNER_TO_ATOMICTEST.put(toMapKey(atomicTest.getDescription()), atomicTest);
-        return atomicTest;
-    }
-    
-    /**
-     * Create new atomic test object for the specified description.
-     * 
-     * @param <T> type of children associated with the specified runner
-     * @param description description of the test that is about to be run
-     * @return {@link AtomicTest} object (may be {@code null})
-     */
-    static <T> AtomicTest<T> newAtomicTest(Description description) {
-        AtomicTest<T> atomicTest = null;
-        AtomicTest<T> original = getAtomicTestOf(LifecycleHooks.getThreadRunner());
-        
-        if (original != null) {
-            atomicTest = new AtomicTest<>(original, description);
-            RUNNER_TO_ATOMICTEST.put(toMapKey(description), atomicTest);
-        }
-        
-        return atomicTest;
-    }
-    
-    /**
-     * Get the atomic test object for the specified class runner or method description.
-     * 
-     * @param <T> atomic test child object type
-     * @param testKey JUnit class runner or method description
-     * @return {@link AtomicTest} object (may be {@code null})
-     */
-    @SuppressWarnings("unchecked")
-    static <T> AtomicTest<T> getAtomicTestOf(Object testKey) {
-        AtomicTest<T> atomicTest = null;
-        if (testKey != null) {
-            // get atomic test for this runner/description
-            atomicTest = (AtomicTest<T>) RUNNER_TO_ATOMICTEST.get(toMapKey(testKey));
-        }
-        return atomicTest;
-    }
-    
-    /**
-     * Release the atomic test object for the specified class runner or method description.
-     * 
-     * @param <T> atomic test child object type
-     * @param testKey JUnit class runner or method description
-     */
-    @SuppressWarnings("unchecked")
-    static <T> AtomicTest<T> releaseAtomicTestOf(Object testKey) {
-        AtomicTest<T> atomicTest = null;
-        if (testKey != null) {
-            // get atomic test for this runner/description
-            atomicTest = (AtomicTest<T>) RUNNER_TO_ATOMICTEST.remove(toMapKey(testKey));
-        }
-        return atomicTest;
-    }
-    
-    /**
-     * Store the specified failure in the active atomic test.
-     * 
-     * @param <T> atomic test child object type
-     * @param failure {@link Failure} object
-     * @return {@link AtomicTest} object
-     */
-    private static <T> AtomicTest<T> setTestFailure(Failure failure) {
-        AtomicTest<T> atomicTest = getAtomicTestOf(Run.getThreadRunner());
-        if (atomicTest == null) {
-            atomicTest = getAtomicTestOf(failure.getDescription());
-        }
-        if (atomicTest != null) {
-            atomicTest.setThrowable(failure.getException());
-        }
-        return atomicTest;
-    }
-    
-    /**
-     * Determine if the run watcher in question supports the data type of specified atomic test.
-     * 
-     * @param watcher {@link RunWatcher} object
-     * @param atomicTest {@link AtomicTest} object
-     * @return {@code true} if the specified run watcher supports the indicated data type; otherwise {@code false}
-     */
-    private static boolean isSupported(RunWatcher<?> watcher, AtomicTest<?> atomicTest) {
-        return (atomicTest == null) ? false : watcher.supportedType().isInstance(atomicTest.getIdentity());
     }
 }

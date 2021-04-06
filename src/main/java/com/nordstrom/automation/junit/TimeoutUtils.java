@@ -39,12 +39,13 @@ class TimeoutUtils {
      * with the underlying test runner, if it doesn't already specify a longer timeout interval.
      * 
      * @param runner underlying test runner
+     * @param method target test method
      * @param target test class instance
      */
     @SuppressWarnings("unchecked")
-    static void applyTestTimeout(final Object runner, final Object target) {
-        // get "identity" method
-        FrameworkMethod identity = getIdentity(runner);
+    static void applyTestTimeout(final Object runner, final FrameworkMethod method, final Object target) {
+        FrameworkMethod identity = getIdentity(runner, method);
+        
         // get @Test annotation
         Test annotation = (identity != null) ? identity.getAnnotation(Test.class) : null;
         
@@ -123,11 +124,12 @@ class TimeoutUtils {
      * If configured for rule-based global timeout, apply timeout to specified test rules list.
      * 
      * @param runner underlying test runner
+     * @param method target test method
      * @param testRules test rules of associated test class
      */
-    static void applyRuleTimeout(final Object runner, final List<TestRule> testRules) {
+    static void applyRuleTimeout(final Object runner, final FrameworkMethod method, final List<TestRule> testRules) {
         // get "identity" method
-        FrameworkMethod identity = getIdentity(runner);
+        FrameworkMethod identity = getIdentity(runner, method);
         // get @Test annotation
         Test annotation = (identity != null) ? identity.getAnnotation(Test.class) : null;
         // get test method timeout interval
@@ -178,17 +180,14 @@ class TimeoutUtils {
      * Get "identity" method of the atomic test for the specified class runner.
      * 
      * @param runner JUnit class runner
+     * @param method target test method
      * @return {@link FrameworkMethod} "identity" for atomic test (may be {@code null})
      */
-    private static FrameworkMethod getIdentity(Object runner) {
-        FrameworkMethod method = null;
+    static FrameworkMethod getIdentity(final Object runner, final FrameworkMethod method) {
+        FrameworkMethod identity = method;
         
-        // get "atomic" test of the specified runner
-        AtomicTest<FrameworkMethod> atomicTest = LifecycleHooks.getAtomicTestOf(runner);
-        
-        if (atomicTest != null) {
-            // get identity method for this "atomic" test
-            method = atomicTest.getIdentity();
+        if (identity != null) {
+            return identity;
         } else {
             try {
                 // get object that created this runner
@@ -196,13 +195,13 @@ class TimeoutUtils {
                 // if created by TheoryAnchor
                 if (anchor instanceof TheoryAnchor) {
                     // get Theory method
-                    method = LifecycleHooks.getFieldValue(anchor, "testMethod");
+                    identity = LifecycleHooks.getFieldValue(anchor, "testMethod");
                 }
             } catch (IllegalAccessException | NoSuchFieldException | SecurityException | IllegalArgumentException e) {
                 // nothing to do here
             }
         }
         
-        return method;
+        return identity;
     }
 }

@@ -2,8 +2,11 @@ package com.nordstrom.automation.junit;
 
 import static com.nordstrom.automation.junit.LifecycleHooks.invoke;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -12,6 +15,7 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.Description;
+import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.TestClass;
 
 /**
@@ -21,25 +25,20 @@ import org.junit.runners.model.TestClass;
  */
 @Ignore
 @SuppressWarnings("all")
-public class AtomicTest<T> {
+public class AtomicTest {
     private final Object runner;
     private final Description description;
-    private final T identity;
-    private final List<T> particles;
+    private final FrameworkMethod identity;
+    private final List<FrameworkMethod> particles;
     private Throwable thrown;
-
-    public AtomicTest(Object runner, T identity) {
-        this.runner = runner;
-        this.identity = identity;
-        this.description = invoke(runner, "describeChild", identity);
-        this.particles = invoke(runner, "getChildren");
-    }
     
-    public AtomicTest(AtomicTest<T> original, Description description) {
-        this.runner = original.runner;
-        this.identity = original.identity;
+    private static final Pattern PARAM = Pattern.compile("[(\\[]");
+
+    public AtomicTest(Description description) {
+        this.runner = RunChildren.getThreadRunner();
         this.description = description;
-        this.particles = original.particles;
+        this.particles = getParticles(runner, description);
+        this.identity = this.particles.get(0);
     }
 
     /**
@@ -65,7 +64,7 @@ public class AtomicTest<T> {
      * 
      * @return core method associated with this atomic test
      */
-    public T getIdentity() {
+    public FrameworkMethod getIdentity() {
         return identity;
     }
     
@@ -74,7 +73,7 @@ public class AtomicTest<T> {
      * 
      * @return list of methods that compose this atomic test
      */
-    public List<T> getParticles() {
+    public List<FrameworkMethod> getParticles() {
         return particles;
     }
 
@@ -111,8 +110,22 @@ public class AtomicTest<T> {
      * @param method method object
      * @return {@code true} if this atomic test includes the specified method; otherwise {@code false}
      */
-    public boolean includes(T method) {
+    public boolean includes(FrameworkMethod method) {
         return particles.contains(method);
+    }
+    
+    /**
+     * Determine if this atomic test represents a "theory" method.
+     * 
+     * @return {@code true} if this atomic test represents a "theory" method; otherwise {@code false}
+     */
+    public boolean isTheory() {
+        try {
+            String uniqueId = LifecycleHooks.getFieldValue(description, "fUniqueId");
+            return ((uniqueId != null) && (uniqueId.startsWith("theory-id: ")));
+        } catch (IllegalAccessException | NoSuchFieldException | SecurityException e) {
+            return false;
+        }
     }
     
     /**
@@ -130,7 +143,7 @@ public class AtomicTest<T> {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        AtomicTest<T> that = (AtomicTest<T>) o;
+        AtomicTest that = (AtomicTest) o;
         return Objects.equals(runner, that.runner) &&
                 Objects.equals(identity, that.identity);
     }
@@ -140,6 +153,44 @@ public class AtomicTest<T> {
      */
     @Override
     public int hashCode() {
-        return Objects.hash(runner, identity);
+        return description.hashCode();
+    }
+    
+    /**
+     * Get the "particle" method for this atomic test.
+     * 
+     * @param runner JUnit test runner
+     * @param description JUnit method description
+     * @return list of "particle" methods
+     */
+    private List<FrameworkMethod> getParticles(Object runner, Description description) {
+        List<FrameworkMethod> particles = new ArrayList<>();
+        if (description.isTest()) {
+            TestClass testClass = LifecycleHooks.getTestClassOf(runner);
+            
+            String methodName = description.getMethodName();
+            Matcher matcher = PARAM.matcher(methodName);
+            if (matcher.find()) {
+                methodName = methodName.substring(0, matcher.start());
+            }
+            
+            FrameworkMethod identity = null;
+            for (FrameworkMethod method : testClass.getAnnotatedMethods()) {
+                if (method.getName().equals(methodName)) {
+                    identity = method;
+                    break;
+                }
+            }
+            
+            if (identity != null) {
+                particles.add(identity);
+                particles.addAll(testClass.getAnnotatedMethods(Before.class));
+                particles.addAll(testClass.getAnnotatedMethods(After.class));
+            } else {
+                throw new IllegalStateException("Identity method not found");
+            }
+        }
+        
+        return particles;
     }
 }

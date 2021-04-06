@@ -40,12 +40,12 @@ public class RunWithCompleteAssignment {
             @Argument(0) final Assignments assignments) throws Exception {
         
         // grab the current thread runner
-        Object parentRunner = Run.getThreadRunner();
+        Object parentRunner = RunChildren.getThreadRunner();
         
         LifecycleHooks.callProxy(proxy); // NOTE: This pushes the BlockJUnit4ClassRunner
            
         Throwable thrown = null;
-        Object classRunner = Run.getThreadRunner();
+        Object classRunner = RunChildren.getThreadRunner();
         FrameworkMethod method = LifecycleHooks.getFieldValue(anchor, "testMethod");
         
         RunNotifier notifier = Run.getNotifierOf(parentRunner);
@@ -63,7 +63,7 @@ public class RunWithCompleteAssignment {
             eachNotifier.addFailure(e);
         } finally {
             eachNotifier.fireTestFinished();
-            Run.popThreadRunner();
+            RunChildren.popThreadRunner();
         }
         
         if (thrown != null) {

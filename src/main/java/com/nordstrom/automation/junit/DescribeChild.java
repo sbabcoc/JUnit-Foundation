@@ -1,7 +1,7 @@
 package com.nordstrom.automation.junit;
 
 import java.lang.reflect.Field;
-import java.util.Objects;
+import java.util.Arrays;
 import java.util.concurrent.Callable;
 
 import org.junit.experimental.theories.PotentialAssignment.CouldNotGenerateValueException;
@@ -74,8 +74,12 @@ public class DescribeChild {
      */
 	private static void injectPermutationId(final Description description, final Assignments assignments) {
 		try {
-			int permutationId = Objects.hash(description.getDisplayName(), assignments.getMethodArguments());
-			String theoryId = String.format("%08X", permutationId);
+		    Object[] args = assignments.getMethodArguments();
+		    Object[] perm = new Object[args.length + 1];
+		    perm[0] = description.getDisplayName();
+		    System.arraycopy(args, 0, perm, 1, args.length);
+			int permutationId = Arrays.hashCode(perm);
+			String theoryId = String.format("theory-id: %08X", permutationId);
 			uniqueId.set(description, theoryId);
 		} catch (CouldNotGenerateValueException | SecurityException | IllegalArgumentException
 				| IllegalAccessException eaten) {

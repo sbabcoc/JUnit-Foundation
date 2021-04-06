@@ -1,5 +1,7 @@
 package com.nordstrom.automation.junit;
 
+import static com.nordstrom.automation.junit.LifecycleHooks.toMapKey;
+
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -7,32 +9,29 @@ import java.util.concurrent.ConcurrentMap;
 import org.junit.experimental.theories.Theories.TheoryAnchor;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
-
 import com.google.common.base.Function;
 
 import net.bytebuddy.implementation.bind.annotation.SuperCall;
 import net.bytebuddy.implementation.bind.annotation.This;
 import net.bytebuddy.implementation.bind.annotation.Argument;
 
-import static com.nordstrom.automation.junit.LifecycleHooks.toMapKey;
-
 /**
  * This class declares the interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#methodBlock
  * methodBlock} method.
  */
 public class MethodBlock {
-    private static final ThreadLocal<ConcurrentMap<Integer, DepthGauge>> methodDepth;
-    private static final Function<Integer, DepthGauge> newInstance;
+    private static final ThreadLocal<ConcurrentMap<Integer, DepthGauge>> METHOD_DEPTH;
+    private static final Function<Integer, DepthGauge> NEW_INSTANCE;
     private static final Map<String, Statement> RUNNER_TO_STATEMENT = new ConcurrentHashMap<>();
     
     static {
-        methodDepth = new ThreadLocal<ConcurrentMap<Integer, DepthGauge>>() {
+        METHOD_DEPTH = new ThreadLocal<ConcurrentMap<Integer, DepthGauge>>() {
             @Override
             protected ConcurrentMap<Integer, DepthGauge> initialValue() {
                 return new ConcurrentHashMap<>();
             }
         };
-        newInstance = new Function<Integer, DepthGauge>() {
+        NEW_INSTANCE = new Function<Integer, DepthGauge>() {
             @Override
             public DepthGauge apply(Integer input) {
                 return new DepthGauge();
@@ -57,13 +56,14 @@ public class MethodBlock {
     public static Statement intercept(@This final Object runner, @SuperCall final Callable<?> proxy,
             @Argument(0) final FrameworkMethod method) throws Exception {
 
-        DepthGauge depthGauge = LifecycleHooks.computeIfAbsent(methodDepth.get(), runner.hashCode(), newInstance);
+        DepthGauge depthGauge = LifecycleHooks.computeIfAbsent(METHOD_DEPTH.get(), runner.hashCode(), NEW_INSTANCE);
         depthGauge.increaseDepth();
         
         Statement statement = (Statement) LifecycleHooks.callProxy(proxy);
         
         // if at ground level
         if (0 == depthGauge.decreaseDepth()) {
+            METHOD_DEPTH.remove();
             try {
                 // get parent of test runner
                 Object parent = LifecycleHooks.getFieldValue(runner, "this$0");
@@ -74,14 +74,11 @@ public class MethodBlock {
                     // create lifecycle catalyst
                     statement = new Statement() {
                         final Object threadRunner = runner;
-                        final FrameworkMethod testMethod = method;
                         
                         @Override
                         public void evaluate() throws Throwable {
                             // attach class runner to thread
-                            Run.pushThreadRunner(threadRunner);
-                            // create new atomic test for target method
-                            RunAnnouncer.newAtomicTest(threadRunner, testMethod);
+                            RunChildren.pushThreadRunner(threadRunner);
                         }
                     };
                 }

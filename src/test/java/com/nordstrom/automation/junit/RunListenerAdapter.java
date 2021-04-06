@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.junit.experimental.theories.Theories;
 import org.junit.runner.Description;
 import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
@@ -110,10 +109,11 @@ public class RunListenerAdapter extends RunListener {
     public List<Description> getPassedTests() {
         m_passedTests.clear();
         m_passedTests.addAll(m_allTestMethods);
-        for (Description description : m_failedTests) { m_passedTests.remove(description); } 
-        for (Description description : m_failedAssumptions) { m_passedTests.remove(description); } 
-        for (Description description : m_ignoredTests) { m_passedTests.remove(description); } 
-        for (Description description : m_retriedTests) { m_passedTests.remove(description); } 
+        for (Description description : m_failedTests) { m_passedTests.remove(description); }
+        for (Description description : m_failedTheories) { m_passedTests.remove(description); }
+        for (Description description : m_failedAssumptions) { m_passedTests.remove(description); }
+        for (Description description : m_ignoredTests) { m_passedTests.remove(description); }
+        for (Description description : m_retriedTests) { m_passedTests.remove(description); }
         return m_passedTests;
     }
     
@@ -227,11 +227,8 @@ public class RunListenerAdapter extends RunListener {
      * @return {@code true} if description represents a theory; otherwise {@code false}
      */
     private boolean isTheory(Description description) {
-        AtomicTest<?> atomicTest = LifecycleHooks.getAtomicTestOf(description);
-        if (atomicTest != null) {
-            return (atomicTest.getRunner() instanceof Theories);
-        }
-        return false;
+        AtomicTest atomicTest = LifecycleHooks.getAtomicTestOf(description);
+        return ((atomicTest != null) && (atomicTest.isTheory()));
     }
 
 }
