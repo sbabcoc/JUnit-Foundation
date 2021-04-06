@@ -7,9 +7,6 @@ import java.util.concurrent.ConcurrentMap;
 import org.junit.experimental.theories.Theories.TheoryAnchor;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.common.base.Function;
 
 import net.bytebuddy.implementation.bind.annotation.SuperCall;
@@ -26,7 +23,6 @@ public class MethodBlock {
     private static final ThreadLocal<ConcurrentMap<Integer, DepthGauge>> METHOD_DEPTH;
     private static final Function<Integer, DepthGauge> NEW_INSTANCE;
     private static final Map<String, Statement> RUNNER_TO_STATEMENT = new ConcurrentHashMap<>();
-    private static final Logger LOGGER = LoggerFactory.getLogger(MethodBlock.class);
     
     static {
         METHOD_DEPTH = new ThreadLocal<ConcurrentMap<Integer, DepthGauge>>() {
@@ -102,16 +98,5 @@ public class MethodBlock {
      */
     static Statement getStatementOf(final Object runner) {
         return RUNNER_TO_STATEMENT.remove(toMapKey(runner));
-    }
-    
-    static boolean isEmpty() {
-        boolean isEmpty = true;
-        if (RUNNER_TO_STATEMENT.isEmpty()) {
-            LOGGER.debug("RUNNER_TO_STATEMENT is empty");
-        } else {
-            isEmpty = false;
-            LOGGER.debug("RUNNER_TO_STATEMENT is not empty");
-        }
-        return isEmpty;
     }
 }

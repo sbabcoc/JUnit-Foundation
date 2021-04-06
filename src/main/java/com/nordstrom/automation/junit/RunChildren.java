@@ -138,15 +138,4 @@ public class RunChildren {
     static Object getThreadRunner() {
         return RUNNER_STACK.get().peek();
     }
-    
-    static boolean isEmpty() {
-        boolean isEmpty = true;
-        if (CHILD_TO_PARENT.isEmpty()) {
-            LOGGER.debug("CHILD_TO_PARENT is empty");
-        } else {
-            isEmpty = false;
-            LOGGER.debug("CHILD_TO_PARENT is not empty");
-        }
-        return isEmpty;
-    }
 }

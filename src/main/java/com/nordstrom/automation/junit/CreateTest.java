@@ -101,21 +101,4 @@ public class CreateTest {
             TARGET_TO_METHOD.remove(toMapKey(target));
         }
     }
-    
-    static boolean isEmpty() {
-        boolean isEmpty = true;
-        if (HASHCODE_TO_TARGET.isEmpty()) {
-            LOGGER.debug("HASHCODE_TO_TARGET is empty");
-        } else {
-            isEmpty = false;
-            LOGGER.debug("HASHCODE_TO_TARGET is not empty");
-        }
-        if (TARGET_TO_METHOD.isEmpty()) {
-            LOGGER.debug("TARGET_TO_METHOD is empty");
-        } else {
-            isEmpty = false;
-            LOGGER.debug("TARGET_TO_METHOD is not empty");
-        }
-        return isEmpty;
-    }
 }

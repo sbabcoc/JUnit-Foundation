@@ -2,7 +2,6 @@ package com.nordstrom.automation.junit;
 
 import org.junit.internal.AssumptionViolatedException;
 import org.junit.runner.Description;
-import org.junit.runner.Result;
 import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
 import org.slf4j.Logger;
@@ -20,18 +19,6 @@ import org.slf4j.LoggerFactory;
 public class RunAnnouncer extends RunListener implements JUnitWatcher {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(RunAnnouncer.class);
-    
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void testRunFinished(Result result) throws Exception {
-        MethodBlock.isEmpty();
-        RunChildren.isEmpty();
-        RunReflectiveCall.isEmpty();
-        CreateTest.isEmpty();
-        EachTestNotifierInit.isEmpty();
-    }
     
     /**
      * {@inheritDoc}
@@ -90,6 +77,10 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
         AtomicTest atomicTest = EachTestNotifierInit.ensureAtomicTestOf(description);
         for (RunWatcher watcher : LifecycleHooks.getRunWatchers()) {
             watcher.testIgnored(atomicTest);
+        }
+        // if this isn't a retried test
+        if (null == description.getAnnotation(RetriedTest.class)) {
+            EachTestNotifierInit.releaseAtomicTestOf(description);
         }
     }
     

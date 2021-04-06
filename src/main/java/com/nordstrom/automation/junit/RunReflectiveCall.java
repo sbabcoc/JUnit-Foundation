@@ -1,7 +1,6 @@
 package com.nordstrom.automation.junit;
 
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -207,19 +206,5 @@ public class RunReflectiveCall {
             }
         }
         return false;
-    }
-    
-    static boolean isEmpty() {
-        boolean isEmpty = true;
-        if (DESCRIPTION_TO_CALLABLE.isEmpty()) {
-            LOGGER.debug("DESCRIPTION_TO_CALLABLE is empty");
-        } else {
-            isEmpty = false;
-            LOGGER.debug("DESCRIPTION_TO_CALLABLE is not empty");
-            for (Entry<Integer, ReflectiveCallable> entry : DESCRIPTION_TO_CALLABLE.entrySet()) {
-                LOGGER.debug("{}", entry);
-            }
-        }
-        return isEmpty;
     }
 }

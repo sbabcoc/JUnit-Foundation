@@ -6,6 +6,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class HookInstallationTestCases {
@@ -20,6 +21,12 @@ public class HookInstallationTestCases {
     
     @Test
     public void unitTestMethod() {
+        assertTrue(true);
+    }
+    
+    @Test
+    @Ignore
+    public void unitTestIgnored() {
         assertTrue(true);
     }
     

@@ -10,9 +10,6 @@ import org.junit.internal.runners.model.EachTestNotifier;
 import org.junit.runner.Description;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.FrameworkMethod;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.nordstrom.common.base.UncheckedThrow;
 
 import net.bytebuddy.implementation.bind.annotation.Argument;
@@ -25,7 +22,6 @@ public class EachTestNotifierInit {
     private static final Map<String, Integer> TARGET_TO_DESCRIPTION = new ConcurrentHashMap<>();
     private static final Map<Integer, Object> DESCRIPTION_TO_TARGET = new ConcurrentHashMap<>();
     private static final Map<Integer, Integer> HASHCODE_TO_DESCRIPTION = new ConcurrentHashMap<>();
-    private static final Logger LOGGER = LoggerFactory.getLogger(EachTestNotifierInit.class);
     
     public static void interceptor(@Argument(0) final RunNotifier notifier,
                                    @Argument(1) final Description description) {
@@ -138,7 +134,7 @@ public class EachTestNotifierInit {
     static void releaseMappingsFor(EachTestNotifier notifier) {
         
         Description description = getDescriptionOf(notifier);
-        AtomicTest atomicTest = DESCRIPTION_TO_ATOMICTEST.remove(description.hashCode());
+        AtomicTest atomicTest = releaseAtomicTestOf(description);
         HASHCODE_TO_DESCRIPTION.remove(Objects.hash(atomicTest.getRunner(), atomicTest.getIdentity()));
         Object target = DESCRIPTION_TO_TARGET.remove(description.hashCode());
         if (target != null) {
@@ -147,6 +143,10 @@ public class EachTestNotifierInit {
         
         RunReflectiveCall.releaseCallableOf(description);
         CreateTest.releaseMappingsFor(atomicTest.getRunner(), atomicTest.getIdentity(), target);
+    }
+
+    static AtomicTest releaseAtomicTestOf(Description description) {
+        return DESCRIPTION_TO_ATOMICTEST.remove(description.hashCode());
     }
 
     private static Description getDescriptionOf(EachTestNotifier notifier) {
@@ -165,34 +165,5 @@ public class EachTestNotifierInit {
             }
         }
         return null;
-    }
-    
-    static boolean isEmpty() {
-        boolean isEmpty = true;
-        if (DESCRIPTION_TO_ATOMICTEST.isEmpty()) {
-            LOGGER.debug("DESCRIPTION_TO_ATOMICTEST is empty");
-        } else {
-            isEmpty = false;
-            LOGGER.debug("DESCRIPTION_TO_ATOMICTEST is not empty");
-        }
-        if (HASHCODE_TO_DESCRIPTION.isEmpty()) {
-            LOGGER.debug("HASHCODE_TO_DESCRIPTION is empty");
-        } else {
-            isEmpty = false;
-            LOGGER.debug("HASHCODE_TO_DESCRIPTION is not empty");
-        }
-        if (DESCRIPTION_TO_TARGET.isEmpty()) {
-            LOGGER.debug("DESCRIPTION_TO_TARGET is empty");
-        } else {
-            isEmpty = false;
-            LOGGER.debug("DESCRIPTION_TO_TARGET is not empty");
-        }
-        if (TARGET_TO_DESCRIPTION.isEmpty()) {
-            LOGGER.debug("TARGET_TO_DESCRIPTION is empty");
-        } else {
-            isEmpty = false;
-            LOGGER.debug("TARGET_TO_DESCRIPTION is not empty");
-        }
-        return isEmpty;
     }
 }
