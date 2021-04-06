@@ -83,5 +83,4 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
             EachTestNotifierInit.releaseAtomicTestOf(description);
         }
     }
-    
 }

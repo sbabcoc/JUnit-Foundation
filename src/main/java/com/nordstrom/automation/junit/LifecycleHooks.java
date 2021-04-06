@@ -162,7 +162,7 @@ public class LifecycleHooks {
      */
     public static ClassFileTransformer installTransformer(Instrumentation instrumentation) {
         final TypeDescription eachTestNotifierInit = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.EachTestNotifierInit").resolve();
-        final TypeDescription fireTestFailure = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.FireTestFailure").resolve();
+        final TypeDescription addFailure = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.AddFailure").resolve();
         final TypeDescription fireTestFinished = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.FireTestFinished").resolve();
         final TypeDescription runReflectiveCall = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.RunReflectiveCall").resolve();
         final TypeDescription finished = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.Finished").resolve();
@@ -191,7 +191,7 @@ public class LifecycleHooks {
                     public Builder<?> transform(Builder<?> builder, TypeDescription type,
                                     ClassLoader classloader, JavaModule module) {
                         return builder.constructor(takesArgument(0, runNotifier).and(takesArgument(1, description))).intercept(MethodDelegation.to(eachTestNotifierInit).andThen(SuperMethodCall.INSTANCE))
-                                      .method(named("addFailure")).intercept(MethodDelegation.to(fireTestFailure))
+                                      .method(named("addFailure")).intercept(MethodDelegation.to(addFailure))
                                       .method(named("fireTestFinished")).intercept(MethodDelegation.to(fireTestFinished))
                                       .implement(Hooked.class);
                     }
@@ -247,8 +247,8 @@ public class LifecycleHooks {
                     @Override
                     public Builder<?> transform(Builder<?> builder, TypeDescription type,
                                     ClassLoader classloader, JavaModule module) {
-                        return builder.method(named("fireTestFailure")).intercept(MethodDelegation.to(fireTestFailure))
-                                      .method(named("fireTestAssumptionFailed")).intercept(MethodDelegation.to(fireTestFailure))
+                        return builder.method(named("fireTestFailure")).intercept(MethodDelegation.to(addFailure))
+                                      .method(named("fireTestAssumptionFailed")).intercept(MethodDelegation.to(addFailure))
                                       .implement(Hooked.class);
                     }
                 })
@@ -359,7 +359,7 @@ public class LifecycleHooks {
     /**
      * Get the {@link ReflectiveCallable} object for the specified description.
      *
-     * @param description 
+     * @param description JUnit method description
      * @return <b>ReflectiveCallable</b> object (may be {@code null})
      */
     public static ReflectiveCallable getCallableOf(Description description) {

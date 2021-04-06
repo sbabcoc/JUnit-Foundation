@@ -1,14 +1,14 @@
 package com.nordstrom.automation.junit;
 
-import java.util.*;
+import static com.nordstrom.automation.junit.LifecycleHooks.toMapKey;
+
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import org.junit.runner.notification.RunNotifier;
 import net.bytebuddy.implementation.bind.annotation.Argument;
 import net.bytebuddy.implementation.bind.annotation.SuperCall;
 import net.bytebuddy.implementation.bind.annotation.This;
-
-import static com.nordstrom.automation.junit.LifecycleHooks.toMapKey;
 
 /**
  * This class declares the interceptor for the {@link org.junit.runners.ParentRunner#run run} method.
@@ -30,8 +30,10 @@ public class Run {
         try {
             RUNNER_TO_NOTIFIER.put(toMapKey(runner), notifier);
             RunChildren.pushThreadRunner(runner);
+            // TODO: fireRunStarted(runner) used to be called from here
             LifecycleHooks.callProxy(proxy);
         } finally {
+            // TODO: fireRunFinished(runner) used to be called from here
             RunChildren.popThreadRunner();
             RUNNER_TO_NOTIFIER.remove(toMapKey(runner));
         }

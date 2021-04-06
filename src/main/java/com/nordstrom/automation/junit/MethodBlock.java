@@ -1,5 +1,7 @@
 package com.nordstrom.automation.junit;
 
+import static com.nordstrom.automation.junit.LifecycleHooks.toMapKey;
+
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -12,8 +14,6 @@ import com.google.common.base.Function;
 import net.bytebuddy.implementation.bind.annotation.SuperCall;
 import net.bytebuddy.implementation.bind.annotation.This;
 import net.bytebuddy.implementation.bind.annotation.Argument;
-
-import static com.nordstrom.automation.junit.LifecycleHooks.toMapKey;
 
 /**
  * This class declares the interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#methodBlock

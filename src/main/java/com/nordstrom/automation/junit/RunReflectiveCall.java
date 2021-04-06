@@ -95,7 +95,7 @@ public class RunReflectiveCall {
     /**
      * Get the test class instance for the specified description.
      *
-     * @param description 
+     * @param description JUnit method description
      * @return <b>ReflectiveCallable</b> object (may be {@code null})
      */
     static Object getTargetFor(Description description) {
@@ -115,7 +115,7 @@ public class RunReflectiveCall {
     /**
      * Get the {@link ReflectiveCallable} object for the specified description.
      *
-     * @param description 
+     * @param description JUnit method description
      * @return <b>ReflectiveCallable</b> object (may be {@code null})
      */
     static ReflectiveCallable getCallableOf(Description description) {
@@ -125,7 +125,7 @@ public class RunReflectiveCall {
     /**
      * Release the {@link ReflectiveCallable} object for the specified description.
      *
-     * @param description 
+     * @param description JUnit method description
      */
     static void releaseCallableOf(Description description) {
         DESCRIPTION_TO_CALLABLE.remove(description.hashCode());

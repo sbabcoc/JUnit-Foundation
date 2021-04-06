@@ -1,5 +1,7 @@
 package com.nordstrom.automation.junit;
 
+import static com.nordstrom.automation.junit.LifecycleHooks.toMapKey;
+
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Callable;
@@ -16,8 +18,6 @@ import net.bytebuddy.implementation.bind.annotation.Argument;
 import net.bytebuddy.implementation.bind.annotation.RuntimeType;
 import net.bytebuddy.implementation.bind.annotation.SuperCall;
 import net.bytebuddy.implementation.bind.annotation.This;
-
-import static com.nordstrom.automation.junit.LifecycleHooks.toMapKey;
 
 /**
  * This class declares the interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#createTest
@@ -68,7 +68,6 @@ public class CreateTest {
         if (0 == depthGauge.decreaseDepth()) {
             METHOD_DEPTH.remove();
             LOGGER.debug("testObjectCreated: {}", target);
-            
             TARGET_TO_METHOD.put(toMapKey(target), method);
             
             // apply parameter-based global timeout
@@ -76,6 +75,7 @@ public class CreateTest {
             
             // if notifier hasn't been initialized yet
             if ( ! EachTestNotifierInit.setTestTarget(runner, method, target)) {
+                // store target for subsequent retrieval
                 HASHCODE_TO_TARGET.put(hashCode, target);
             }
             
@@ -87,14 +87,36 @@ public class CreateTest {
         return target;
     }
     
+    /**
+     * Get test class instance associated with the specified runner/method pair.
+     * <p>
+     * <b>NOTE</b>: This method can only be called once per target, as it removes the mapping.
+     * 
+     * @param runner JUnit class runner
+     * @param method JUnit framework method
+     * @return target test class instance
+     */
     static Object getTargetFor(Object runner, FrameworkMethod method) {
         return HASHCODE_TO_TARGET.remove(Objects.hash(runner, method));
     }
     
+    /**
+     * Get the method for which the specified test class instance was created.
+     * 
+     * @param target test class instance
+     * @return JUnit framework method
+     */
     static FrameworkMethod getMethodFor(Object target) {
         return TARGET_TO_METHOD.get(toMapKey(target));
     }
     
+    /**
+     * Release the mappings associated with the specified runner/method/target group.
+     * 
+     * @param runner JUnit class runner
+     * @param method JUnit framework method
+     * @param target test class instance
+     */
     static void releaseMappingsFor(Object runner, FrameworkMethod method, Object target) {
         HASHCODE_TO_TARGET.remove(Objects.hash(runner, method));
         if (target != null) {

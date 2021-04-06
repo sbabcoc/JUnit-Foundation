@@ -10,19 +10,17 @@ import net.bytebuddy.implementation.bind.annotation.SuperCall;
 import net.bytebuddy.implementation.bind.annotation.This;
 
 /**
- * This class declares the interceptor for the {@link org.junit.runner.notification.RunNotifier#fireTestFailure
- * fireTestFailure} and {@link org.junit.runner.notification.RunNotifier#fireTestAssumptionFailed
- * fireTestAssumptionFailed} methods.
+ * This class declares the interceptor for the {@link org.junit.internal.runners.model.EachTestNotifier#addFailure
+ * addFailure} method.
  */
-public class FireTestFailure {
+public class AddFailure {
 
     /**
-     * Interceptor for the {@link org.junit.runner.notification.RunNotifier#fireTestFailure fireTestFailure} and
-     * {@link org.junit.runner.notification.RunNotifier#fireTestAssumptionFailed fireTestAssumptionFailed} methods.
+     * Interceptor for the {@link org.junit.internal.runners.model.EachTestNotifier#addFailure addFailure} method.
      * 
      * @param notifier underlying run notifier
      * @param proxy callable proxy for the intercepted method
-     * @param failure the description of the test that failed and the exception thrown
+     * @param targetException the exception thrown by the test
      * @throws Exception {@code anything} (exception thrown by the intercepted method)
      */
     public static void intercept(@This final EachTestNotifier notifier, @SuperCall final Callable<?> proxy,

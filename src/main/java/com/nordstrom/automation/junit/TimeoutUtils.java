@@ -183,7 +183,7 @@ class TimeoutUtils {
      * @param method target test method
      * @return {@link FrameworkMethod} "identity" for atomic test (may be {@code null})
      */
-    static FrameworkMethod getIdentity(Object runner, FrameworkMethod method) {
+    static FrameworkMethod getIdentity(final Object runner, final FrameworkMethod method) {
         FrameworkMethod identity = method;
         
         if (identity != null) {
