@@ -35,8 +35,8 @@ public class RunChild {
         
         String mapKey = toMapKey(runner);
         if ( ! DID_NOTIFY.containsKey(mapKey)) {
-            Run.attachRunListeners(runner, notifier);
             DID_NOTIFY.put(mapKey, Run.fireRunStarted(runner));
+            Run.attachRunListeners(runner, notifier);
         }
         
         if (child instanceof FrameworkMethod) {
