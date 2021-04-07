@@ -20,20 +20,20 @@ import net.bytebuddy.implementation.bind.annotation.Argument;
  * methodBlock} method.
  */
 public class MethodBlock {
-    private static final ThreadLocal<ConcurrentMap<Integer, DepthGauge>> METHOD_DEPTH;
-    private static final Function<Integer, DepthGauge> NEW_INSTANCE;
+    private static final ThreadLocal<ConcurrentMap<String, DepthGauge>> METHOD_DEPTH;
+    private static final Function<String, DepthGauge> NEW_INSTANCE;
     private static final Map<String, Statement> RUNNER_TO_STATEMENT = new ConcurrentHashMap<>();
     
     static {
-        METHOD_DEPTH = new ThreadLocal<ConcurrentMap<Integer, DepthGauge>>() {
+        METHOD_DEPTH = new ThreadLocal<ConcurrentMap<String, DepthGauge>>() {
             @Override
-            protected ConcurrentMap<Integer, DepthGauge> initialValue() {
+            protected ConcurrentMap<String, DepthGauge> initialValue() {
                 return new ConcurrentHashMap<>();
             }
         };
-        NEW_INSTANCE = new Function<Integer, DepthGauge>() {
+        NEW_INSTANCE = new Function<String, DepthGauge>() {
             @Override
-            public DepthGauge apply(Integer input) {
+            public DepthGauge apply(String input) {
                 return new DepthGauge();
             }
         };
@@ -56,14 +56,14 @@ public class MethodBlock {
     public static Statement intercept(@This final Object runner, @SuperCall final Callable<?> proxy,
             @Argument(0) final FrameworkMethod method) throws Exception {
 
-        DepthGauge depthGauge = LifecycleHooks.computeIfAbsent(METHOD_DEPTH.get(), runner.hashCode(), NEW_INSTANCE);
+        DepthGauge depthGauge = LifecycleHooks.computeIfAbsent(METHOD_DEPTH.get(), toMapKey(runner), NEW_INSTANCE);
         depthGauge.increaseDepth();
         
         Statement statement = (Statement) LifecycleHooks.callProxy(proxy);
         
         // if at ground level
         if (0 == depthGauge.decreaseDepth()) {
-            METHOD_DEPTH.remove();
+            METHOD_DEPTH.get().remove(toMapKey(runner));
             try {
                 // get parent of test runner
                 Object parent = LifecycleHooks.getFieldValue(runner, "this$0");
@@ -78,7 +78,7 @@ public class MethodBlock {
                         @Override
                         public void evaluate() throws Throwable {
                             // attach class runner to thread
-                            RunChildren.pushThreadRunner(threadRunner);
+                            Run.pushThreadRunner(threadRunner);
                         }
                     };
                 }

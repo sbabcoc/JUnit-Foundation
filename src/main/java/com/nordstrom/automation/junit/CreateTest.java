@@ -66,7 +66,7 @@ public class CreateTest {
         Object target = LifecycleHooks.callProxy(proxy);
         
         if (0 == depthGauge.decreaseDepth()) {
-            METHOD_DEPTH.remove();
+            METHOD_DEPTH.get().remove(hashCode);
             LOGGER.debug("testObjectCreated: {}", target);
             TARGET_TO_METHOD.put(toMapKey(target), method);
             

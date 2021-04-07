@@ -68,9 +68,9 @@ public class RunReflectiveCall {
             // handled below
         }
         
-        Object runner = RunChildren.getParentOf(child);
+        Object runner = Run.getParentOf(child);
         if (runner == null) {
-            runner = RunChildren.getThreadRunner();
+            runner = Run.getThreadRunner();
         }
 
         Object result = null;
@@ -184,9 +184,9 @@ public class RunReflectiveCall {
     @SuppressWarnings({"rawtypes", "unchecked"})
     private static boolean fireAfterInvocation(Object runner, Object child, ReflectiveCallable callable, Throwable thrown) {
         if ((runner != null) && (child != null)) {
-            DepthGauge depthGauge = LifecycleHooks.computeIfAbsent(METHOD_DEPTH.get(), callable.hashCode(), NEW_INSTANCE);
+            DepthGauge depthGauge = METHOD_DEPTH.get().get(callable.hashCode());
             if (0 == depthGauge.decreaseDepth()) {
-                METHOD_DEPTH.remove();
+                METHOD_DEPTH.get().remove(callable.hashCode());
                 if (child instanceof FrameworkMethod) {
                     Description description = LifecycleHooks.describeChild(runner, child);
                     if (LOGGER.isDebugEnabled()) {
