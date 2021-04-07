@@ -75,8 +75,8 @@ public class Run {
         try {
             if (0 == depthGauge.increaseDepth()) {
                 RUNNER_TO_NOTIFIER.put(toMapKey(runner), notifier);
-                attachRunListeners(runner, notifier);
                 pushThreadRunner(runner);
+                attachRunListeners(runner, notifier);
                 fireRunStarted(runner);
             }
             
