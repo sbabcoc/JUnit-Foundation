@@ -2,13 +2,10 @@ package com.nordstrom.automation.junit;
 
 import static com.nordstrom.automation.junit.LifecycleHooks.toMapKey;
 
-import java.util.Set;
+import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CopyOnWriteArraySet;
-
+import java.util.concurrent.ConcurrentHashMap;
 import org.junit.Ignore;
-import org.junit.runner.Description;
-import org.junit.runner.notification.RunListener;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.FrameworkMethod;
 import net.bytebuddy.implementation.bind.annotation.Argument;
@@ -21,7 +18,7 @@ import net.bytebuddy.implementation.bind.annotation.This;
  */
 public class RunChild {
     
-    private static final Set<String> NOTIFIERS = new CopyOnWriteArraySet<>();
+    private static final Map<String, Boolean> DID_NOTIFY = new ConcurrentHashMap<>();
     
     /**
      * Interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#runChild runChild} method.
@@ -36,7 +33,11 @@ public class RunChild {
                     @Argument(0) final Object child,
                     @Argument(1) final RunNotifier notifier) throws Exception {
         
-        attachRunListeners(runner, notifier);
+        String mapKey = toMapKey(runner);
+        if ( ! DID_NOTIFY.containsKey(mapKey)) {
+            Run.attachRunListeners(runner, notifier);
+            DID_NOTIFY.put(mapKey, Run.fireRunStarted(runner));
+        }
         
         if (child instanceof FrameworkMethod) {
             FrameworkMethod method = (FrameworkMethod) child;
@@ -54,23 +55,12 @@ public class RunChild {
     }
     
     /**
-     * Attach registered run listeners to the specified run notifier.
-     * <p>
-     * <b>NOTE</b>: If the specified run notifier has already been seen, do nothing.
-     *  
-     * @param runner JUnit test runner
-     * @param notifier JUnit {@link RunNotifier} object
-     * @throws Exception if {@code run-started} notification 
+     * Fire the {@link RunnerWatcher#runFinished(Object)} event for the current runner.
      */
-    static void attachRunListeners(Object runner, final RunNotifier notifier) throws Exception {
-        if (NOTIFIERS.add(toMapKey(notifier))) {
-            Description description = LifecycleHooks.invoke(runner, "getDescription");
-            for (RunListener listener : LifecycleHooks.getRunListeners()) {
-                // prevent potential duplicates
-                notifier.removeListener(listener);
-                notifier.addListener(listener);
-                listener.testRunStarted(description);
-            }
+    static void finished() {
+        Object runner = Run.getThreadRunner();
+        if (Boolean.TRUE == DID_NOTIFY.remove(toMapKey(runner))) {
+            Run.fireRunFinished(runner);
         }
     }
 }

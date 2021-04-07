@@ -37,7 +37,7 @@ public class EachTestNotifierInit {
         
         if (description.isTest()) {
             newAtomicTestFor(description);
-            Object runner = RunChildren.getThreadRunner();
+            Object runner = Run.getThreadRunner();
             FrameworkMethod method = null;
             List<Object> children = LifecycleHooks.invoke(runner, "getChildren");
             for (Object child : children) {

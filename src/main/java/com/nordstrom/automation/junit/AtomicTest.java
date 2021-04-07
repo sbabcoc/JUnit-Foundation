@@ -35,7 +35,7 @@ public class AtomicTest {
     private static final Pattern PARAM = Pattern.compile("[(\\[]");
 
     public AtomicTest(Description description) {
-        this.runner = RunChildren.getThreadRunner();
+        this.runner = Run.getThreadRunner();
         this.description = description;
         this.particles = getParticles(runner, description);
         this.identity = this.particles.get(0);

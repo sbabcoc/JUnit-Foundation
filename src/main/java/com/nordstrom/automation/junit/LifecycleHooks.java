@@ -166,8 +166,6 @@ public class LifecycleHooks {
         final TypeDescription fireTestFinished = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.FireTestFinished").resolve();
         final TypeDescription runReflectiveCall = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.RunReflectiveCall").resolve();
         final TypeDescription finished = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.Finished").resolve();
-        final TypeDescription schedule = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.Schedule").resolve();
-        final TypeDescription runChildren = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.RunChildren").resolve();
         final TypeDescription runChild = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.RunChild").resolve();
         final TypeDescription run = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.Run").resolve();
         final TypeDescription describeChild = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.DescribeChild").resolve();
@@ -178,7 +176,6 @@ public class LifecycleHooks {
         
         final TypeDescription runNotifier = TypePool.Default.ofSystemLoader().describe("org.junit.runner.notification.RunNotifier").resolve();
         final TypeDescription description = TypePool.Default.ofSystemLoader().describe("org.junit.runner.Description").resolve();
-        final SignatureToken runChildrenToken = new SignatureToken("runChildren", TypeDescription.VOID, Arrays.asList(runNotifier));
         final SignatureToken runToken = new SignatureToken("run", TypeDescription.VOID, Arrays.asList(runNotifier));
         
         final TypeDescription frameworkMethod = TypePool.Default.ofSystemLoader().describe("org.junit.runners.model.FrameworkMethod").resolve();
@@ -210,8 +207,7 @@ public class LifecycleHooks {
                     @Override
                     public Builder<?> transform(Builder<?> builder, TypeDescription type,
                                     ClassLoader classloader, JavaModule module) {
-                        return builder.method(named("schedule")).intercept(MethodDelegation.to(schedule))
-                                      .method(named("finished")).intercept(MethodDelegation.to(finished))
+                        return builder.method(named("finished")).intercept(MethodDelegation.to(finished))
                                       .implement(Hooked.class);
                     }
                 })
@@ -221,7 +217,6 @@ public class LifecycleHooks {
                     public Builder<?> transform(Builder<?> builder, TypeDescription type,
                                     ClassLoader classloader, JavaModule module) {
                         return builder.method(named("runChild")).intercept(MethodDelegation.to(runChild))
-                                      .method(hasSignature(runChildrenToken)).intercept(MethodDelegation.to(runChildren))
                                       .method(hasSignature(runToken)).intercept(MethodDelegation.to(run))
                                       .method(named("describeChild")).intercept(MethodDelegation.to(describeChild))
                                       // NOTE: The 'methodBlock', 'createTest', and 'getTestRules' methods
@@ -300,7 +295,7 @@ public class LifecycleHooks {
      *         objects)
      */
     public static Object getParentOf(Object child) {
-        return RunChildren.getParentOf(child);
+        return Run.getParentOf(child);
     }
 
     /**
@@ -320,7 +315,7 @@ public class LifecycleHooks {
      * @return active {@code ParentRunner} object (may be ({@code null})
      */
     public static Object getThreadRunner() {
-        return RunChildren.getThreadRunner();
+        return Run.getThreadRunner();
     }
     
     /**
@@ -353,8 +348,6 @@ public class LifecycleHooks {
     public static Description describeChild(Object runner, Object child) {
         return invoke(runner, "describeChild", child);
     }
-    
-    
     
     /**
      * Get the {@link ReflectiveCallable} object for the specified description.
@@ -652,6 +645,5 @@ public class LifecycleHooks {
         public int size() {
             return indexes.length;
         }
-        
     }
 }
