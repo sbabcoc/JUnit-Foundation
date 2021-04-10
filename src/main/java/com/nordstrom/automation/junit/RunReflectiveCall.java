@@ -60,19 +60,41 @@ public class RunReflectiveCall {
             throws Exception {
         
         Object child = null;
+        Object runner = null;
+        boolean didPush = false;
 
         try {
             // get child object
             child = LifecycleHooks.getFieldValue(callable, "this$0");
+            // get thread runner
+            runner = Run.getThreadRunner();
+            
+            // if runner unknown
+            if (runner == null) {
+                // get runner for child
+                runner = Run.getParentOf(child);
+            }
+            
+            // if runner unknown
+            if (runner == null) {
+                // get test class instance
+                Object target = LifecycleHooks.getFieldValue(callable, "val$target");
+                // if target acquired
+                if (target != null) {
+                    // get runner for target
+                    runner = CreateTest.getRunnerFor(target);
+                    
+                    // if runner resolved
+                    if (runner != null) {
+                        didPush = true;
+                        Run.pushThreadRunner(runner);
+                    }
+                }
+            }
         } catch (IllegalAccessException | NoSuchFieldException | SecurityException | IllegalArgumentException e) {
             // handled below
         }
         
-        Object runner = Run.getParentOf(child);
-        if (runner == null) {
-            runner = Run.getThreadRunner();
-        }
-
         Object result = null;
         Throwable thrown = null;
 
@@ -83,6 +105,9 @@ public class RunReflectiveCall {
             thrown = t;
         } finally {
             fireAfterInvocation(runner, child, callable, thrown);
+            if (didPush) {
+                Run.popThreadRunner();
+            }
         }
 
         if (thrown != null) {
