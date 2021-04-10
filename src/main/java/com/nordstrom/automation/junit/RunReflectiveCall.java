@@ -86,8 +86,8 @@ public class RunReflectiveCall {
                     
                     // if runner resolved
                     if (runner != null) {
-                        didPush = true;
                         Run.pushThreadRunner(runner);
+                        didPush = true;
                     }
                 }
             }
