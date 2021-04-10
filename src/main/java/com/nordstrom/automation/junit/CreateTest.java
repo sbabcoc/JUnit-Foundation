@@ -27,6 +27,7 @@ public class CreateTest {
     
     private static final Map<Integer, Object> HASHCODE_TO_TARGET = new ConcurrentHashMap<>();
     private static final Map<String, FrameworkMethod> TARGET_TO_METHOD = new ConcurrentHashMap<>();
+    private static final Map<String, Object> TARGET_TO_RUNNER = new ConcurrentHashMap<>();
     private static final ThreadLocal<ConcurrentMap<Integer, DepthGauge>> METHOD_DEPTH;
     private static final Function<Integer, DepthGauge> NEW_INSTANCE;
     private static final Logger LOGGER = LoggerFactory.getLogger(CreateTest.class);
@@ -69,6 +70,7 @@ public class CreateTest {
             METHOD_DEPTH.get().remove(hashCode);
             LOGGER.debug("testObjectCreated: {}", target);
             TARGET_TO_METHOD.put(toMapKey(target), method);
+            TARGET_TO_RUNNER.put(toMapKey(target), runner);
             
             // apply parameter-based global timeout
             TimeoutUtils.applyTestTimeout(runner, method, target);
@@ -111,6 +113,16 @@ public class CreateTest {
     }
     
     /**
+     * Get the runner associated with the specified test class instance.
+     * 
+     * @param target test class instance
+     * @return JUnit class runner
+     */
+    static Object getRunnerFor(Object target) {
+        return TARGET_TO_RUNNER.get(toMapKey(target));
+    }
+    
+    /**
      * Release the mappings associated with the specified runner/method/target group.
      * 
      * @param runner JUnit class runner
@@ -121,6 +133,7 @@ public class CreateTest {
         HASHCODE_TO_TARGET.remove(Objects.hash(runner, method));
         if (target != null) {
             TARGET_TO_METHOD.remove(toMapKey(target));
+            TARGET_TO_RUNNER.remove(toMapKey(target));
         }
     }
 }
