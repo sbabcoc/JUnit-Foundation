@@ -1,5 +1,7 @@
 package com.nordstrom.automation.junit;
 
+import static com.nordstrom.automation.junit.LifecycleHooks.toMapKey;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -20,14 +22,14 @@ import com.nordstrom.common.file.PathUtils;
  */
 public class ArtifactCollector<T extends ArtifactType> extends AtomIdentity {
     
-    private static final ConcurrentHashMap<Description, List<ArtifactCollector<? extends ArtifactType>>> WATCHER_MAP;
-    private static final Function<Description, List<ArtifactCollector<? extends ArtifactType>>> NEW_INSTANCE;
+    private static final ConcurrentHashMap<String, List<ArtifactCollector<? extends ArtifactType>>> WATCHER_MAP;
+    private static final Function<String, List<ArtifactCollector<? extends ArtifactType>>> NEW_INSTANCE;
     
     static {
         WATCHER_MAP = new ConcurrentHashMap<>();
-        NEW_INSTANCE = new Function<Description, List<ArtifactCollector<? extends ArtifactType>>>() {
+        NEW_INSTANCE = new Function<String, List<ArtifactCollector<? extends ArtifactType>>>() {
             @Override
-            public List<ArtifactCollector<? extends ArtifactType>> apply(Description input) {
+            public List<ArtifactCollector<? extends ArtifactType>> apply(String input) {
                 return new ArrayList<>();
             }
         };
@@ -48,7 +50,7 @@ public class ArtifactCollector<T extends ArtifactType> extends AtomIdentity {
     public void starting(Description description) {
         super.starting(description);
         List<ArtifactCollector<? extends ArtifactType>> watcherList =
-                        LifecycleHooks.computeIfAbsent(WATCHER_MAP, description, NEW_INSTANCE);
+                        LifecycleHooks.computeIfAbsent(WATCHER_MAP, toMapKey(description), NEW_INSTANCE);
         watcherList.add(this);
     }
     
@@ -170,7 +172,7 @@ public class ArtifactCollector<T extends ArtifactType> extends AtomIdentity {
     }
     
     /**
-     * Get the artifact provider object.
+     * Get the artifact provider object.UnitTestCapture
      * 
      * @return artifact provider object
      */
@@ -189,7 +191,7 @@ public class ArtifactCollector<T extends ArtifactType> extends AtomIdentity {
     @SuppressWarnings("unchecked")
     public static <S extends ArtifactCollector<? extends ArtifactType>> Optional<S>
                     getWatcher(Description description, Class<S> watcherType) {
-        List<ArtifactCollector<? extends ArtifactType>> watcherList = WATCHER_MAP.get(description);
+        List<ArtifactCollector<? extends ArtifactType>> watcherList = WATCHER_MAP.get(toMapKey(description));
         if (watcherList != null) {
             for (ArtifactCollector<? extends ArtifactType> watcher : watcherList) {
                 if (watcher.getClass() == watcherType) {
@@ -199,5 +201,14 @@ public class ArtifactCollector<T extends ArtifactType> extends AtomIdentity {
         }
         return Optional.absent();
     }
+
+	/**
+     * Release the watchers for the specified description.
+     *
+     * @param description JUnit method description
+	 */
+    static void releaseWatchersOf(Description description) {
+    	WATCHER_MAP.remove(toMapKey(description));
+	}
 
 }

@@ -600,7 +600,7 @@ public class LifecycleHooks {
      * @param obj target object
      * @return map key string
      */
-    static String toMapKey(Object obj) {
+    public static String toMapKey(Object obj) {
         return obj.getClass().getName() + "@" + Integer.toHexString(System.identityHashCode(obj));
     }
     

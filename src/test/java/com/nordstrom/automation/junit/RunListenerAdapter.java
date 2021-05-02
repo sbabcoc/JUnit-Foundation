@@ -8,6 +8,8 @@ import org.junit.runner.Description;
 import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
 
+import com.google.common.base.Optional;
+
 /**
  * This run listener tracks the results of executed tests.
  */
@@ -27,6 +29,7 @@ public class RunListenerAdapter extends RunListener {
     private List<Description> m_failedTheories = Collections.synchronizedList(new ArrayList<Description>());
     private List<Description> m_ignoredTheories = Collections.synchronizedList(new ArrayList<Description>());
     private List<Description> m_passedTheories = Collections.synchronizedList(new ArrayList<Description>());
+    private Optional<UnitTestCapture> watcher;
                 
     /**
      * Called when an atomic test is about to be started.
@@ -90,6 +93,11 @@ public class RunListenerAdapter extends RunListener {
                 m_ignoredTests.add(description);
             }
         }
+    }
+    
+    @Override
+    public void testFinished(Description description) {
+    	watcher = ArtifactCollector.getWatcher(description, UnitTestCapture.class);
     }
     
     /**
@@ -170,7 +178,7 @@ public class RunListenerAdapter extends RunListener {
     public List<Description> getRetriedTests() {
         return m_retriedTests;
     }
-
+    null
     /**
      * Get list of all theory methods that were run.
      * 
@@ -218,6 +226,10 @@ public class RunListenerAdapter extends RunListener {
      */
     public List<Description> getIgnoredTheories() {
         return m_ignoredTheories;
+    }
+    
+    public UnitTestCapture getWatcher() {
+    	return (watcher.isPresent()) ? watcher.get() : null;
     }
     
     /**

@@ -169,6 +169,7 @@ public class EachTestNotifierInit {
         }
         
         RunReflectiveCall.releaseCallableOf(description);
+        ArtifactCollector.releaseWatchersOf(description);
         CreateTest.releaseMappingsFor(atomicTest.getRunner(), atomicTest.getIdentity(), target);
     }
 
