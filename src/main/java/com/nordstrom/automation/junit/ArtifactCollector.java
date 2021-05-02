@@ -172,7 +172,7 @@ public class ArtifactCollector<T extends ArtifactType> extends AtomIdentity {
     }
     
     /**
-     * Get the artifact provider object.UnitTestCapture
+     * Get the artifact provider object.
      * 
      * @return artifact provider object
      */
@@ -202,13 +202,13 @@ public class ArtifactCollector<T extends ArtifactType> extends AtomIdentity {
         return Optional.absent();
     }
 
-	/**
+    /**
      * Release the watchers for the specified description.
      *
      * @param description JUnit method description
-	 */
+     */
     static void releaseWatchersOf(Description description) {
-    	WATCHER_MAP.remove(toMapKey(description));
-	}
+        WATCHER_MAP.remove(toMapKey(description));
+    }
 
 }

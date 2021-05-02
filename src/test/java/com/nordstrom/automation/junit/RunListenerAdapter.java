@@ -3,6 +3,7 @@ package com.nordstrom.automation.junit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.junit.runner.Description;
 import org.junit.runner.notification.Failure;
@@ -29,7 +30,7 @@ public class RunListenerAdapter extends RunListener {
     private List<Description> m_failedTheories = Collections.synchronizedList(new ArrayList<Description>());
     private List<Description> m_ignoredTheories = Collections.synchronizedList(new ArrayList<Description>());
     private List<Description> m_passedTheories = Collections.synchronizedList(new ArrayList<Description>());
-    private Optional<UnitTestCapture> watcher;
+    private ConcurrentHashMap<Description, UnitTestCapture> watcherMap = new ConcurrentHashMap<>();
                 
     /**
      * Called when an atomic test is about to be started.
@@ -95,9 +96,15 @@ public class RunListenerAdapter extends RunListener {
         }
     }
     
+    /**
+     * Called when an atomic test has finished, whether the test succeeds or fails.
+     * 
+     * @param description the description of the test that just ran
+     */
     @Override
     public void testFinished(Description description) {
-    	watcher = ArtifactCollector.getWatcher(description, UnitTestCapture.class);
+        Optional<UnitTestCapture> watcher = ArtifactCollector.getWatcher(description, UnitTestCapture.class);
+        if (watcher.isPresent()) watcherMap.put(description, watcher.get());
     }
     
     /**
@@ -178,7 +185,7 @@ public class RunListenerAdapter extends RunListener {
     public List<Description> getRetriedTests() {
         return m_retriedTests;
     }
-    null
+
     /**
      * Get list of all theory methods that were run.
      * 
@@ -227,11 +234,17 @@ public class RunListenerAdapter extends RunListener {
     public List<Description> getIgnoredTheories() {
         return m_ignoredTheories;
     }
-    
-    public UnitTestCapture getWatcher() {
-    	return (watcher.isPresent()) ? watcher.get() : null;
+
+    /**
+     * Get unit test watcher registered for the specified description.
+     * 
+     * @param description JUnit method description
+     * @return {@link UnitTestWatcher} object; may be {@code null}
+     */
+    public UnitTestCapture getWatcher(Description description) {
+        return watcherMap.get(description);
     }
-    
+
     /**
      * Determine if the specified description represents a theory.
      * 
