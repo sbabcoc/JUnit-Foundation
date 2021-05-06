@@ -76,10 +76,14 @@ public class RetryHandler {
                     eachNotifier.addFailure(e);
                 }
             } finally {
+                // cache reference to test class instance
                 Object target = EachTestNotifierInit.getTargetOf(description);
+                // fire 'test finished' event
                 eachNotifier.fireTestFinished();
                 
+                // if retrying
                 if (doRetry) {
+                    // recreate mappings for runner/method/target group
                     CreateTest.createMappingsFor(runner, method, target);
                 }
             }
