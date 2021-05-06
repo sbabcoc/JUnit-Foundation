@@ -33,16 +33,20 @@ public class RetryHandler {
     }
     
     /**
-     * Run the specified method, retrying on failure.
+     * Run the specified child method, retrying on failure.
      * 
-     * @param runner JUnit test runner
+     * @param runner underlying test runner
      * @param method test method to be run
+     * @param statement JUnit statement object (the atomic test)
      * @param notifier run notifier through which events are published
      * @param maxRetry maximum number of retry attempts
+     * @return exception thrown by child method; {@code null} on normal completion
      */
-    static void runChildWithRetry(Object runner, final FrameworkMethod method, RunNotifier notifier, int maxRetry) {
+    public static Throwable runChildWithRetry(final Object runner, final FrameworkMethod method,
+            final Statement statement, final RunNotifier notifier, final int maxRetry) {
+        
+        Throwable thrown = null;
         boolean doRetry = false;
-        Statement statement = invoke(runner, "methodBlock", method);
         Description description = invoke(runner, "describeChild", method);
         AtomicInteger count = new AtomicInteger(maxRetry);
         
@@ -53,26 +57,35 @@ public class RetryHandler {
             try {
                 statement.evaluate();
                 doRetry = false;
-            } catch (AssumptionViolatedException thrown) {
-                doRetry = doRetry(method, thrown, count);
+            } catch (AssumptionViolatedException e) {
+                doRetry = doRetry(method, e, count);
                 if (doRetry) {
-                    description = RetriedTest.proxyFor(description, thrown);
+                    description = RetriedTest.proxyFor(description, e);
                     eachNotifier.fireTestIgnored();
                 } else {
-                    eachNotifier.addFailedAssumption(thrown);
+                    thrown = e;
+                    eachNotifier.addFailedAssumption(e);
                 }
-            } catch (Throwable thrown) {
-                doRetry = doRetry(method, thrown, count);
+            } catch (Throwable e) {
+                doRetry = doRetry(method, e, count);
                 if (doRetry) {
-                    description = RetriedTest.proxyFor(description, thrown);
+                    description = RetriedTest.proxyFor(description, e);
                     eachNotifier.fireTestIgnored();
                 } else {
-                    eachNotifier.addFailure(thrown);
+                    thrown = e;
+                    eachNotifier.addFailure(e);
                 }
             } finally {
+                Object target = EachTestNotifierInit.getTargetOf(description);
                 eachNotifier.fireTestFinished();
+                
+                if (doRetry) {
+                    CreateTest.createMappingsFor(runner, method, target);
+                }
             }
         } while (doRetry);
+        
+        return thrown;
     }
     
     /**

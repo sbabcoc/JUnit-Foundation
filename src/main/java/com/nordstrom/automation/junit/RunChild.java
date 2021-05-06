@@ -1,13 +1,17 @@
 package com.nordstrom.automation.junit;
 
+import static com.nordstrom.automation.junit.LifecycleHooks.invoke;
 import static com.nordstrom.automation.junit.LifecycleHooks.toMapKey;
 
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import org.junit.Ignore;
+import org.junit.experimental.theories.Theories;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.FrameworkMethod;
+import org.junit.runners.model.Statement;
+
 import net.bytebuddy.implementation.bind.annotation.Argument;
 import net.bytebuddy.implementation.bind.annotation.SuperCall;
 import net.bytebuddy.implementation.bind.annotation.This;
@@ -39,13 +43,13 @@ public class RunChild {
             Run.attachRunListeners(runner, notifier);
         }
         
-        if (child instanceof FrameworkMethod) {
+        if (!(runner instanceof Theories) && (child instanceof FrameworkMethod)) {
             FrameworkMethod method = (FrameworkMethod) child;
-            
-            int count = RetryHandler.getMaxRetry(runner, method);
-            if (count > 0) {
+            int maxRetry = RetryHandler.getMaxRetry(runner, method);
+            if (maxRetry > 0) {
                 if (null == method.getAnnotation(Ignore.class)) {
-                    RetryHandler.runChildWithRetry(runner, method, notifier, count);
+                    Statement statement = invoke(runner, "methodBlock", method);
+                    RetryHandler.runChildWithRetry(runner, method, statement, notifier, maxRetry);
                 }
                 return;
             }

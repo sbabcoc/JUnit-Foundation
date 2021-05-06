@@ -4,6 +4,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.experimental.theories.Theory;
 import org.junit.runner.Description;
 
 /**
@@ -49,11 +50,12 @@ public class RetriedTest extends MutableTest {
     }
     
     /**
-     * Create a {@link Test &#64;Test} annotation proxy for the specified test description.
+     * Create a {@link Test &#64;Test} or {@link Theory &#64;Theory} annotation proxy for the specified test
+     * description.
      * 
-     * @param description test description to which {@code @Test} annotation proxy will be attached
+     * @param description test description to which {@code @Test} or {@code @Theory} annotation proxy will be attached
      * @param thrown exception for this failed test
-     * @return new Description object for retry attempt
+     * @return new {@link Description} object for retry attempt
      */
     public static Description proxyFor(Description description, Throwable thrown) {
         try {
@@ -62,12 +64,16 @@ public class RetriedTest extends MutableTest {
             try {
                 Annotation[] annotations = (Annotation[]) field.get(description);
                 for (int i = 0; i < annotations.length; i++) {
+                    Annotation proxy = null;
                     Annotation annotation = annotations[i];
                     if (annotation instanceof Test) {
-                        Annotation[] originalAnnotations = annotations.clone();
-                        annotations[i] = new RetriedTest((Test) annotation, thrown);
-                        return Description.createTestDescription(
-                                        description.getTestClass(), description.getMethodName(), originalAnnotations);
+                        proxy = new RetriedTest((Test) annotation, thrown);
+                    } else if (annotation instanceof Theory) {
+                        proxy = new RetriedTheory((Theory) annotation, thrown);
+                    }
+                    if (proxy != null) {
+                        annotations[i] = proxy;
+                        return DescribeChild.makeChildlessCopyOf(description);
                     }
                 }
             } catch (IllegalArgumentException | IllegalAccessException e) {
@@ -77,6 +83,17 @@ public class RetriedTest extends MutableTest {
             throw new UnsupportedOperationException("Failed acquiring [" + ANNOTATIONS
                             + "] field of test method class", e);
         }
-        throw new IllegalArgumentException("Specified method is not a JUnit @Test: " + description);
+        throw new IllegalArgumentException("Specified method is not a JUnit @Test or @Theory: " + description);
+    }
+    
+    /**
+     * Determine if the specified description is for a retried test or theory.
+     * 
+     * @param description JUnit description
+     * @return {@code true} if the specified description indicates a retried test; otherwise {@code false}
+     */
+    public static boolean isRetriedTest(Description description) {
+        return ((null != description.getAnnotation(RetriedTest.class)) ||
+                (null != description.getAnnotation(RetriedTheory.class)));
     }
 }

@@ -2,13 +2,12 @@ package com.nordstrom.automation.junit;
 
 import java.util.concurrent.Callable;
 
-import org.junit.AssumptionViolatedException;
 import org.junit.experimental.theories.Theories.TheoryAnchor;
 import org.junit.experimental.theories.internal.Assignments;
-import org.junit.internal.runners.model.EachTestNotifier;
-import org.junit.runner.Description;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.FrameworkMethod;
+import org.junit.runners.model.Statement;
+
 import com.nordstrom.common.base.UncheckedThrow;
 
 import net.bytebuddy.implementation.bind.annotation.Argument;
@@ -44,27 +43,14 @@ public class RunWithCompleteAssignment {
         
         LifecycleHooks.callProxy(proxy); // NOTE: This pushes the BlockJUnit4ClassRunner
            
-        Throwable thrown = null;
-        Object classRunner = Run.getThreadRunner();
+        Object runner = Run.getThreadRunner();
         FrameworkMethod method = LifecycleHooks.getFieldValue(anchor, "testMethod");
-        
+        Statement statement = MethodBlock.getStatementOf(runner);
         RunNotifier notifier = Run.getNotifierOf(parentRunner);
-        Description description = LifecycleHooks.invoke(classRunner, "describeChild", method);
-        EachTestNotifier eachNotifier = new EachTestNotifier(notifier, description);
+        int maxRetry = RetryHandler.getMaxRetry(runner, method);
         
-        eachNotifier.fireTestStarted();
-        try {
-            MethodBlock.getStatementOf(classRunner).evaluate();
-        } catch (AssumptionViolatedException e) {
-            thrown = e;
-            eachNotifier.addFailedAssumption(e);
-        } catch (Throwable e) {
-            thrown = e;
-            eachNotifier.addFailure(e);
-        } finally {
-            eachNotifier.fireTestFinished();
-            Run.popThreadRunner();
-        }
+        Throwable thrown = RetryHandler.runChildWithRetry(runner, method, statement, notifier, maxRetry);
+        Run.popThreadRunner();
         
         if (thrown != null) {
             throw UncheckedThrow.throwUnchecked(thrown);

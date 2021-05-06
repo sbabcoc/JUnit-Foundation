@@ -19,8 +19,8 @@ public class RunListenerAdapter extends RunListener {
     private List<Description> m_allTestMethods = Collections.synchronizedList(new ArrayList<Description>());
     private List<Failure> m_testFailures = Collections.synchronizedList(new ArrayList<Failure>());
     private List<Description> m_failedTests = Collections.synchronizedList(new ArrayList<Description>());
-    private List<Failure> m_assumptionFailures = Collections.synchronizedList(new ArrayList<Failure>());
-    private List<Description> m_failedAssumptions = Collections.synchronizedList(new ArrayList<Description>());
+    private List<Failure> m_testAssumptionFailures = Collections.synchronizedList(new ArrayList<Failure>());
+    private List<Description> m_failedTestAssumptions = Collections.synchronizedList(new ArrayList<Description>());
     private List<Description> m_ignoredTests = Collections.synchronizedList(new ArrayList<Description>());
     private List<Description> m_retriedTests = Collections.synchronizedList(new ArrayList<Description>());
     private List<Description> m_passedTests = Collections.synchronizedList(new ArrayList<Description>());
@@ -28,9 +28,12 @@ public class RunListenerAdapter extends RunListener {
     private List<Description> m_allTheories = Collections.synchronizedList(new ArrayList<Description>());
     private List<Failure> m_theoryFailures = Collections.synchronizedList(new ArrayList<Failure>());
     private List<Description> m_failedTheories = Collections.synchronizedList(new ArrayList<Description>());
+    private List<Failure> m_theoryAssumptionFailures = Collections.synchronizedList(new ArrayList<Failure>());
+    private List<Description> m_failedTheoryAssumptions = Collections.synchronizedList(new ArrayList<Description>());
     private List<Description> m_ignoredTheories = Collections.synchronizedList(new ArrayList<Description>());
+    private List<Description> m_retriedTheories = Collections.synchronizedList(new ArrayList<Description>());
     private List<Description> m_passedTheories = Collections.synchronizedList(new ArrayList<Description>());
-    private ConcurrentHashMap<Description, UnitTestCapture> watcherMap = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Integer, UnitTestCapture> watcherMap = new ConcurrentHashMap<>();
                 
     /**
      * Called when an atomic test is about to be started.
@@ -73,8 +76,13 @@ public class RunListenerAdapter extends RunListener {
      */
     @Override
     public void testAssumptionFailure(Failure failure) {
-        m_assumptionFailures.add(failure);
-        m_failedAssumptions.add(failure.getDescription());
+        if (isTheory(failure.getDescription())) {
+            m_theoryAssumptionFailures.add(failure);
+            m_failedTheoryAssumptions.add(failure.getDescription());
+        } else {
+            m_testAssumptionFailures.add(failure);
+            m_failedTestAssumptions.add(failure.getDescription());
+        }
     }
 
     /**
@@ -85,11 +93,15 @@ public class RunListenerAdapter extends RunListener {
      */
     @Override
     public void testIgnored(Description description) throws Exception {
-        if (isTheory(description)) {
-            m_ignoredTheories.add(description);
-        } else {
-            if (null != description.getAnnotation(RetriedTest.class)) {
+        if (RetriedTest.isRetriedTest(description)) {
+            if (isTheory(description)) {
+                m_retriedTheories.add(description);
+            } else {
                 m_retriedTests.add(description);
+            }
+        } else {
+            if (isTheory(description)) {
+                m_ignoredTheories.add(description);
             } else {
                 m_ignoredTests.add(description);
             }
@@ -104,7 +116,7 @@ public class RunListenerAdapter extends RunListener {
     @Override
     public void testFinished(Description description) {
         Optional<UnitTestCapture> watcher = ArtifactCollector.getWatcher(description, UnitTestCapture.class);
-        if (watcher.isPresent()) watcherMap.put(description, watcher.get());
+        if (watcher.isPresent()) watcherMap.put(description.hashCode(), watcher.get());
     }
     
     /**
@@ -125,8 +137,7 @@ public class RunListenerAdapter extends RunListener {
         m_passedTests.clear();
         m_passedTests.addAll(m_allTestMethods);
         for (Description description : m_failedTests) { m_passedTests.remove(description); }
-        for (Description description : m_failedTheories) { m_passedTests.remove(description); }
-        for (Description description : m_failedAssumptions) { m_passedTests.remove(description); }
+        for (Description description : m_failedTestAssumptions) { m_passedTests.remove(description); }
         for (Description description : m_ignoredTests) { m_passedTests.remove(description); }
         for (Description description : m_retriedTests) { m_passedTests.remove(description); }
         return m_passedTests;
@@ -151,21 +162,21 @@ public class RunListenerAdapter extends RunListener {
     }
     
     /**
-     * Get list of assumption failures.
+     * Get list of test assumption failures.
      * 
-     * @return list of assumption failures
+     * @return list of test assumption failures
      */
-    public List<Failure> getAssumptionFailures() {
-        return m_assumptionFailures;
+    public List<Failure> getTestAssumptionFailures() {
+        return m_testAssumptionFailures;
     }
     
     /**
-     * Get list of failed assumptions.
+     * Get list of failed test assumptions.
      * 
-     * @return list of failed assumptions
+     * @return list of failed test assumptions
      */
-    public List<Description> getFailedAssumptions() {
-        return m_failedAssumptions;
+    public List<Description> getFailedTestAssumptions() {
+        return m_failedTestAssumptions;
     }
     
     /**
@@ -204,7 +215,9 @@ public class RunListenerAdapter extends RunListener {
         m_passedTheories.clear();
         m_passedTheories.addAll(m_allTheories);
         for (Description description : m_failedTheories) { m_passedTheories.remove(description); }
-        for (Description description : m_ignoredTests) { m_passedTheories.remove(description); }
+        for (Description description : m_failedTheoryAssumptions) { m_passedTheories.remove(description); }
+        for (Description description : m_ignoredTheories) { m_passedTheories.remove(description); }
+        for (Description description : m_retriedTheories) { m_passedTheories.remove(description); }
         return m_passedTheories;
     }
     
@@ -227,6 +240,24 @@ public class RunListenerAdapter extends RunListener {
     }
 
     /**
+     * Get list of theory assumption failures.
+     * 
+     * @return list of theory assumption failures
+     */
+    public List<Failure> getTheoryAssumptionFailures() {
+        return m_theoryAssumptionFailures;
+    }
+    
+    /**
+     * Get list of failed theory assumptions.
+     * 
+     * @return list of failed theory assumptions
+     */
+    public List<Description> getFailedTheoryAssumptions() {
+        return m_failedTheoryAssumptions;
+    }
+    
+    /**
      * Get list of ignored theories.
      * 
      * @return list of ignored theories
@@ -242,7 +273,7 @@ public class RunListenerAdapter extends RunListener {
      * @return {@link UnitTestWatcher} object; may be {@code null}
      */
     public UnitTestCapture getWatcher(Description description) {
-        return watcherMap.get(description);
+        return watcherMap.get(description.hashCode());
     }
 
     /**
