@@ -39,14 +39,24 @@ public class RunWithCompleteAssignment {
         // grab the current thread runner
         Object parentRunner = Run.getThreadRunner();
         
-        LifecycleHooks.callProxy(proxy); // NOTE: This pushes the BlockJUnit4ClassRunner
-           
+        // invoke proxy, which performs the following "magic":
+        // * create parameterized statement, caching it for later retrieval
+        // * create/execute "theory catalyst", which pushed the thread runner
+        LifecycleHooks.callProxy(proxy);
+        
+        // get runner from "theory catalyst"
         Object runner = Run.getThreadRunner();
+        // extract framework method from theory anchor
         FrameworkMethod method = LifecycleHooks.getFieldValue(anchor, "testMethod");
+        // get notifier attached to parent runner
         RunNotifier notifier = Run.getNotifierOf(parentRunner);
+        // get configured maximum retry count
         int maxRetry = RetryHandler.getMaxRetry(runner, method);
         
+        // execute atomic test, retry on failure
+        // NOTE - Cached statement is retrieved via MethodBlock.getStatementOf(runner)
         Throwable thrown = RetryHandler.runChildWithRetry(runner, method, null, notifier, maxRetry);
+        // pop thread runner
         Run.popThreadRunner();
         
         if (thrown != null) {

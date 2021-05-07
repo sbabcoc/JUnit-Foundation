@@ -54,7 +54,7 @@ public class RunChild {
                 if (maxRetry > 0) {
                     // create "atomic test" statement for this method
                     Statement statement = invoke(runner, "methodBlock", method);
-                    // execute atomic test, retry on failure 
+                    // execute atomic test, retry on failure
                     RetryHandler.runChildWithRetry(runner, method, statement, notifier, maxRetry);
                     // done
                     return;
