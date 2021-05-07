@@ -86,11 +86,10 @@ public class RetryHandler {
                     eachNotifier.addFailure(e);
                 }
             } finally {
-                // fire 'test finished' event
                 eachNotifier.fireTestFinished();
             }
             
-            // if finished, exit
+            // if no retry, exit
             if (!doRetry) break;
             
             try {
