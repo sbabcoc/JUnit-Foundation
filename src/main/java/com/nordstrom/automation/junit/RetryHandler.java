@@ -95,12 +95,12 @@ public class RetryHandler {
             if (!doRetry) break;
             
             try {
-                // 
+                // retain method to retry for JUnitParams
                 METHOD_TO_RETRY.put(toMapKey(method), true);
                 // create new "atomic test" for next iteration
                 iteration = invoke(runner, "methodBlock", method);
             } finally {
-                // 
+                // release method to retry
                 METHOD_TO_RETRY.remove(toMapKey(method));
             }
         } while (true);
@@ -171,9 +171,10 @@ public class RetryHandler {
     }
     
     /**
+     * Determine if the specified method is being retried.
      * 
-     * @param method
-     * @return
+     * @param method JUnit framework method
+     * @return {@code true} if method is being retried; otherwise {@code false}
      */
     static boolean doRetryFor(final FrameworkMethod method) {
         Boolean doRetry = METHOD_TO_RETRY.get(toMapKey(method));
