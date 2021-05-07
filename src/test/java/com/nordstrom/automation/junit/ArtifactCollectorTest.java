@@ -20,7 +20,7 @@ public class ArtifactCollectorTest {
 
     @BeforeClass
     public static void beforeClass() {
-        System.setProperty(JUnitSettings.MAX_RETRY.key(), "3");
+        System.setProperty(JUnitSettings.MAX_RETRY.key(), "1");
     }
     
     @Test
