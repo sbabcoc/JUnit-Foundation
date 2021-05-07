@@ -124,11 +124,11 @@ public class DescribeChild {
      */
     private static Description augmentDescription(final Object child, final Description description) {
         if ((child instanceof FrameworkMethod) && (uniqueId != null)) {
-            Description fixed = Description.createTestDescription(description.getTestClass(),
+            Description augmented = Description.createTestDescription(description.getTestClass(),
                     description.getMethodName(), ((FrameworkMethod) child).getAnnotations());
             try {
-                uniqueId.set(fixed, uniqueId.get(description));
-                return fixed;
+                uniqueId.set(augmented, uniqueId.get(description));
+                return augmented;
             } catch (IllegalArgumentException | IllegalAccessException eaten) {
                 // nothing to do here
             }
