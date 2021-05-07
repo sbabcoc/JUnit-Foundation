@@ -27,9 +27,8 @@ public class GetTestRules {
     @RuntimeType
     public static List<TestRule> intercept(@This final Object runner, @SuperCall final Callable<?> proxy,
             @Argument(0) final Object target) throws Exception {
-        @SuppressWarnings("unchecked")
         // get list of test rules for target class runner
-        List<TestRule> testRules = (List<TestRule>) LifecycleHooks.callProxy(proxy);
+        List<TestRule> testRules = LifecycleHooks.callProxy(proxy);
         // get method associated with this test class instance
         FrameworkMethod method = CreateTest.getMethodFor(target);
         // apply rule-based global timeout

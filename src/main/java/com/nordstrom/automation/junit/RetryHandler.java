@@ -1,8 +1,11 @@
 package com.nordstrom.automation.junit;
 
 import static com.nordstrom.automation.junit.LifecycleHooks.invoke;
+import static com.nordstrom.automation.junit.LifecycleHooks.toMapKey;
 
+import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.internal.AssumptionViolatedException;
@@ -21,6 +24,7 @@ import com.nordstrom.automation.junit.JUnitConfig.JUnitSettings;
  */
 public class RetryHandler {
 
+    private static final Map<String, Boolean> METHOD_TO_RETRY = new ConcurrentHashMap<>();
     private static final ServiceLoader<JUnitRetryAnalyzer> retryAnalyzerLoader;
     private static final Logger LOGGER = LoggerFactory.getLogger(RetryHandler.class);
     
@@ -33,46 +37,75 @@ public class RetryHandler {
     }
     
     /**
-     * Run the specified method, retrying on failure.
+     * Run the specified child method, retrying on failure.
      * 
-     * @param runner JUnit test runner
+     * @param runner underlying test runner
      * @param method test method to be run
+     * @param statement JUnit statement object (the atomic test)
      * @param notifier run notifier through which events are published
      * @param maxRetry maximum number of retry attempts
+     * @return exception thrown by child method; {@code null} on normal completion
      */
-    static void runChildWithRetry(Object runner, final FrameworkMethod method, RunNotifier notifier, int maxRetry) {
-        boolean doRetry = false;
-        Statement statement = invoke(runner, "methodBlock", method);
+    public static Throwable runChildWithRetry(final Object runner, final FrameworkMethod method,
+            final Statement statement, final RunNotifier notifier, final int maxRetry) {
+        
+        boolean doRetry = true;
+        Throwable thrown = null;
+        Statement iteration = statement; 
         Description description = invoke(runner, "describeChild", method);
         AtomicInteger count = new AtomicInteger(maxRetry);
         
         do {
             EachTestNotifier eachNotifier = new EachTestNotifier(notifier, description);
+            AtomicTest atomicTest = EachTestNotifierInit.getAtomicTestOf(description);
+            
+            // if atomic test is theory
+            if (atomicTest.isTheory()) {
+                // retrieve cached method block statement
+                iteration = MethodBlock.getStatementOf(runner);
+            }
             
             eachNotifier.fireTestStarted();
             try {
-                statement.evaluate();
+                iteration.evaluate();
                 doRetry = false;
-            } catch (AssumptionViolatedException thrown) {
-                doRetry = doRetry(method, thrown, count);
+            } catch (AssumptionViolatedException e) {
+                doRetry = doRetry(method, e, count);
                 if (doRetry) {
-                    description = RetriedTest.proxyFor(description, thrown);
+                    description = RetriedTest.proxyFor(description, e);
                     eachNotifier.fireTestIgnored();
                 } else {
-                    eachNotifier.addFailedAssumption(thrown);
+                    thrown = e;
+                    eachNotifier.addFailedAssumption(e);
                 }
-            } catch (Throwable thrown) {
-                doRetry = doRetry(method, thrown, count);
+            } catch (Throwable e) {
+                doRetry = doRetry(method, e, count);
                 if (doRetry) {
-                    description = RetriedTest.proxyFor(description, thrown);
+                    description = RetriedTest.proxyFor(description, e);
                     eachNotifier.fireTestIgnored();
                 } else {
-                    eachNotifier.addFailure(thrown);
+                    thrown = e;
+                    eachNotifier.addFailure(e);
                 }
             } finally {
                 eachNotifier.fireTestFinished();
             }
-        } while (doRetry);
+            
+            // if no retry, exit
+            if (!doRetry) break;
+            
+            try {
+                // retain method to retry for JUnitParams
+                METHOD_TO_RETRY.put(toMapKey(method), true);
+                // create new "atomic test" for next iteration
+                iteration = invoke(runner, "methodBlock", method);
+            } finally {
+                // release method to retry
+                METHOD_TO_RETRY.remove(toMapKey(method));
+            }
+        } while (true);
+        
+        return thrown;
     }
     
     /**
@@ -135,6 +168,17 @@ public class RetryHandler {
             }
         }
         return false;
+    }
+    
+    /**
+     * Determine if the specified method is being retried.
+     * 
+     * @param method JUnit framework method
+     * @return {@code true} if method is being retried; otherwise {@code false}
+     */
+    static boolean doRetryFor(final FrameworkMethod method) {
+        Boolean doRetry = METHOD_TO_RETRY.get(toMapKey(method));
+        return (doRetry != null) ? doRetry.booleanValue() : false;
     }
     
 }

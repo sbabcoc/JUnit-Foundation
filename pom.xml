@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.nordstrom.tools</groupId>
   <artifactId>junit-foundation</artifactId>
-  <version>15.0.1-SNAPSHOT</version>
+  <version>15.1.1-SNAPSHOT</version>
   <packaging>jar</packaging>
   
   <name>JUnit Foundation</name>
@@ -166,7 +166,6 @@
     <dependency>
       <groupId>pl.pragmatists</groupId>
       <artifactId>JUnitParams</artifactId>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.powermock</groupId>

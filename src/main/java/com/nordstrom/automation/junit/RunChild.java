@@ -1,13 +1,17 @@
 package com.nordstrom.automation.junit;
 
+import static com.nordstrom.automation.junit.LifecycleHooks.invoke;
 import static com.nordstrom.automation.junit.LifecycleHooks.toMapKey;
 
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import org.junit.Ignore;
+import org.junit.experimental.theories.Theories;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.FrameworkMethod;
+import org.junit.runners.model.Statement;
+
 import net.bytebuddy.implementation.bind.annotation.Argument;
 import net.bytebuddy.implementation.bind.annotation.SuperCall;
 import net.bytebuddy.implementation.bind.annotation.This;
@@ -39,15 +43,22 @@ public class RunChild {
             Run.attachRunListeners(runner, notifier);
         }
         
-        if (child instanceof FrameworkMethod) {
+        // if child is a framework method (but not the theory template)
+        if (!(runner instanceof Theories) && (child instanceof FrameworkMethod)) {
             FrameworkMethod method = (FrameworkMethod) child;
-            
-            int count = RetryHandler.getMaxRetry(runner, method);
-            if (count > 0) {
-                if (null == method.getAnnotation(Ignore.class)) {
-                    RetryHandler.runChildWithRetry(runner, method, notifier, count);
+            // if this method isn't being ignored
+            if (null == method.getAnnotation(Ignore.class)) {
+                // get configured maximum retry count
+                int maxRetry = RetryHandler.getMaxRetry(runner, method);
+                // if retry enabled
+                if (maxRetry > 0) {
+                    // create "atomic test" statement for this method
+                    Statement statement = invoke(runner, "methodBlock", method);
+                    // execute atomic test, retry on failure
+                    RetryHandler.runChildWithRetry(runner, method, statement, notifier, maxRetry);
+                    // done
+                    return;
                 }
-                return;
             }
         }
         

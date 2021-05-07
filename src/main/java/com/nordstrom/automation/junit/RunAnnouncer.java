@@ -79,7 +79,7 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
             watcher.testIgnored(atomicTest);
         }
         // if this isn't a retried test
-        if (null == description.getAnnotation(RetriedTest.class)) {
+        if ( ! RetriedTest.isRetriedTest(description)) {
             EachTestNotifierInit.releaseAtomicTestOf(description);
         }
     }

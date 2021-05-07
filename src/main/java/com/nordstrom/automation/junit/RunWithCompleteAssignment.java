@@ -2,11 +2,8 @@ package com.nordstrom.automation.junit;
 
 import java.util.concurrent.Callable;
 
-import org.junit.AssumptionViolatedException;
 import org.junit.experimental.theories.Theories.TheoryAnchor;
 import org.junit.experimental.theories.internal.Assignments;
-import org.junit.internal.runners.model.EachTestNotifier;
-import org.junit.runner.Description;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.FrameworkMethod;
 import com.nordstrom.common.base.UncheckedThrow;
@@ -42,31 +39,29 @@ public class RunWithCompleteAssignment {
         // grab the current thread runner
         Object parentRunner = Run.getThreadRunner();
         
-        LifecycleHooks.callProxy(proxy); // NOTE: This pushes the BlockJUnit4ClassRunner
-           
-        Throwable thrown = null;
-        Object classRunner = Run.getThreadRunner();
+        // invoke proxy, which performs the following "magic":
+        // * create parameterized statement, caching it for later retrieval
+        // * create/execute "theory catalyst", which pushes the thread runner
+        LifecycleHooks.callProxy(proxy);
+        
+        // get runner from "theory catalyst"
+        Object runner = Run.getThreadRunner();
+        // extract framework method from theory anchor
         FrameworkMethod method = LifecycleHooks.getFieldValue(anchor, "testMethod");
-        
+        // get notifier attached to parent runner
         RunNotifier notifier = Run.getNotifierOf(parentRunner);
-        Description description = LifecycleHooks.invoke(classRunner, "describeChild", method);
-        EachTestNotifier eachNotifier = new EachTestNotifier(notifier, description);
+        // get configured maximum retry count
+        int maxRetry = RetryHandler.getMaxRetry(runner, method);
         
-        eachNotifier.fireTestStarted();
-        try {
-            MethodBlock.getStatementOf(classRunner).evaluate();
-        } catch (AssumptionViolatedException e) {
-            thrown = e;
-            eachNotifier.addFailedAssumption(e);
-        } catch (Throwable e) {
-            thrown = e;
-            eachNotifier.addFailure(e);
-        } finally {
-            eachNotifier.fireTestFinished();
-            Run.popThreadRunner();
-        }
+        // execute atomic test (with automatic retry on failure)
+        // NOTE - Cached statement is retrieved via MethodBlock.getStatementOf(runner)
+        Throwable thrown = RetryHandler.runChildWithRetry(runner, method, null, notifier, maxRetry);
+        // pop thread runner
+        Run.popThreadRunner();
         
+        // if test failed
         if (thrown != null) {
+            // re-throw the caught exception
             throw UncheckedThrow.throwUnchecked(thrown);
         }
     }
