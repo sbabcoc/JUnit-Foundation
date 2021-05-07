@@ -150,8 +150,8 @@ Note that some associations are not available for specific context:
 
 * `LifecycleHooks.getThreadRunner()`  
 Get the runner that owns the active thread context.
-* `LifecycleHooks.describeChild(Object target, Object child)`  
-Get a **Description** for the indicated child object from the runner for the specified test class instance.
+* `LifecycleHooks.describeChild(Object runner, Object child)`  
+Get a **Description** for the specified child object.
 * `LifecycleHooks.getInstanceClass(Object instance)`  
 Get class of specified test class instance.
 * `LifecycleHooks.getFieldValue(Object target, String name)`  
