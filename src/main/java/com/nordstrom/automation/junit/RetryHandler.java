@@ -51,14 +51,13 @@ public class RetryHandler {
         
         boolean doRetry = true;
         Throwable thrown = null;
-        AtomicTest atomicTest = null;
         Statement iteration = statement; 
         Description description = invoke(runner, "describeChild", method);
         AtomicInteger count = new AtomicInteger(maxRetry);
         
         do {
             EachTestNotifier eachNotifier = new EachTestNotifier(notifier, description);
-            atomicTest = EachTestNotifierInit.getAtomicTestOf(description);
+            AtomicTest atomicTest = EachTestNotifierInit.getAtomicTestOf(description);
             
             if (atomicTest.isTheory()) {
                 iteration = MethodBlock.getStatementOf(runner);
