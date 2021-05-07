@@ -69,11 +69,17 @@ public class CreateTest {
         if (0 == depthGauge.decreaseDepth()) {
             METHOD_DEPTH.get().remove(hashCode);
             LOGGER.debug("testObjectCreated: {}", target);
+            TARGET_TO_METHOD.put(toMapKey(target), method);
+            TARGET_TO_RUNNER.put(toMapKey(target), runner);
             
             // apply parameter-based global timeout
             TimeoutUtils.applyTestTimeout(runner, method, target);
             
-            createMappingsFor(runner, method, target);
+            // if notifier hasn't been initialized yet
+            if ( ! EachTestNotifierInit.setTestTarget(runner, method, target)) {
+                // store target for subsequent retrieval
+                HASHCODE_TO_TARGET.put(hashCode, target);
+            }
             
             for (TestObjectWatcher watcher : LifecycleHooks.getObjectWatchers()) {
                 watcher.testObjectCreated(runner, method, target);
@@ -83,24 +89,6 @@ public class CreateTest {
         return target;
     }
 
-    /**
-     * Create the mappings associated with the specified runner/method/target group.
-     * 
-     * @param runner JUnit class runner
-     * @param method JUnit framework method
-     * @param target test class instance
-     */
-    static void createMappingsFor(final Object runner, final FrameworkMethod method, Object target) {
-        TARGET_TO_METHOD.put(toMapKey(target), method);
-        TARGET_TO_RUNNER.put(toMapKey(target), runner);
-        
-        // if notifier hasn't been initialized yet
-        if ( ! EachTestNotifierInit.setTestTarget(runner, method, target)) {
-            // store target for subsequent retrieval
-            HASHCODE_TO_TARGET.put(Objects.hash(runner, method), target);
-        }
-    }
-    
     /**
      * Get test class instance associated with the specified runner/method pair.
      * <p>
