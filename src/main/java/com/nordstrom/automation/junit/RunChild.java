@@ -46,18 +46,19 @@ public class RunChild {
         // if child is a framework method (but not the theory template)
         if (!(runner instanceof Theories) && (child instanceof FrameworkMethod)) {
             FrameworkMethod method = (FrameworkMethod) child;
-            // get configured maximum retry count
-            int maxRetry = RetryHandler.getMaxRetry(runner, method);
-            // if retry enabled
-            if (maxRetry > 0) {
-                // if this method isn't being ignored
-                if (null == method.getAnnotation(Ignore.class)) {
+            // if this method isn't being ignored
+            if (null == method.getAnnotation(Ignore.class)) {
+                // get configured maximum retry count
+                int maxRetry = RetryHandler.getMaxRetry(runner, method);
+                // if retry enabled
+                if (maxRetry > 0) {
                     // create "atomic test" statement for this method
                     Statement statement = invoke(runner, "methodBlock", method);
                     // execute atomic test, retry on failure 
                     RetryHandler.runChildWithRetry(runner, method, statement, notifier, maxRetry);
+                    // done
+                    return;
                 }
-                return;
             }
         }
         
