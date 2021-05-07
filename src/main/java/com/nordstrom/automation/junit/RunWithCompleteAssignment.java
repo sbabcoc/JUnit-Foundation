@@ -41,7 +41,7 @@ public class RunWithCompleteAssignment {
         
         // invoke proxy, which performs the following "magic":
         // * create parameterized statement, caching it for later retrieval
-        // * create/execute "theory catalyst", which pushed the thread runner
+        // * create/execute "theory catalyst", which pushes the thread runner
         LifecycleHooks.callProxy(proxy);
         
         // get runner from "theory catalyst"
