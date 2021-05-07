@@ -43,7 +43,7 @@ public class RunChild {
             Run.attachRunListeners(runner, notifier);
         }
         
-        // if child is a framework method (but not the theory anchor)
+        // if child is a framework method (but not the theory template)
         if (!(runner instanceof Theories) && (child instanceof FrameworkMethod)) {
             FrameworkMethod method = (FrameworkMethod) child;
             // get configured maximum retry count
