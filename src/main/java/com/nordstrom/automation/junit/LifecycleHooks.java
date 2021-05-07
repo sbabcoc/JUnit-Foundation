@@ -173,6 +173,7 @@ public class LifecycleHooks {
         final TypeDescription createTest = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.CreateTest").resolve();
         final TypeDescription getTestRules = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.GetTestRules").resolve();
         final TypeDescription runWithCompleteAssignment = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.RunWithCompleteAssignment").resolve();
+        final TypeDescription nextCount = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.NextCount").resolve();
         
         final TypeDescription runNotifier = TypePool.Default.ofSystemLoader().describe("org.junit.runner.notification.RunNotifier").resolve();
         final TypeDescription description = TypePool.Default.ofSystemLoader().describe("org.junit.runner.Description").resolve();
@@ -244,6 +245,15 @@ public class LifecycleHooks {
                                     ClassLoader classloader, JavaModule module) {
                         return builder.method(named("fireTestFailure")).intercept(MethodDelegation.to(addFailure))
                                       .method(named("fireTestAssumptionFailed")).intercept(MethodDelegation.to(addFailure))
+                                      .implement(Hooked.class);
+                    }
+                })
+                .type(hasSuperType(named("junitparams.internal.ParameterisedTestMethodRunner")))
+                .transform(new Transformer() {
+                    @Override
+                    public Builder<?> transform(Builder<?> builder, TypeDescription type,
+                                    ClassLoader classloader, JavaModule module) {
+                        return builder.method(named("nextCount")).intercept(MethodDelegation.to(nextCount))
                                       .implement(Hooked.class);
                     }
                 })
@@ -483,9 +493,10 @@ public class LifecycleHooks {
      * @return {@code anything} - value returned by the intercepted method
      * @throws Exception {@code anything} (exception thrown by the intercepted method)
      */
-    static Object callProxy(final Callable<?> proxy) throws Exception {
+    @SuppressWarnings("unchecked")
+    static <T> T callProxy(final Callable<?> proxy) throws Exception {
         try {
-            return proxy.call();
+            return (T) proxy.call();
         } catch (InvocationTargetException e) {
             throw UncheckedThrow.throwUnchecked(e.getCause());
         }

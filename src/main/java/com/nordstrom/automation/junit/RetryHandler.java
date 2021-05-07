@@ -1,8 +1,11 @@
 package com.nordstrom.automation.junit;
 
 import static com.nordstrom.automation.junit.LifecycleHooks.invoke;
+import static com.nordstrom.automation.junit.LifecycleHooks.toMapKey;
 
+import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.internal.AssumptionViolatedException;
@@ -21,6 +24,7 @@ import com.nordstrom.automation.junit.JUnitConfig.JUnitSettings;
  */
 public class RetryHandler {
 
+    private static final Map<String, Boolean> METHOD_TO_RETRY = new ConcurrentHashMap<>();
     private static final ServiceLoader<JUnitRetryAnalyzer> retryAnalyzerLoader;
     private static final Logger LOGGER = LoggerFactory.getLogger(RetryHandler.class);
     
@@ -45,17 +49,24 @@ public class RetryHandler {
     public static Throwable runChildWithRetry(final Object runner, final FrameworkMethod method,
             final Statement statement, final RunNotifier notifier, final int maxRetry) {
         
+        boolean doRetry = true;
         Throwable thrown = null;
-        boolean doRetry = false;
+        AtomicTest atomicTest = null;
+        Statement iteration = statement; 
         Description description = invoke(runner, "describeChild", method);
         AtomicInteger count = new AtomicInteger(maxRetry);
         
         do {
             EachTestNotifier eachNotifier = new EachTestNotifier(notifier, description);
+            atomicTest = EachTestNotifierInit.getAtomicTestOf(description);
+            
+            if (atomicTest.isTheory()) {
+                iteration = MethodBlock.getStatementOf(runner);
+            }
             
             eachNotifier.fireTestStarted();
             try {
-                statement.evaluate();
+                iteration.evaluate();
                 doRetry = false;
             } catch (AssumptionViolatedException e) {
                 doRetry = doRetry(method, e, count);
@@ -76,18 +87,23 @@ public class RetryHandler {
                     eachNotifier.addFailure(e);
                 }
             } finally {
-                // cache reference to test class instance
-                Object target = EachTestNotifierInit.getTargetOf(description);
                 // fire 'test finished' event
                 eachNotifier.fireTestFinished();
-                
-                // if retrying
-                if (doRetry) {
-                    // recreate mappings for runner/method/target group
-                    CreateTest.createMappingsFor(runner, method, target);
-                }
             }
-        } while (doRetry);
+            
+            // if finished, exit
+            if (!doRetry) break;
+            
+            try {
+                // 
+                METHOD_TO_RETRY.put(toMapKey(method), true);
+                // create new "atomic test" for next iteration
+                iteration = invoke(runner, "methodBlock", method);
+            } finally {
+                // 
+                METHOD_TO_RETRY.remove(toMapKey(method));
+            }
+        } while (true);
         
         return thrown;
     }
@@ -152,6 +168,16 @@ public class RetryHandler {
             }
         }
         return false;
+    }
+    
+    /**
+     * 
+     * @param method
+     * @return
+     */
+    static boolean doRetryFor(final FrameworkMethod method) {
+        Boolean doRetry = METHOD_TO_RETRY.get(toMapKey(method));
+        return (doRetry != null) ? doRetry.booleanValue() : false;
     }
     
 }

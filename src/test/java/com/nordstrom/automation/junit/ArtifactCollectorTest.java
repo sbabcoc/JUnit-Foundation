@@ -9,12 +9,20 @@ import static org.testng.Assert.assertTrue;
 import org.junit.runner.Description;
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Result;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import com.nordstrom.automation.junit.JUnitConfig.JUnitSettings;
 import com.nordstrom.automation.junit.UnitTestArtifact.CaptureState;
 
 public class ArtifactCollectorTest {
 
+    @BeforeClass
+    public static void beforeClass() {
+        System.setProperty(JUnitSettings.MAX_RETRY.key(), "3");
+    }
+    
     @Test
     public void verifyHappyPath() {
         RunListenerAdapter rla = new RunListenerAdapter();
@@ -176,4 +184,10 @@ public class ArtifactCollectorTest {
         assertEquals(watcher.getArtifactProvider().getCaptureState(), CaptureState.CAPTURE_SUCCESS, "Incorrect artifact provider capture state");
         assertTrue(watcher.getArtifactPath().isPresent(), "Artifact capture output path is not present");
     }
+    
+    @AfterClass
+    public static void afterClass() {
+        System.clearProperty(JUnitSettings.MAX_RETRY.key());
+    }
+    
 }

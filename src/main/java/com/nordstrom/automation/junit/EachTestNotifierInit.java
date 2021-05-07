@@ -125,16 +125,6 @@ public class EachTestNotifierInit {
     }
     
     /**
-     * Get the test class instance associated with the specified test description.
-     * 
-     * @param description JUnit method description
-     * @return test class instance (may be {@code null})
-     */
-    static Object getTargetOf(Description description) {
-        return DESCRIPTION_TO_TARGET.get(description.hashCode());
-    }
-    
-    /**
      * Set the target test class instance for the specified runner/method pair.
      * <p>
      * <b>NOTE</b>: If the associated notifier has yet to be instantiated, no mapping is established.

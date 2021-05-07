@@ -6,8 +6,6 @@ import org.junit.experimental.theories.Theories.TheoryAnchor;
 import org.junit.experimental.theories.internal.Assignments;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.FrameworkMethod;
-import org.junit.runners.model.Statement;
-
 import com.nordstrom.common.base.UncheckedThrow;
 
 import net.bytebuddy.implementation.bind.annotation.Argument;
@@ -45,11 +43,10 @@ public class RunWithCompleteAssignment {
            
         Object runner = Run.getThreadRunner();
         FrameworkMethod method = LifecycleHooks.getFieldValue(anchor, "testMethod");
-        Statement statement = MethodBlock.getStatementOf(runner);
         RunNotifier notifier = Run.getNotifierOf(parentRunner);
         int maxRetry = RetryHandler.getMaxRetry(runner, method);
         
-        Throwable thrown = RetryHandler.runChildWithRetry(runner, method, statement, notifier, maxRetry);
+        Throwable thrown = RetryHandler.runChildWithRetry(runner, method, null, notifier, maxRetry);
         Run.popThreadRunner();
         
         if (thrown != null) {

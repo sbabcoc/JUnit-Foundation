@@ -49,7 +49,7 @@ public class DescribeChild {
                     @SuperCall final Callable<?> proxy,
                     @Argument(0) final Object child) throws Exception {
         
-        Description description = (Description) LifecycleHooks.callProxy(proxy);
+        Description description = LifecycleHooks.callProxy(proxy);
         
         // if running with JUnitParams
         if (runner instanceof JUnitParamsRunner) {

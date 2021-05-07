@@ -59,7 +59,7 @@ public class MethodBlock {
         DepthGauge depthGauge = LifecycleHooks.computeIfAbsent(METHOD_DEPTH.get(), toMapKey(runner), NEW_INSTANCE);
         depthGauge.increaseDepth();
         
-        Statement statement = (Statement) LifecycleHooks.callProxy(proxy);
+        Statement statement = LifecycleHooks.callProxy(proxy);
         
         // if at ground level
         if (0 == depthGauge.decreaseDepth()) {
