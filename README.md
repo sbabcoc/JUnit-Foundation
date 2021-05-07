@@ -65,18 +65,18 @@ The notifications provided by **JUnit Foundation** include the context that owns
 
 The objects passed to your service provider implementation are members of a hierarchy that **JUnit** builds to represent the test collection being executed. **JUnit Foundation** provides a set of static methods that enable you walk this object hierarchy.
 
+* `LifecycleHooks.getAtomicTestOf(Object target)`  
+Get the atomic test object for the specified test class instance.
 * `LifecycleHooks.getParentOf(Object child)`  
 Get the parent runner that owns specified child runner or framework method.
-* `LifecycleHooks.getRunnerForTarget(Object target)`  
-Get the parent runner that owns the specified instance.
-* `LifecycleHooks.getTargetForRunner(Object runner)`  
-Get the JUnit test class instance owned by the specified parent runner.
+* `LifecycleHooks.getNotifierOf(Object runner)`
+Get the run notifier associated with the specified parent runner.
 * `LifecycleHooks.getTestClassOf(Object runner)`  
 Get the test class object associated with the specified parent runner.
-* `LifecycleHooks.getAtomicTestOf(Object runner)`  
-Get the atomic test object for the specified class runner.
-* `LifecycleHooks.getCallableOf(Object runner, Object child)`  
-Get the _callable_ closure associated with the specified parent runner and child runner or framework method.
+* `LifecycleHooks.getAtomicTestOf(Description description)`
+Get the atomic test object for the specified method description.
+* `LifecycleHooks.getCallableOf(Description description)`
+Get the **ReflectiveCallable** object for the specified description.
 
 ###### Exploring the Test Run Hierarchy
 ```java
@@ -120,8 +120,10 @@ public class ExploringWatcher implements TestObjectWatcher, MethodWatcher<Framew
     public void afterInvocation(Object runner, FrameworkMethod method, ReflectiveCallable callable, Throwable thrown) {
         // if child is a 'before' configuration method
         if (null != method.getAnnotation(Before.class)) {
-            // get the atomic test of the runner
-            AtomicTest<FrameworkMethod> atomicTest = LifecycleHooks.getAtomicTestOf(runner);
+            // get description for this method
+            Description description = LifecycleHooks.describeChild(runner, method);
+            // get the atomic test for the described method
+            AtomicTest<FrameworkMethod> atomicTest = LifecycleHooks.getAtomicTestOf(description);
             // get the "identity" method
             FrameworkMethod identity = atomicTest.getIdentity();
             // ...
@@ -146,10 +148,8 @@ Note that some associations are not available for specific context:
 
 **JUnit Foundation** provides several static utility methods that can be useful in your service provider implementation.
 
-* `LifecycleHooks.isParticleMethod(Object child)`  
-Determines if the specified child is a test or configuration method.
-* `LifecycleHooks.getAnnotation(Object object, Class<T> annotationType)`  
-Returns the annotation of the specified type if the object is tagged with such an annotation.
+* `LifecycleHooks.getThreadRunner()`
+Get the runner that owns the active thread context.
 * `LifecycleHooks.describeChild(Object target, Object child)`  
 Get a `Description` for the indicated child object from the runner for the specified test class instance.
 * `LifecycleHooks.getInstanceClass(Object instance)`  
@@ -184,7 +184,7 @@ The hooks that enable **JUnit Foundation** test lifecycle notifications are inst
     <dependency>
       <groupId>com.nordstrom.tools</groupId>
       <artifactId>junit-foundation</artifactId>
-      <version>13.0.0</version>
+      <version>15.1.1</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -263,7 +263,7 @@ repositories {
 }
 dependencies {
     // ...
-    compile 'com.nordstrom.tools:junit-foundation:13.0.0'
+    compile 'com.nordstrom.tools:junit-foundation:15.1.1'
 }
 test {
 //  debug true
@@ -294,7 +294,7 @@ android {
 
 dependencies {
     // ...
-    testImplementation 'com.nordstrom.tools:junit-foundation:13.0.0'
+    testImplementation 'com.nordstrom.tools:junit-foundation:15.1.1'
 }
 ```
 
