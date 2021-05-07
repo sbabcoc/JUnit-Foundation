@@ -59,7 +59,9 @@ public class RunWithCompleteAssignment {
         // pop thread runner
         Run.popThreadRunner();
         
+        // if test failed
         if (thrown != null) {
+            // re-throw the caught exception
             throw UncheckedThrow.throwUnchecked(thrown);
         }
     }

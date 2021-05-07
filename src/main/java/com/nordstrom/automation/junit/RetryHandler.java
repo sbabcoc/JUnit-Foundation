@@ -59,7 +59,9 @@ public class RetryHandler {
             EachTestNotifier eachNotifier = new EachTestNotifier(notifier, description);
             AtomicTest atomicTest = EachTestNotifierInit.getAtomicTestOf(description);
             
+            // if atomic test is theory
             if (atomicTest.isTheory()) {
+                // retrieve cached method block statement
                 iteration = MethodBlock.getStatementOf(runner);
             }
             
