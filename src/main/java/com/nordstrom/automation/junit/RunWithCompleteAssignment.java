@@ -53,7 +53,7 @@ public class RunWithCompleteAssignment {
         // get configured maximum retry count
         int maxRetry = RetryHandler.getMaxRetry(runner, method);
         
-        // execute atomic test, retry on failure
+        // execute atomic test (with automatic retry on failure)
         // NOTE - Cached statement is retrieved via MethodBlock.getStatementOf(runner)
         Throwable thrown = RetryHandler.runChildWithRetry(runner, method, null, notifier, maxRetry);
         // pop thread runner
