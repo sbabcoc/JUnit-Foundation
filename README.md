@@ -69,13 +69,13 @@ The objects passed to your service provider implementation are members of a hier
 Get the atomic test object for the specified test class instance.
 * `LifecycleHooks.getParentOf(Object child)`  
 Get the parent runner that owns specified child runner or framework method.
-* `LifecycleHooks.getNotifierOf(Object runner)`
+* `LifecycleHooks.getNotifierOf(Object runner)`  
 Get the run notifier associated with the specified parent runner.
 * `LifecycleHooks.getTestClassOf(Object runner)`  
 Get the test class object associated with the specified parent runner.
-* `LifecycleHooks.getAtomicTestOf(Description description)`
+* `LifecycleHooks.getAtomicTestOf(Description description)`  
 Get the atomic test object for the specified method description.
-* `LifecycleHooks.getCallableOf(Description description)`
+* `LifecycleHooks.getCallableOf(Description description)`  
 Get the **ReflectiveCallable** object for the specified description.
 
 ###### Exploring the Test Run Hierarchy
@@ -148,7 +148,7 @@ Note that some associations are not available for specific context:
 
 **JUnit Foundation** provides several static utility methods that can be useful in your service provider implementation.
 
-* `LifecycleHooks.getThreadRunner()`
+* `LifecycleHooks.getThreadRunner()`  
 Get the runner that owns the active thread context.
 * `LifecycleHooks.describeChild(Object target, Object child)`  
 Get a `Description` for the indicated child object from the runner for the specified test class instance.
