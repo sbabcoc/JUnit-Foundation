@@ -349,6 +349,16 @@ public class LifecycleHooks {
     }
     
     /**
+     * Get the test class instance for the specified method description.
+     * 
+     * @param description JUnit method description
+     * @return test class instance (may be {@code null})
+     */
+    public static Object getTargetOf(Description description) {
+        return EachTestNotifierInit.getTargetOf(description);
+    }
+    
+    /**
      * Get the description for the specified child object.
      * 
      * @param runner target {@link org.junit.runners.ParentRunner ParentRunner} object

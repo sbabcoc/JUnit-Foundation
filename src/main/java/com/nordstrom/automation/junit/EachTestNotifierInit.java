@@ -115,6 +115,16 @@ public class EachTestNotifierInit {
     }
     
     /**
+     * Get the test class instance for the specified method description.
+     * 
+     * @param description JUnit method description
+     * @return test class instance (may be {@code null})
+     */
+    static Object getTargetOf(Description description) {
+        return DESCRIPTION_TO_TARGET.get(description.hashCode());
+    }
+    
+    /**
      * Get the atomic test for the specified notifier.
      * 
      * @param notifier JUnit {@link EachTestNotifier} object
