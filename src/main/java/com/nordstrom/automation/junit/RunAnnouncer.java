@@ -26,7 +26,7 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
     @Override
     public void testStarted(Description description) throws Exception {
         LOGGER.debug("testStarted: {}", description);
-        AtomicTest atomicTest = EachTestNotifierInit.getAtomicTestOf(description);
+        AtomicTest atomicTest = ensureAtomicTestOf(description);
         for (RunWatcher watcher : LifecycleHooks.getRunWatchers()) {
             watcher.testStarted(atomicTest);
         }
@@ -38,7 +38,7 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
     @Override
     public void testFinished(Description description) throws Exception {
         LOGGER.debug("testFinished: {}", description);
-        AtomicTest atomicTest = EachTestNotifierInit.getAtomicTestOf(description);
+        AtomicTest atomicTest = ensureAtomicTestOf(description);
         for (RunWatcher watcher : LifecycleHooks.getRunWatchers()) {
             watcher.testFinished(atomicTest);
         }
@@ -50,7 +50,7 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
     @Override
     public void testFailure(Failure failure) throws Exception {
         LOGGER.debug("testFailure: {}", failure);
-        AtomicTest atomicTest = EachTestNotifierInit.getAtomicTestOf(failure.getDescription());
+        AtomicTest atomicTest = ensureAtomicTestOf(failure);
         for (RunWatcher watcher : LifecycleHooks.getRunWatchers()) {
             watcher.testFailure(atomicTest, failure.getException());
         }
@@ -62,7 +62,7 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
     @Override
     public void testAssumptionFailure(Failure failure) {
         LOGGER.debug("testAssumptionFailure: {}", failure);
-        AtomicTest atomicTest = EachTestNotifierInit.getAtomicTestOf(failure.getDescription());
+        AtomicTest atomicTest = ensureAtomicTestOf(failure);
         for (RunWatcher watcher : LifecycleHooks.getRunWatchers()) {
             watcher.testAssumptionFailure(atomicTest, (AssumptionViolatedException) failure.getException());
         }
@@ -74,13 +74,49 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
     @Override
     public void testIgnored(Description description) throws Exception {
         LOGGER.debug("testIgnored: {}", description);
-        AtomicTest atomicTest = EachTestNotifierInit.ensureAtomicTestOf(description);
+        AtomicTest atomicTest = ensureAtomicTestOf(description);
         for (RunWatcher watcher : LifecycleHooks.getRunWatchers()) {
             watcher.testIgnored(atomicTest);
         }
-        // if this isn't a retried test
-        if ( ! RetriedTest.isRetriedTest(description)) {
-            EachTestNotifierInit.releaseAtomicTestOf(description);
+    }
+    
+    /**
+     * Get the atomic test object for the specified method description.
+     * <p>
+     * <b>NOTE</b>: For ignored tests, this method returns an ephemeral object.
+     * 
+     * @param description JUnit method description
+     * @return {@link AtomicTest} object
+     */
+    private static AtomicTest ensureAtomicTestOf(Description description) {
+        // get atomic test for this description
+        AtomicTest atomicTest = EachTestNotifierInit.getAtomicTestOf(description);
+        // if none was found
+        if (atomicTest == null) {
+            // create ephemeral atomic test object
+            atomicTest = new AtomicTest(description);
         }
+        return atomicTest;
+    }
+    
+    /**
+     * Get the atomic test object for the specified failure.
+     * <p>
+     * <b>NOTE</b>: For suite failures, this method returns an ephemeral object.
+     * 
+     * @param failure 
+     * @return {@link AtomicTest} object
+     */
+    private static AtomicTest ensureAtomicTestOf(Failure failure) {
+        // get atomic test for this description
+        AtomicTest atomicTest = EachTestNotifierInit.getAtomicTestOf(failure.getDescription());
+        // if none was found
+        if (atomicTest == null) {
+            // create ephemeral atomic test object
+            atomicTest = new AtomicTest(failure.getDescription());
+            // set the exception for this atomic test
+            atomicTest.setThrowable(failure.getException());
+        }
+        return atomicTest;
     }
 }

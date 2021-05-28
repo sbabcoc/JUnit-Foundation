@@ -26,13 +26,18 @@ public class AddFailure {
     public static void intercept(@This final EachTestNotifier notifier, @SuperCall final Callable<?> proxy,
             @Argument(0) final Throwable targetException) throws Exception {
         
+        // if this isn't a multi-failure wrapper exception
         if ( ! (targetException instanceof MultipleFailureException)) {
+            // get atomic test for this notifier ('null' for suite notifiers)
             AtomicTest atomicTest = EachTestNotifierInit.getAtomicTestOf(notifier);
+            // if atomic test exists
             if (atomicTest != null) {
+                // set test exception ("throwable")
                 atomicTest.setThrowable(targetException);
             }
         }
         
+        // invoke intercepted method
         LifecycleHooks.callProxy(proxy);
     }
 }

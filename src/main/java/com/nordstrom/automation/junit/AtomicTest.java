@@ -38,7 +38,7 @@ public class AtomicTest {
         this.runner = Run.getThreadRunner();
         this.description = description;
         this.particles = getParticles(runner, description);
-        this.identity = this.particles.get(0);
+        this.identity = (particles.isEmpty()) ? null : particles.get(0);
     }
 
     /**
@@ -62,7 +62,7 @@ public class AtomicTest {
     /**
      * Get the "identity" method for this atomic test - the core {@link Test &#64;Test} method.
      * 
-     * @return core method associated with this atomic test
+     * @return core method associated with this atomic test (may be {@code null})
      */
     public FrameworkMethod getIdentity() {
         return identity;
@@ -71,7 +71,7 @@ public class AtomicTest {
     /**
      * Get the "particle" methods of which this atomic test is composed.
      * 
-     * @return list of methods that compose this atomic test
+     * @return list of methods that compose this atomic test (may be empty)
      */
     public List<FrameworkMethod> getParticles() {
         return particles;
@@ -129,6 +129,15 @@ public class AtomicTest {
     }
     
     /**
+     * Determine if this atomic test represents a test method.
+     * 
+     * @return {@code true} if this atomic test represents a test method; otherwise {@code false} 
+     */
+    public boolean isTest() {
+        return description.isTest();
+    }
+    
+    /**
      * {@inheritDoc}
      */
     @Override
@@ -161,7 +170,7 @@ public class AtomicTest {
      * 
      * @param runner JUnit test runner
      * @param description JUnit method description
-     * @return list of "particle" methods
+     * @return list of "particle" methods (may be empty)
      */
     private List<FrameworkMethod> getParticles(Object runner, Description description) {
         List<FrameworkMethod> particles = new ArrayList<>();
