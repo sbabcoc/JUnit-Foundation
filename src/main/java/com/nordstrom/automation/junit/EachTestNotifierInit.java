@@ -95,17 +95,14 @@ public class EachTestNotifierInit {
      * Create new atomic test object for the specified description.
      * 
      * @param description description of the test that is about to be run
-     * @return {@link AtomicTest} object; {@code null} if not a test
+     * @return {@link AtomicTest} object
      */
-    static AtomicTest newAtomicTestFor(Description description) {
-        AtomicTest atomicTest = null;
-        // if test is described
-        if (description.isTest()) {
-            // create new atomic test object
-            atomicTest = new AtomicTest(description);
-            // create description => atomic test mapping
-            DESCRIPTION_TO_ATOMICTEST.put(description.hashCode(), atomicTest);
-        }
+    private static AtomicTest newAtomicTestFor(Description description) {
+        // create new atomic test object
+        AtomicTest atomicTest = new AtomicTest(description);
+        // create description => atomic test mapping
+        DESCRIPTION_TO_ATOMICTEST.put(description.hashCode(), atomicTest);
+        
         return atomicTest;
     }
     
