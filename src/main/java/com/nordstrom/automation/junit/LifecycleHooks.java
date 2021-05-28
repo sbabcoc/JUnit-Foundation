@@ -381,7 +381,7 @@ public class LifecycleHooks {
      * @param runner  target {@link org.junit.runners.ParentRunner ParentRunner} object
      * @return supported child type; {@code null} if undetermined
      */
-    static Class<?> getSupportedType(Object runner) {
+    private static Class<?> getSupportedType(Object runner) {
         for (Method method : runner.getClass().getDeclaredMethods()) {
             if ("describeChild".equals(method.getName())) {
                 Class<?>[] paramTypes = method.getParameterTypes();
