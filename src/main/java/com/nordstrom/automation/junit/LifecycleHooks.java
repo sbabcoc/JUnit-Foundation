@@ -349,14 +349,48 @@ public class LifecycleHooks {
     }
     
     /**
+     * Get the test class instance for the specified method description.
+     * 
+     * @param description JUnit method description
+     * @return test class instance (may be {@code null})
+     */
+    public static Object getTargetOf(Description description) {
+        return EachTestNotifierInit.getTargetOf(description);
+    }
+    
+    /**
      * Get the description for the specified child object.
      * 
      * @param runner target {@link org.junit.runners.ParentRunner ParentRunner} object
      * @param child child object
-     * @return {@link Description} for the specified framework method
+     * @return {@link Description} for the specified framework method (may be {@code null})
      */
     public static Description describeChild(Object runner, Object child) {
-        return invoke(runner, "describeChild", child);
+        if (runner != null && child != null) {
+            Class<?> runnerType = getSupportedType(runner);
+            if (runnerType != null && runnerType.isInstance(child)) {
+                return invoke(runner, "describeChild", child);
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * Get the type of children supported by the specified runner.
+     * 
+     * @param runner  target {@link org.junit.runners.ParentRunner ParentRunner} object
+     * @return supported child type; {@code null} if undetermined
+     */
+    private static Class<?> getSupportedType(Object runner) {
+        for (Method method : runner.getClass().getDeclaredMethods()) {
+            if ("describeChild".equals(method.getName())) {
+                Class<?>[] paramTypes = method.getParameterTypes();
+                if ((paramTypes.length == 1) && (paramTypes[0] != Object.class)) {
+                    return paramTypes[0];
+                }
+            }
+        }
+        return null;
     }
     
     /**

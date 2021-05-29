@@ -35,23 +35,36 @@ public class EachTestNotifierInit {
     public static void interceptor(@Argument(0) final RunNotifier notifier,
                                    @Argument(1) final Description description) {
         
+        // if notifier for test
         if (description.isTest()) {
-            newAtomicTestFor(description);
-            Object runner = Run.getThreadRunner();
+            // create new atomic test object
+            AtomicTest atomicTest = newAtomicTestFor(description);
+            // get current thread runner
+            Object runner = atomicTest.getRunner();
+            
             FrameworkMethod method = null;
+            // get particle methods of current runner
             List<Object> children = LifecycleHooks.invoke(runner, "getChildren");
+            // iterate particle methods
             for (Object child : children) {
+                // if this method matches subject description
                 if (description.equals(LifecycleHooks.describeChild(runner, child))) {
+                    // subject method resolved
                     method = (FrameworkMethod) child;
                     break;
                 }
             }
+            // if method unknown
             if (method == null) {
                 try {
+                    // get method => description mappings
                     Map<FrameworkMethod, Description> assoc = 
                             LifecycleHooks.getFieldValue(runner, "methodDescriptions");
+                    // iterate method => description mappings
                     for (Entry<FrameworkMethod, Description> entry : assoc.entrySet()) {
+                        // if this entry maps subject description
                         if (description.equals(entry.getValue())) {
+                            // subject method resolved
                             method = entry.getKey();
                         }
                     }
@@ -59,11 +72,17 @@ public class EachTestNotifierInit {
                     // nothing to do here
                 }
             }
+            // if method resolved
             if (method != null) {
+                // get target test class instance
                 Object target = CreateTest.getTargetFor(runner, method);
+                // if target exists
                 if (target != null) {
+                    // create description <=> target mappings
                     createMappingsFor(description.hashCode(), target);
+                // otherwise (target not yet created)
                 } else {
+                    // store [runner + method] => description mapping for 'setTestTarget' method
                     HASHCODE_TO_DESCRIPTION.put(Objects.hash(runner, method), description.hashCode());
                 }
             } else {
@@ -76,29 +95,15 @@ public class EachTestNotifierInit {
      * Create new atomic test object for the specified description.
      * 
      * @param description description of the test that is about to be run
-     * @return {@link AtomicTest} object (may be {@code null})
+     * @return {@link AtomicTest} object
      */
-    static AtomicTest newAtomicTestFor(Description description) {
-        AtomicTest atomicTest = null;
-        if (description.isTest()) {
-            atomicTest = new AtomicTest(description);
-            DESCRIPTION_TO_ATOMICTEST.put(description.hashCode(), atomicTest);
-        }
+    private static AtomicTest newAtomicTestFor(Description description) {
+        // create new atomic test object
+        AtomicTest atomicTest = new AtomicTest(description);
+        // create description => atomic test mapping
+        DESCRIPTION_TO_ATOMICTEST.put(description.hashCode(), atomicTest);
+        
         return atomicTest;
-    }
-    
-    /**
-    * Get the atomic test object for the specified method description; create if absent.
-    * 
-    * @param description JUnit method description
-    * @return {@link AtomicTest} object (may be {@code null})
-    */
-    static AtomicTest ensureAtomicTestOf(Description description) {
-        if (DESCRIPTION_TO_ATOMICTEST.containsKey(description.hashCode())) {
-            return DESCRIPTION_TO_ATOMICTEST.get(description.hashCode());
-        } else {
-            return newAtomicTestFor(description);
-        }
     }
     
     /**
@@ -112,6 +117,16 @@ public class EachTestNotifierInit {
             return DESCRIPTION_TO_ATOMICTEST.get(description.hashCode());
         }
         return null;
+    }
+    
+    /**
+     * Get the test class instance for the specified method description.
+     * 
+     * @param description JUnit method description
+     * @return test class instance (may be {@code null})
+     */
+    static Object getTargetOf(Description description) {
+        return DESCRIPTION_TO_TARGET.get(description.hashCode());
     }
     
     /**
@@ -135,8 +150,11 @@ public class EachTestNotifierInit {
      * @return {@code true} is mapping was established; otherwise {@code false}
      */
     static boolean setTestTarget(Object runner, FrameworkMethod method, Object target) {
+        // get [runner + method] => description mapping
         Integer descriptionHash = getDescriptionHashFor(runner, method);
+        // if mapping exists
         if (descriptionHash != null) {
+            // create description <=> target mappings
             createMappingsFor(descriptionHash, target);
             return true;
         }
