@@ -5,7 +5,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import org.junit.Test;
 import org.junit.internal.runners.model.ReflectiveCallable;
 import org.junit.runner.Description;
 import org.junit.runners.model.FrameworkMethod;
@@ -175,12 +174,12 @@ public class RunReflectiveCall {
                     Description description = LifecycleHooks.describeChild(runner, child);
                     if (LOGGER.isDebugEnabled()) {
                         try {
-                            LOGGER.debug("beforeInvocation: {}", description);
+                            LOGGER.debug("beforeInvocation: {}", (description != null) ? description : child);
                         } catch (Throwable t) {
                             // nothing to do here
                         }
                     }
-                    if (null != ((FrameworkMethod) child).getAnnotation(Test.class)) {
+                    if ((description != null) && description.isTest()) {
                         DESCRIPTION_TO_CALLABLE.put(description.hashCode(), callable);
                     }
                 }
@@ -213,10 +212,10 @@ public class RunReflectiveCall {
             if (0 == depthGauge.decreaseDepth()) {
                 METHOD_DEPTH.get().remove(callable.hashCode());
                 if (child instanceof FrameworkMethod) {
-                    Description description = LifecycleHooks.describeChild(runner, child);
                     if (LOGGER.isDebugEnabled()) {
                         try {
-                            LOGGER.debug("afterInvocation: {}", description);
+                            Description description = LifecycleHooks.describeChild(runner, child);
+                            LOGGER.debug("afterInvocation: {}", (description != null) ? description : child);
                         } catch (Throwable t) {
                             // nothing to do here
                         }

@@ -385,7 +385,7 @@ public class LifecycleHooks {
         for (Method method : runner.getClass().getDeclaredMethods()) {
             if ("describeChild".equals(method.getName())) {
                 Class<?>[] paramTypes = method.getParameterTypes();
-                if (paramTypes.length == 1) {
+                if ((paramTypes.length == 1) && (paramTypes[0] != Object.class)) {
                     return paramTypes[0];
                 }
             }
