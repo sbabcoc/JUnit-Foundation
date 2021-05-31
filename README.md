@@ -9,12 +9,12 @@
 
 **JUnit Foundation** is specifically designed to add test lifecycle events to test runners associated with **`BlockJUnit4ClassRunner`**. Any runner that extends from the standard **JUnit 4** test execution API should work just fine with **JUnit Foundation**. We've specifically verified compatibility with the following runners:
 
-* **Parameterized**
-* **JUnitParamsRunner**
-* **Theories**
-* **PowerMockRunner** (requires delegation)
+* [Parameterized](https://github.com/junit-team/junit4/blob/main/src/main/java/org/junit/runners/Parameterized.java)
+* [Theories](https://github.com/junit-team/junit4/blob/main/src/main/java/org/junit/experimental/theories/Theories.java)
+* [JUnitParamsRunner](https://github.com/Pragmatists/JUnitParams/blob/master/src/main/java/junitparams/JUnitParamsRunner.java)
+* [PowerMockRunner](https://github.com/powermock/powermock/blob/release/2.x/powermock-modules/powermock-module-junit4/src/main/java/org/powermock/modules/junit4/PowerMockRunner.java) (requires delegation)
 
-The native implementation of **PowerMockRunner** uses a deprecated JUnit runner model that **JUnit Foundation** doesn't support. You need to delegate test execution to the standard **BlockJUnit4ClassRunner** (or subclasses thereof) to enable reporting of test lifecycle events. This is specified via the **`@PowerMockRunnerDelegate`** annotation, as shown below:
+The native implementation of **PowerMockRunner** uses a deprecated JUnit runner model that **JUnit Foundation** doesn't support. You need to delegate test execution to the standard **BlockJUnit4ClassRunner** (or subclasses thereof) to enable reporting of test lifecycle events. This is specified via the [@PowerMockRunnerDelegate](https://github.com/powermock/powermock/blob/release/2.x/powermock-modules/powermock-module-junit4/src/main/java/org/powermock/modules/junit4/PowerMockRunnerDelegate.java) annotation, as shown below:
 
 ```
 package com.nordstrom.automation.junit;
