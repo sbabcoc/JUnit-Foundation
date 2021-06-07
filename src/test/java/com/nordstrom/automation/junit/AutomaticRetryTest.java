@@ -4,13 +4,18 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Result;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import com.google.common.base.Optional;
 import com.nordstrom.automation.junit.JUnitConfig.JUnitSettings;
+import com.nordstrom.automation.junit.UnitTestWatcher.Notification;
 
 public class AutomaticRetryTest {
     
@@ -32,6 +37,12 @@ public class AutomaticRetryTest {
         assertEquals(rla.getFailedTests().size(), 0, "Incorrect failed test count");
         assertEquals(rla.getIgnoredTests().size(), 0, "Incorrect ignored test count");
         assertEquals(rla.getRetriedTests().size(), 0, "Incorrect retried test count");
+        
+        Optional<UnitTestWatcher> optWatcher = LifecycleHooks.getAttachedWatcher(UnitTestWatcher.class);
+        assertTrue(optWatcher.isPresent());
+        UnitTestWatcher testWatcher = (UnitTestWatcher) optWatcher.get();
+        List<Notification> notifications = testWatcher.getNotificationsFor(rla.getPassedTests().get(0));
+        assertEquals(notifications, Arrays.asList(Notification.STARTED, Notification.FINISHED));
     }
     
     @Test
@@ -47,6 +58,14 @@ public class AutomaticRetryTest {
         assertEquals(rla.getFailedTests().size(), 0, "Incorrect failed test count");
         assertEquals(rla.getIgnoredTests().size(), 0, "Incorrect ignored test count");
         assertEquals(rla.getRetriedTests().size(), 1, "Incorrect retried test count");
+        
+        Optional<UnitTestWatcher> optWatcher = LifecycleHooks.getAttachedWatcher(UnitTestWatcher.class);
+        assertTrue(optWatcher.isPresent());
+        UnitTestWatcher testWatcher = (UnitTestWatcher) optWatcher.get();
+        List<Notification> notifications = testWatcher.getNotificationsFor(rla.getRetriedTests().get(0));
+        assertEquals(notifications, Arrays.asList(
+                Notification.STARTED, Notification.RETRIED, Notification.FINISHED,
+                Notification.STARTED, Notification.FINISHED));
     }
     
     @Test
@@ -62,6 +81,16 @@ public class AutomaticRetryTest {
         assertEquals(rla.getFailedTests().size(), 1, "Incorrect failed test count");
         assertEquals(rla.getIgnoredTests().size(), 0, "Incorrect ignored test count");
         assertEquals(rla.getRetriedTests().size(), 3, "Incorrect retried test count");
+        
+        Optional<UnitTestWatcher> optWatcher = LifecycleHooks.getAttachedWatcher(UnitTestWatcher.class);
+        assertTrue(optWatcher.isPresent());
+        UnitTestWatcher testWatcher = (UnitTestWatcher) optWatcher.get();
+        List<Notification> notifications = testWatcher.getNotificationsFor(rla.getRetriedTests().get(0));
+        assertEquals(notifications, Arrays.asList(
+                Notification.STARTED, Notification.RETRIED, Notification.FINISHED,
+                Notification.STARTED, Notification.RETRIED, Notification.FINISHED,
+                Notification.STARTED, Notification.RETRIED, Notification.FINISHED,
+                Notification.STARTED, Notification.FAILED, Notification.FINISHED));
     }
     
     @Test
@@ -77,6 +106,12 @@ public class AutomaticRetryTest {
         assertEquals(rla.getFailedTests().size(), 1, "Incorrect failed test count");
         assertEquals(rla.getIgnoredTests().size(), 0, "Incorrect ignored test count");
         assertEquals(rla.getRetriedTests().size(), 0, "Incorrect retried test count");
+        
+        Optional<UnitTestWatcher> optWatcher = LifecycleHooks.getAttachedWatcher(UnitTestWatcher.class);
+        assertTrue(optWatcher.isPresent());
+        UnitTestWatcher testWatcher = (UnitTestWatcher) optWatcher.get();
+        List<Notification> notifications = testWatcher.getNotificationsFor(rla.getFailedTests().get(0));
+        assertEquals(notifications, Arrays.asList(Notification.STARTED, Notification.FAILED, Notification.FINISHED));
     }
     
     @Test
@@ -92,6 +127,12 @@ public class AutomaticRetryTest {
         assertEquals(rla.getFailedTests().size(), 0, "Incorrect failed test count");
         assertEquals(rla.getIgnoredTests().size(), 1, "Incorrect ignored test count");
         assertEquals(rla.getRetriedTests().size(), 0, "Incorrect retried test count");
+        
+        Optional<UnitTestWatcher> optWatcher = LifecycleHooks.getAttachedWatcher(UnitTestWatcher.class);
+        assertTrue(optWatcher.isPresent());
+        UnitTestWatcher testWatcher = (UnitTestWatcher) optWatcher.get();
+        List<Notification> notifications = testWatcher.getNotificationsFor(rla.getIgnoredTests().get(0));
+        assertEquals(notifications, Arrays.asList(Notification.IGNORED));
     }
     
     @AfterClass

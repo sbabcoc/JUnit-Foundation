@@ -1,7 +1,7 @@
 package com.nordstrom.automation.junit;
 
-import static org.junit.Assert.assertFalse;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
 
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Result;

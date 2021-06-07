@@ -267,10 +267,19 @@ public class RunListenerAdapter extends RunListener {
     }
 
     /**
+     * Get list of retried theories.
+     * 
+     * @return list of retried theories
+     */
+    public List<Description> getRetriedTheories() {
+        return m_retriedTheories;
+    }
+
+    /**
      * Get unit test watcher registered for the specified description.
      * 
      * @param description JUnit method description
-     * @return {@link UnitTestWatcher} object; may be {@code null}
+     * @return {@link UnitTestCapture} object; may be {@code null}
      */
     public UnitTestCapture getWatcher(Description description) {
         return watcherMap.get(description.hashCode());
@@ -282,7 +291,7 @@ public class RunListenerAdapter extends RunListener {
      * @param description description of test "identity" method
      * @return {@code true} if description represents a theory; otherwise {@code false}
      */
-    private boolean isTheory(Description description) {
+    public boolean isTheory(Description description) {
         AtomicTest atomicTest = LifecycleHooks.getAtomicTestOf(description);
         return ((atomicTest != null) && (atomicTest.isTheory()));
     }
