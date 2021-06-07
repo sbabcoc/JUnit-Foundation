@@ -120,6 +120,16 @@ public class AtomicTest {
      * @return {@code true} if this atomic test represents a "theory" method; otherwise {@code false}
      */
     public boolean isTheory() {
+        return isTheory(description);
+    }
+    
+    /**
+     * Determine if the specified description represents a "theory" method.
+     * 
+     * @param description JUnit method description
+     * @return {@code true} if the specified description represents a "theory" method; otherwise {@code false}
+     */
+    public static boolean isTheory(Description description) {
         try {
             String uniqueId = LifecycleHooks.getFieldValue(description, "fUniqueId");
             return ((uniqueId != null) && (uniqueId.startsWith("theory-id: ")));

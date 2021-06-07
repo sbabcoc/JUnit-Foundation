@@ -291,7 +291,7 @@ public class RunListenerAdapter extends RunListener {
      * @param description description of test "identity" method
      * @return {@code true} if description represents a theory; otherwise {@code false}
      */
-    public boolean isTheory(Description description) {
+    private boolean isTheory(Description description) {
         AtomicTest atomicTest = LifecycleHooks.getAtomicTestOf(description);
         return ((atomicTest != null) && (atomicTest.isTheory()));
     }
