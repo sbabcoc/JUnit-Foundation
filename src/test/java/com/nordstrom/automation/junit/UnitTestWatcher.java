@@ -3,17 +3,35 @@ package com.nordstrom.automation.junit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.internal.AssumptionViolatedException;
 import org.junit.internal.runners.model.ReflectiveCallable;
+import org.junit.runner.Description;
 import org.junit.runners.model.FrameworkMethod;
 
-public class UnitTestWatcher implements MethodWatcher<FrameworkMethod> {
+import com.google.common.base.Function;
 
+public class UnitTestWatcher implements MethodWatcher<FrameworkMethod>, RunWatcher {
+
+    private static final ConcurrentHashMap<Integer, List<Notification>> NOTIFICATION_MAP;
+    private static final Function<Integer, List<Notification>> NEW_INSTANCE;
+    
+    static {
+        NOTIFICATION_MAP = new ConcurrentHashMap<>();
+        NEW_INSTANCE = new Function<Integer, List<Notification>>() {
+            @Override
+            public List<Notification> apply(Integer input) {
+                return new ArrayList<>();
+            }
+        };
+    }
+    
     private List<String> m_enterBeforeClass = Collections.synchronizedList(new ArrayList<String>());
     private List<String> m_enterBeforeMethod = Collections.synchronizedList(new ArrayList<String>());
     private List<String> m_enterTest = Collections.synchronizedList(new ArrayList<String>());
@@ -25,6 +43,10 @@ public class UnitTestWatcher implements MethodWatcher<FrameworkMethod> {
     private List<String> m_leaveTest = Collections.synchronizedList(new ArrayList<String>());
     private List<String> m_leaveAfterMethod = Collections.synchronizedList(new ArrayList<String>());
     private List<String> m_leaveAfterClass = Collections.synchronizedList(new ArrayList<String>());
+    
+    public enum Notification {
+        STARTED, FINISHED, FAILED, ASSUMP, IGNORED, RETRIED
+    }
     
     @Override
     public void beforeInvocation(Object runner, FrameworkMethod method, ReflectiveCallable callable) {
@@ -99,5 +121,43 @@ public class UnitTestWatcher implements MethodWatcher<FrameworkMethod> {
     
     public List<String> getLeaveAfterClass() {
         return m_leaveAfterClass;
+    }
+
+    @Override
+    public void testStarted(AtomicTest atomicTest) {
+        addNotification(atomicTest, Notification.STARTED);
+    }
+
+    @Override
+    public void testFinished(AtomicTest atomicTest) {
+        addNotification(atomicTest, Notification.FINISHED);
+    }
+
+    @Override
+    public void testFailure(AtomicTest atomicTest, Throwable thrown) {
+        addNotification(atomicTest, Notification.FAILED);
+    }
+
+    @Override
+    public void testAssumptionFailure(AtomicTest atomicTest, AssumptionViolatedException thrown) {
+        addNotification(atomicTest, Notification.ASSUMP);
+    }
+
+    @Override
+    public void testIgnored(AtomicTest atomicTest) {
+        if (RetriedTest.isRetriedTest(atomicTest.getDescription())) {
+            addNotification(atomicTest, Notification.RETRIED);
+        } else {
+            addNotification(atomicTest, Notification.IGNORED);
+        }
+    }
+    
+    public List<Notification> getNotificationsFor(Description description) {
+        return NOTIFICATION_MAP.get(description.hashCode());
+    }
+    
+    private static void addNotification(AtomicTest atomicTest, Notification notification) {
+        List<Notification> list = LifecycleHooks.computeIfAbsent(NOTIFICATION_MAP, atomicTest.getDescription().hashCode(), NEW_INSTANCE);
+        list.add(notification);
     }
 }

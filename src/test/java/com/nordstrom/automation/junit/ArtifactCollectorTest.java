@@ -6,6 +6,9 @@ import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.junit.runner.Description;
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Result;
@@ -13,8 +16,10 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import com.google.common.base.Optional;
 import com.nordstrom.automation.junit.JUnitConfig.JUnitSettings;
 import com.nordstrom.automation.junit.UnitTestArtifact.CaptureState;
+import com.nordstrom.automation.junit.UnitTestWatcher.Notification;
 
 public class ArtifactCollectorTest {
 
@@ -35,12 +40,21 @@ public class ArtifactCollectorTest {
         assertEquals(rla.getPassedTests().size(), 1, "Incorrect passed test count");
         assertEquals(rla.getFailedTests().size(), 0, "Incorrect failed test count");
         assertEquals(rla.getIgnoredTests().size(), 0, "Incorrect ignored test count");
+        assertEquals(rla.getRetriedTests().size(), 0, "Incorrect retried test count");
         
         Description description = rla.getPassedTests().get(0);
         UnitTestCapture watcher = rla.getWatcher(description);
-        assertNotNull(watcher, "Unit test watcher not registered");
+        assertNotNull(watcher, "Unit test artifact collector not registered");
         assertNull(watcher.getArtifactProvider().getCaptureState(), "Artifact provider capture state should be 'null'");
         assertNull(watcher.getArtifactPath(), "Artifact capture should not have been requested");
+        
+        Optional<UnitTestWatcher> optWatcher = LifecycleHooks.getAttachedWatcher(UnitTestWatcher.class);
+        assertTrue(optWatcher.isPresent(), "Unit test watcher not attached");
+        UnitTestWatcher testWatcher = (UnitTestWatcher) optWatcher.get();
+        List<Notification> notifications = testWatcher.getNotificationsFor(description);
+        assertEquals(notifications, Arrays.asList(
+                Notification.STARTED, Notification.FINISHED),
+                "Incorrect event notifications");
     }
     
     @Test
@@ -55,12 +69,23 @@ public class ArtifactCollectorTest {
         assertEquals(rla.getPassedTests().size(), 0, "Incorrect passed test count");
         assertEquals(rla.getFailedTests().size(), 1, "Incorrect failed test count");
         assertEquals(rla.getIgnoredTests().size(), 0, "Incorrect ignored test count");
+        assertEquals(rla.getRetriedTests().size(), 1, "Incorrect retried test count");
         
         Description description = rla.getFailedTests().get(0);
         UnitTestCapture watcher = rla.getWatcher(description);
-        assertNotNull(watcher, "Unit test watcher not registered");
+        assertNotNull(watcher, "Unit test artifact collector not registered");
         assertEquals(watcher.getArtifactProvider().getCaptureState(), CaptureState.CAPTURE_SUCCESS, "Incorrect artifact provider capture state");
         assertTrue(watcher.getArtifactPath().isPresent(), "Artifact capture output path is not present");
+        
+        Optional<UnitTestWatcher> optWatcher = LifecycleHooks.getAttachedWatcher(UnitTestWatcher.class);
+        assertTrue(optWatcher.isPresent(), "Unit test watcher not attached");
+        UnitTestWatcher testWatcher = (UnitTestWatcher) optWatcher.get();
+        List<Notification> notifications = testWatcher.getNotificationsFor(description);
+        assertEquals(notifications, Arrays.asList(
+                Notification.STARTED, Notification.RETRIED, Notification.FINISHED,
+                Notification.STARTED, Notification.FAILED, Notification.FINISHED),
+                "Incorrect event notifications");
+
     }
     
     @Test
@@ -75,12 +100,22 @@ public class ArtifactCollectorTest {
         assertEquals(rla.getPassedTests().size(), 0, "Incorrect passed test count");
         assertEquals(rla.getFailedTests().size(), 1, "Incorrect failed test count");
         assertEquals(rla.getIgnoredTests().size(), 0, "Incorrect ignored test count");
+        assertEquals(rla.getRetriedTests().size(), 1, "Incorrect retried test count");
         
         Description description = rla.getFailedTests().get(0);
         UnitTestCapture watcher = rla.getWatcher(description);
-        assertNotNull(watcher, "Unit test watcher not registered");
+        assertNotNull(watcher, "Unit test artifact collector not registered");
         assertEquals(watcher.getArtifactProvider().getCaptureState(), CaptureState.CAN_NOT_CAPTURE, "Incorrect artifact provider capture state");
         assertFalse(watcher.getArtifactPath().isPresent(), "Artifact capture output path should not be present");
+        
+        Optional<UnitTestWatcher> optWatcher = LifecycleHooks.getAttachedWatcher(UnitTestWatcher.class);
+        assertTrue(optWatcher.isPresent(), "Unit test watcher not attached");
+        UnitTestWatcher testWatcher = (UnitTestWatcher) optWatcher.get();
+        List<Notification> notifications = testWatcher.getNotificationsFor(description);
+        assertEquals(notifications, Arrays.asList(
+                Notification.STARTED, Notification.RETRIED, Notification.FINISHED,
+                Notification.STARTED, Notification.FAILED, Notification.FINISHED),
+                "Incorrect event notifications");
     }
     
     @Test
@@ -95,12 +130,22 @@ public class ArtifactCollectorTest {
         assertEquals(rla.getPassedTests().size(), 0, "Incorrect passed test count");
         assertEquals(rla.getFailedTests().size(), 1, "Incorrect failed test count");
         assertEquals(rla.getIgnoredTests().size(), 0, "Incorrect ignored test count");
+        assertEquals(rla.getRetriedTests().size(), 1, "Incorrect retried test count");
         
         Description description = rla.getFailedTests().get(0);
         UnitTestCapture watcher = rla.getWatcher(description);
-        assertNotNull(watcher, "Unit test watcher not registered");
+        assertNotNull(watcher, "Unit test artifact collector not registered");
         assertEquals(watcher.getArtifactProvider().getCaptureState(), CaptureState.CAPTURE_FAILED, "Incorrect artifact provider capture state");
         assertFalse(watcher.getArtifactPath().isPresent(), "Artifact capture output path should not be present");
+        
+        Optional<UnitTestWatcher> optWatcher = LifecycleHooks.getAttachedWatcher(UnitTestWatcher.class);
+        assertTrue(optWatcher.isPresent(), "Unit test watcher not attached");
+        UnitTestWatcher testWatcher = (UnitTestWatcher) optWatcher.get();
+        List<Notification> notifications = testWatcher.getNotificationsFor(description);
+        assertEquals(notifications, Arrays.asList(
+                Notification.STARTED, Notification.RETRIED, Notification.FINISHED,
+                Notification.STARTED, Notification.FAILED, Notification.FINISHED),
+                "Incorrect event notifications");
     }
     
     @Test
@@ -115,12 +160,21 @@ public class ArtifactCollectorTest {
         assertEquals(rla.getPassedTests().size(), 1, "Incorrect passed test count");
         assertEquals(rla.getFailedTests().size(), 0, "Incorrect failed test count");
         assertEquals(rla.getIgnoredTests().size(), 0, "Incorrect ignored test count");
+        assertEquals(rla.getRetriedTests().size(), 0, "Incorrect retried test count");
         
         Description description = rla.getPassedTests().get(0);
         UnitTestCapture watcher = rla.getWatcher(description);
-        assertNotNull(watcher, "Unit test watcher not registered");
+        assertNotNull(watcher, "Unit test artifact collector not registered");
         assertEquals(watcher.getArtifactProvider().getCaptureState(), CaptureState.CAPTURE_SUCCESS, "Incorrect artifact provider capture state");
         assertTrue(watcher.getArtifactPath().isPresent(), "Artifact capture output path is not present");
+        
+        Optional<UnitTestWatcher> optWatcher = LifecycleHooks.getAttachedWatcher(UnitTestWatcher.class);
+        assertTrue(optWatcher.isPresent(), "Unit test watcher not attached");
+        UnitTestWatcher testWatcher = (UnitTestWatcher) optWatcher.get();
+        List<Notification> notifications = testWatcher.getNotificationsFor(description);
+        assertEquals(notifications, Arrays.asList(
+                Notification.STARTED, Notification.FINISHED),
+                "Incorrect event notifications");
     }
     
     @Test
@@ -135,12 +189,26 @@ public class ArtifactCollectorTest {
         assertEquals(rla.getPassedTests().size(), 1, "Incorrect passed test count");
         assertEquals(rla.getFailedTests().size(), 1, "Incorrect failed test count");
         assertEquals(rla.getIgnoredTests().size(), 0, "Incorrect ignored test count");
+        assertEquals(rla.getRetriedTests().size(), 1, "Incorrect retried test count");
         
         Description description = rla.getFailedTests().get(0);
         UnitTestCapture watcher = rla.getWatcher(description);
-        assertNotNull(watcher, "Unit test watcher not registered");
+        assertNotNull(watcher, "Unit test artifact collector not registered");
         assertEquals(watcher.getArtifactProvider().getCaptureState(), CaptureState.CAPTURE_SUCCESS, "Incorrect artifact provider capture state");
         assertTrue(watcher.getArtifactPath().isPresent(), "Artifact capture output path is not present");
+        
+        Optional<UnitTestWatcher> optWatcher = LifecycleHooks.getAttachedWatcher(UnitTestWatcher.class);
+        assertTrue(optWatcher.isPresent(), "Unit test watcher not attached");
+        UnitTestWatcher testWatcher = (UnitTestWatcher) optWatcher.get();
+        List<Notification> notifications = testWatcher.getNotificationsFor(rla.getPassedTests().get(0));
+        assertEquals(notifications, Arrays.asList(
+                Notification.STARTED, Notification.FINISHED),
+                "Incorrect event notifications");
+        notifications = testWatcher.getNotificationsFor(description);
+        assertEquals(notifications, Arrays.asList(
+                Notification.STARTED, Notification.RETRIED, Notification.FINISHED,
+                Notification.STARTED, Notification.FAILED, Notification.FINISHED),
+                "Incorrect event notifications");
     }
 
     @Test
@@ -155,12 +223,26 @@ public class ArtifactCollectorTest {
         assertEquals(rla.getPassedTests().size(), 1, "Incorrect passed test count");
         assertEquals(rla.getFailedTests().size(), 1, "Incorrect failed test count");
         assertEquals(rla.getIgnoredTests().size(), 0, "Incorrect ignored test count");
+        assertEquals(rla.getRetriedTests().size(), 1, "Incorrect retried test count");
 
         Description description = rla.getFailedTests().get(0);
         UnitTestCapture watcher = rla.getWatcher(description);
-        assertNotNull(watcher, "Unit test watcher not registered");
+        assertNotNull(watcher, "Unit test artifact collector not registered");
         assertEquals(watcher.getArtifactProvider().getCaptureState(), CaptureState.CAPTURE_SUCCESS, "Incorrect artifact provider capture state");
         assertTrue(watcher.getArtifactPath().isPresent(), "Artifact capture output path is not present");
+        
+        Optional<UnitTestWatcher> optWatcher = LifecycleHooks.getAttachedWatcher(UnitTestWatcher.class);
+        assertTrue(optWatcher.isPresent(), "Unit test watcher not attached");
+        UnitTestWatcher testWatcher = (UnitTestWatcher) optWatcher.get();
+        List<Notification> notifications = testWatcher.getNotificationsFor(rla.getPassedTests().get(0));
+        assertEquals(notifications, Arrays.asList(
+                Notification.STARTED, Notification.FINISHED),
+                "Incorrect event notifications");
+        notifications = testWatcher.getNotificationsFor(description);
+        assertEquals(notifications, Arrays.asList(
+                Notification.STARTED, Notification.RETRIED, Notification.FINISHED,
+                Notification.STARTED, Notification.FAILED, Notification.FINISHED),
+                "Incorrect event notifications");
     }
 
     @Test
@@ -172,17 +254,36 @@ public class ArtifactCollectorTest {
         Result result = runner.run(ArtifactCollectorTheories.class);
         assertFalse(result.wasSuccessful());
 
+        // NOTE: If any permutation fails, the core theory fails
         assertEquals(rla.getPassedTests().size(), 0, "Incorrect passed test count");
         assertEquals(rla.getFailedTests().size(), 1, "Incorrect failed test count");
         assertEquals(rla.getIgnoredTests().size(), 0, "Incorrect ignored test count");
+        assertEquals(rla.getRetriedTests().size(), 0, "Incorrect retried test count");
+        // NOTE: Each permutation is distinct from the core theory
         assertEquals(rla.getPassedTheories().size(), 1, "Incorrect passed theory count");
         assertEquals(rla.getFailedTheories().size(), 1, "Incorrect failed theory count");
+        assertEquals(rla.getRetriedTheories().size(), 1, "Incorrect retried theory count");
 
         Description description = rla.getFailedTheories().get(0);
+        assertTrue(rla.isTheory(description), "Theory description lacks unique ID prefix");
+        
         UnitTestCapture watcher = rla.getWatcher(description);
-        assertNotNull(watcher, "Unit test watcher not registered");
+        assertNotNull(watcher, "Unit test artifact collector not registered");
         assertEquals(watcher.getArtifactProvider().getCaptureState(), CaptureState.CAPTURE_SUCCESS, "Incorrect artifact provider capture state");
         assertTrue(watcher.getArtifactPath().isPresent(), "Artifact capture output path is not present");
+        
+        Optional<UnitTestWatcher> optWatcher = LifecycleHooks.getAttachedWatcher(UnitTestWatcher.class);
+        assertTrue(optWatcher.isPresent(), "Unit test watcher not attached");
+        UnitTestWatcher testWatcher = (UnitTestWatcher) optWatcher.get();
+        List<Notification> notifications = testWatcher.getNotificationsFor(rla.getPassedTheories().get(0));
+        assertEquals(notifications, Arrays.asList(
+                Notification.STARTED, Notification.FINISHED),
+                "Incorrect event notifications");
+        notifications = testWatcher.getNotificationsFor(description);
+        assertEquals(notifications, Arrays.asList(
+                Notification.STARTED, Notification.RETRIED, Notification.FINISHED,
+                Notification.STARTED, Notification.FAILED, Notification.FINISHED),
+                "Incorrect event notifications");
     }
     
     @AfterClass

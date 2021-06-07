@@ -1,6 +1,6 @@
 package com.nordstrom.automation.junit;
 
-import static org.junit.Assert.assertTrue;
+import static org.testng.Assert.assertTrue;
 
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Result;
