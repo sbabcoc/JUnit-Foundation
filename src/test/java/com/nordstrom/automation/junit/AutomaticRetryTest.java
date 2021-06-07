@@ -39,10 +39,12 @@ public class AutomaticRetryTest {
         assertEquals(rla.getRetriedTests().size(), 0, "Incorrect retried test count");
         
         Optional<UnitTestWatcher> optWatcher = LifecycleHooks.getAttachedWatcher(UnitTestWatcher.class);
-        assertTrue(optWatcher.isPresent());
+        assertTrue(optWatcher.isPresent(), "Unit test watcher not attached");
         UnitTestWatcher testWatcher = (UnitTestWatcher) optWatcher.get();
         List<Notification> notifications = testWatcher.getNotificationsFor(rla.getPassedTests().get(0));
-        assertEquals(notifications, Arrays.asList(Notification.STARTED, Notification.FINISHED));
+        assertEquals(notifications, Arrays.asList(
+                Notification.STARTED, Notification.FINISHED),
+                "Incorrect event notifications");
     }
     
     @Test
@@ -60,12 +62,13 @@ public class AutomaticRetryTest {
         assertEquals(rla.getRetriedTests().size(), 1, "Incorrect retried test count");
         
         Optional<UnitTestWatcher> optWatcher = LifecycleHooks.getAttachedWatcher(UnitTestWatcher.class);
-        assertTrue(optWatcher.isPresent());
+        assertTrue(optWatcher.isPresent(), "Unit test watcher not attached");
         UnitTestWatcher testWatcher = (UnitTestWatcher) optWatcher.get();
         List<Notification> notifications = testWatcher.getNotificationsFor(rla.getRetriedTests().get(0));
         assertEquals(notifications, Arrays.asList(
                 Notification.STARTED, Notification.RETRIED, Notification.FINISHED,
-                Notification.STARTED, Notification.FINISHED));
+                Notification.STARTED, Notification.FINISHED),
+                "Incorrect event notifications");
     }
     
     @Test
@@ -83,14 +86,15 @@ public class AutomaticRetryTest {
         assertEquals(rla.getRetriedTests().size(), 3, "Incorrect retried test count");
         
         Optional<UnitTestWatcher> optWatcher = LifecycleHooks.getAttachedWatcher(UnitTestWatcher.class);
-        assertTrue(optWatcher.isPresent());
+        assertTrue(optWatcher.isPresent(), "Unit test watcher not attached");
         UnitTestWatcher testWatcher = (UnitTestWatcher) optWatcher.get();
         List<Notification> notifications = testWatcher.getNotificationsFor(rla.getRetriedTests().get(0));
         assertEquals(notifications, Arrays.asList(
                 Notification.STARTED, Notification.RETRIED, Notification.FINISHED,
                 Notification.STARTED, Notification.RETRIED, Notification.FINISHED,
                 Notification.STARTED, Notification.RETRIED, Notification.FINISHED,
-                Notification.STARTED, Notification.FAILED, Notification.FINISHED));
+                Notification.STARTED, Notification.FAILED, Notification.FINISHED),
+                "Incorrect event notifications");
     }
     
     @Test
@@ -108,10 +112,12 @@ public class AutomaticRetryTest {
         assertEquals(rla.getRetriedTests().size(), 0, "Incorrect retried test count");
         
         Optional<UnitTestWatcher> optWatcher = LifecycleHooks.getAttachedWatcher(UnitTestWatcher.class);
-        assertTrue(optWatcher.isPresent());
+        assertTrue(optWatcher.isPresent(), "Unit test watcher not attached");
         UnitTestWatcher testWatcher = (UnitTestWatcher) optWatcher.get();
         List<Notification> notifications = testWatcher.getNotificationsFor(rla.getFailedTests().get(0));
-        assertEquals(notifications, Arrays.asList(Notification.STARTED, Notification.FAILED, Notification.FINISHED));
+        assertEquals(notifications, Arrays.asList(
+                Notification.STARTED, Notification.FAILED, Notification.FINISHED),
+                "Incorrect event notifications");
     }
     
     @Test
@@ -129,10 +135,10 @@ public class AutomaticRetryTest {
         assertEquals(rla.getRetriedTests().size(), 0, "Incorrect retried test count");
         
         Optional<UnitTestWatcher> optWatcher = LifecycleHooks.getAttachedWatcher(UnitTestWatcher.class);
-        assertTrue(optWatcher.isPresent());
+        assertTrue(optWatcher.isPresent(), "Unit test watcher not attached");
         UnitTestWatcher testWatcher = (UnitTestWatcher) optWatcher.get();
         List<Notification> notifications = testWatcher.getNotificationsFor(rla.getIgnoredTests().get(0));
-        assertEquals(notifications, Arrays.asList(Notification.IGNORED));
+        assertEquals(notifications, Arrays.asList(Notification.IGNORED), "Incorrect event notifications");
     }
     
     @AfterClass
