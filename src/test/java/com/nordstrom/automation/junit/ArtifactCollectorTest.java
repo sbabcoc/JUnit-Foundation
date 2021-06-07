@@ -265,7 +265,7 @@ public class ArtifactCollectorTest {
         assertEquals(rla.getRetriedTheories().size(), 1, "Incorrect retried theory count");
 
         Description description = rla.getFailedTheories().get(0);
-        assertTrue(rla.isTheory(description), "Theory description lacks unique ID prefix");
+        assertTrue(AtomicTest.isTheory(description), "Theory description lacks unique ID prefix");
         
         UnitTestCapture watcher = rla.getWatcher(description);
         assertNotNull(watcher, "Unit test artifact collector not registered");
