@@ -68,6 +68,7 @@ public class ReferenceChecker extends RunListener {
     private List<String> watcherLeaks = Collections.synchronizedList(new ArrayList<String>());
     private List<String> atomicTestLeaks = Collections.synchronizedList(new ArrayList<String>());
     private List<String> targetLeaks = Collections.synchronizedList(new ArrayList<String>());
+    private List<String> callableLeaks = Collections.synchronizedList(new ArrayList<String>());
     private List<String> descriptionLeaks = Collections.synchronizedList(new ArrayList<String>());
     private List<String> methodLeaks = Collections.synchronizedList(new ArrayList<String>());
     private List<String> runnerLeaks = Collections.synchronizedList(new ArrayList<String>());
@@ -152,12 +153,12 @@ public class ReferenceChecker extends RunListener {
             
             message = checkTargetFor(descriptionHashCode);
             if (message != null) {
-                atomicTestLeaks.add(message + name);
+                targetLeaks.add(message + name);
             }
             
             message = checkCallableFor(descriptionHashCode);
             if (message != null) {
-                atomicTestLeaks.add(message + name);
+                callableLeaks.add(message + name);
             }
         }
         
@@ -271,6 +272,13 @@ public class ReferenceChecker extends RunListener {
             Reporter.log(message);
         }
         return targetLeaks.size();
+    }
+    
+    public int reportCallableLeaks() {
+        for (String message : callableLeaks) {
+            Reporter.log(message);
+        }
+        return callableLeaks.size();
     }
     
     public int reportDescriptionLeaks() {

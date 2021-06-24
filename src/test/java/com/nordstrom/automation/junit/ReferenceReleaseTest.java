@@ -81,6 +81,7 @@ public class ReferenceReleaseTest {
         assertEquals(checker.reportWatcherLeaks(), 0);
         assertEquals(checker.reportAtomicTestLeaks(), 0);
         assertEquals(checker.reportTargetLeaks(), 0);
+        assertEquals(checker.reportCallableLeaks(), 0);
         assertEquals(checker.reportDescriptionLeaks(), 0);
         assertEquals(checker.reportMethodLeaks(), 0);
         assertEquals(checker.reportRunnerLeaks(), 0);
