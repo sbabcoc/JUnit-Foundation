@@ -179,7 +179,7 @@ public class RunReflectiveCall {
                             // nothing to do here
                         }
                     }
-                    if ((description != null) && description.isTest()) {
+                    if ((description != null) && AtomicTest.isTest(description)) {
                         DESCRIPTION_TO_CALLABLE.put(description.hashCode(), callable);
                     }
                 }

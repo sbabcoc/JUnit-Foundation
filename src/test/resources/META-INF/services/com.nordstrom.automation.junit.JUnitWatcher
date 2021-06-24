@@ -1,1 +1,2 @@
 com.nordstrom.automation.junit.UnitTestWatcher
+com.nordstrom.automation.junit.ReferenceTracker

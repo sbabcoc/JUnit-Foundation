@@ -9,10 +9,8 @@ import org.junit.runner.Description;
 @SuppressWarnings("all")
 public class RetriedTheory implements Theory {
     
-    private static final String ANNOTATIONS = "fAnnotations";
-    
-    private boolean nullsAccepted;
-    private Throwable thrown;
+    private final boolean nullsAccepted;
+    private final Throwable thrown;
     
     /**
      * Constructor: Populate the fields of this object from the parameters of the specified {@link Theory &#64;Theory}
@@ -43,5 +41,33 @@ public class RetriedTheory implements Theory {
      */
     public Throwable getThrown() {
         return thrown;
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + (nullsAccepted ? 1231 : 1237);
+        result = prime * result + ((thrown == null) ? 0 : thrown.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if ( ! (obj instanceof RetriedTheory))
+            return false;
+        RetriedTheory other = (RetriedTheory) obj;
+        if (nullsAccepted != other.nullsAccepted)
+            return false;
+        if (thrown == null) {
+            if (other.thrown != null)
+                return false;
+        } else if (!thrown.equals(other.thrown))
+            return false;
+        return true;
     }
 }

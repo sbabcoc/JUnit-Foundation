@@ -18,7 +18,7 @@ public class RetriedTest extends MutableTest {
 
     private static final String ANNOTATIONS = "fAnnotations";
     
-    private Throwable thrown;
+    private final Throwable thrown;
     
     /**
      * Constructor: Populate the fields of this object from the parameters of the specified {@link Test &#64;Test}
@@ -95,5 +95,30 @@ public class RetriedTest extends MutableTest {
     public static boolean isRetriedTest(Description description) {
         return ((null != description.getAnnotation(RetriedTest.class)) ||
                 (null != description.getAnnotation(RetriedTheory.class)));
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = super.hashCode();
+        result = prime * result + ((thrown == null) ? 0 : thrown.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (!super.equals(obj))
+            return false;
+        if ( ! (obj instanceof RetriedTest))
+            return false;
+        RetriedTest other = (RetriedTest) obj;
+        if (thrown == null) {
+            if (other.thrown != null)
+                return false;
+        } else if (!thrown.equals(other.thrown))
+            return false;
+        return true;
     }
 }

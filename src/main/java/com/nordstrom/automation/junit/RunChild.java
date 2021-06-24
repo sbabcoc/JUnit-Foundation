@@ -70,7 +70,8 @@ public class RunChild {
      */
     static void finished() {
         Object runner = Run.getThreadRunner();
-        if (Boolean.TRUE == DID_NOTIFY.remove(toMapKey(runner))) {
+        Boolean didNotify = DID_NOTIFY.remove(toMapKey(runner));
+        if ((didNotify != null) && didNotify) {
             Run.fireRunFinished(runner);
         }
     }

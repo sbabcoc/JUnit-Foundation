@@ -2,7 +2,9 @@ package com.nordstrom.automation.junit;
 
 import static com.nordstrom.automation.junit.LifecycleHooks.invoke;
 
+import java.lang.annotation.Annotation;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -14,6 +16,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.experimental.theories.Theory;
 import org.junit.runner.Description;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.TestClass;
@@ -38,7 +41,7 @@ public class AtomicTest {
         this.runner = Run.getThreadRunner();
         this.description = description;
         this.particles = getParticles(runner, description);
-        this.identity = (particles.isEmpty()) ? null : particles.get(0);
+        this.identity = particles.isEmpty() ? null : particles.get(0);
     }
 
     /**
@@ -144,7 +147,21 @@ public class AtomicTest {
      * @return {@code true} if this atomic test represents a test method; otherwise {@code false} 
      */
     public boolean isTest() {
-        return description.isTest();
+        return isTest(description);
+    }
+    
+    /**
+     * Determine if the specified description represents a test method.
+     * 
+     * @param description JUnit description object
+     * @return {@code true} if description represents a test method; otherwise {@code false} 
+     */
+    public static boolean isTest(Description description) {
+        for (Annotation annotation : description.getAnnotations()) {
+            if (annotation instanceof Test) return true;
+            if (annotation instanceof Theory) return true;
+        }
+        return false;
     }
     
     /**
@@ -161,7 +178,8 @@ public class AtomicTest {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (o == null) return false;
+        if ( ! (o instanceof AtomicTest)) return false;
         AtomicTest that = (AtomicTest) o;
         return Objects.equals(runner, that.runner) &&
                 Objects.equals(identity, that.identity);
@@ -184,7 +202,7 @@ public class AtomicTest {
      */
     private List<FrameworkMethod> getParticles(Object runner, Description description) {
         List<FrameworkMethod> particles = new ArrayList<>();
-        if (description.isTest()) {
+        if (isTest(description)) {
             TestClass testClass = LifecycleHooks.getTestClassOf(runner);
             
             String methodName = description.getMethodName();

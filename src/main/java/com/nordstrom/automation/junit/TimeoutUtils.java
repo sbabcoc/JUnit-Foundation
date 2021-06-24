@@ -100,7 +100,7 @@ class TimeoutUtils {
         // if timeout disabled by local or global rule
         if ((uberTimeout == 0) || (ruleTimeout == 0)) {
             // disable timeout of @Test annotation
-            MutableTest.proxyFor(identity.getMethod()).setTimeout(0);
+            MutableTest.proxyFor(identity.getMethod(), 0);
         } else {
             long testTimeout = -1;
             // if default test timeout is defined
@@ -115,7 +115,7 @@ class TimeoutUtils {
             // if default timeout is longer
             if (testTimeout > metaTimeout) {
                 // override value of timeout parameter
-                MutableTest.proxyFor(identity.getMethod()).setTimeout(testTimeout);
+                MutableTest.proxyFor(identity.getMethod(), testTimeout);
             }
         }
     }
@@ -160,7 +160,7 @@ class TimeoutUtils {
         }
         
         boolean disableTimeout = ((uberTimeout == 0) || (ruleTimeout == 0));
-        long timeout = (disableTimeout) ? 0 : Collections.max(Arrays.asList(metaTimeout, uberTimeout, ruleTimeout));
+        long timeout = disableTimeout ? 0 : Collections.max(Arrays.asList(metaTimeout, uberTimeout, ruleTimeout));
         
         // if Timeout found
         if (ruleIndex != -1) {

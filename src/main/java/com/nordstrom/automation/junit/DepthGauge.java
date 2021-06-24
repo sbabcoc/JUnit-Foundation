@@ -9,7 +9,7 @@ public class DepthGauge {
      * 
      * @return {@code true} if depth is 0; otherwise {@code false}
      */
-    public boolean atGroundLevel() {
+    public synchronized boolean atGroundLevel() {
         return (0 == counter);
     }
     
@@ -18,7 +18,7 @@ public class DepthGauge {
      * 
      * @return current depth count
      */
-    public int currentDepth() {
+    public synchronized int currentDepth() {
         return counter;
     }
     

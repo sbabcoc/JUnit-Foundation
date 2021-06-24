@@ -36,7 +36,7 @@ public class EachTestNotifierInit {
                                    @Argument(1) final Description description) {
         
         // if notifier for test
-        if (description.isTest()) {
+        if (AtomicTest.isTest(description)) {
             // create new atomic test object
             AtomicTest atomicTest = newAtomicTestFor(description);
             // get current thread runner

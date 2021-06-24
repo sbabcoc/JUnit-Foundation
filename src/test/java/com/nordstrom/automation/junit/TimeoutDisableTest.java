@@ -12,29 +12,35 @@ public class TimeoutDisableTest {
     @Test
     public void verifyTimeoutDisable() {
         RunListenerAdapter rla = new RunListenerAdapter();
+        ReferenceChecker checker = new ReferenceChecker();
         
         JUnitCore runner = new JUnitCore();
         runner.addListener(rla);
+        runner.addListener(checker);
         Result result = runner.run(TimeoutDisablePassing.class);
         assertTrue(result.wasSuccessful());
         
         assertEquals(rla.getPassedTests().size(), 2, "Incorrect passed test count");
         assertEquals(rla.getFailedTests().size(), 0, "Incorrect failed test count");
         assertEquals(rla.getIgnoredTests().size(), 0, "Incorrect ignored test count");
+        ReferenceReleaseTest.checkLeakReports(checker);
     }
 
     @Test
     public void verifyTimeoutDisableOverride() {
         RunListenerAdapter rla = new RunListenerAdapter();
+        ReferenceChecker checker = new ReferenceChecker();
         
         JUnitCore runner = new JUnitCore();
         runner.addListener(rla);
+        runner.addListener(checker);
         Result result = runner.run(TimeoutDisableOverridePassing.class);
         assertTrue(result.wasSuccessful());
         
         assertEquals(rla.getPassedTests().size(), 2, "Incorrect passed test count");
         assertEquals(rla.getFailedTests().size(), 0, "Incorrect failed test count");
         assertEquals(rla.getIgnoredTests().size(), 0, "Incorrect ignored test count");
+        ReferenceReleaseTest.checkLeakReports(checker);
     }
 
 }

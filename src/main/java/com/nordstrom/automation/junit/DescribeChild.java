@@ -14,8 +14,6 @@ import net.bytebuddy.implementation.bind.annotation.Argument;
 import net.bytebuddy.implementation.bind.annotation.SuperCall;
 import net.bytebuddy.implementation.bind.annotation.This;
 
-import junitparams.JUnitParamsRunner;
-
 /**
  * This class declares the interceptor for the {@link org.junit.runners.ParentRunner#describeChild
  * describeChild} method.
@@ -29,7 +27,6 @@ public class DescribeChild {
         try {
             field = Description.class.getDeclaredField("fUniqueId");
             field.setAccessible(true);
-            
         } catch (NoSuchFieldException | SecurityException e) {
             field = null;
         }
@@ -49,14 +46,21 @@ public class DescribeChild {
                     @SuperCall final Callable<?> proxy,
                     @Argument(0) final Object child) throws Exception {
         
-        Description description = LifecycleHooks.callProxy(proxy);
+        Description description = null;
         
-        // if running with JUnitParams
-        if (runner instanceof JUnitParamsRunner) {
-            // fix description, adding test class and annotations
-            description = augmentDescription(child, description);
-        // otherwise, if able to override [uniqueId] of test
-        } else if ((uniqueId != null) && description.isTest()) {
+        try {
+            // invoke original implementation
+            description = LifecycleHooks.callProxy(proxy);
+        } catch (NullPointerException eaten) { // from JUnitParams
+            // JUnitParams choked on a configuration method
+            FrameworkMethod method = (FrameworkMethod) child;
+            // call JUnit API to create a standard method description
+            description = Description.createTestDescription(method.getDeclaringClass(),
+                    method.getName(), method.getAnnotations());
+        }
+        
+        // if able to override [uniqueId] of test
+        if ((uniqueId != null) && AtomicTest.isTest(description)) {
             try {
                 // get parent of test runner
                 Object parent = LifecycleHooks.getFieldValue(runner, "this$0");
@@ -113,27 +117,4 @@ public class DescribeChild {
         return descripCopy;
     }
     
-    /**
-     * Augment incomplete description created by JUnitParams runner.
-     * <p>
-     * <b>NOTE</b>: The description built by JUnitParams lack the test class and annotations.
-     * 
-     * @param child child object of the test runner
-     * @param description JUnit description built by JUnitParams
-     * @return new augmented description object; if augmentation fails, returns original description
-     */
-    private static Description augmentDescription(final Object child, final Description description) {
-        if ((child instanceof FrameworkMethod) && (uniqueId != null)) {
-            Description augmented = Description.createTestDescription(description.getTestClass(),
-                    description.getMethodName(), ((FrameworkMethod) child).getAnnotations());
-            try {
-                uniqueId.set(augmented, uniqueId.get(description));
-                return augmented;
-            } catch (IllegalArgumentException | IllegalAccessException eaten) {
-                // nothing to do here
-            }
-        }
-        return description;
-    }
-
 }

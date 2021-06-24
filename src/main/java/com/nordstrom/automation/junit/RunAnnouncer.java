@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
  * or Gradle project configuration, {@code JUnitCore.addListener()}) is not only unnecessary, but will likely
  * suppress <b>RunWatcher</b> notifications.
  */
+@RunAnnouncer.ThreadSafe
 public class RunAnnouncer extends RunListener implements JUnitWatcher {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(RunAnnouncer.class);

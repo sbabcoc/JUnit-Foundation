@@ -12,13 +12,17 @@ public class RuleFailureTest {
 
     @Test
     public void verifyRuleExceptionHandling() {
+        ReferenceChecker checker = new ReferenceChecker();
+        
         JUnitCore runner = new JUnitCore();
+        runner.addListener(checker);
         Result result = runner.run(RuleThrowsException.class);
         assertFalse(result.wasSuccessful());
         assertEquals(1, result.getFailureCount());
         Failure failure = result.getFailures().get(0);
         assertEquals(RuntimeException.class, failure.getException().getClass());
         assertEquals("Must be failed", failure.getMessage());
+        ReferenceReleaseTest.checkLeakReports(checker);
     }
     
 }

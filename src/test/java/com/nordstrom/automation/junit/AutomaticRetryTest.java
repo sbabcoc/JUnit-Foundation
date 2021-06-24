@@ -27,9 +27,11 @@ public class AutomaticRetryTest {
     @Test
     public void testHappyPath() {
         RunListenerAdapter rla = new RunListenerAdapter();
+        ReferenceChecker checker = new ReferenceChecker();
         
         JUnitCore runner = new JUnitCore();
         runner.addListener(rla);
+        runner.addListener(checker);
         Result result = runner.run(AutomaticRetryPassing.class);
         assertTrue(result.wasSuccessful());
         
@@ -45,14 +47,17 @@ public class AutomaticRetryTest {
         assertEquals(notifications, Arrays.asList(
                 Notification.STARTED, Notification.FINISHED),
                 "Incorrect event notifications");
+        ReferenceReleaseTest.checkLeakReports(checker);
     }
     
     @Test
     public void testPassOnRetry() {
         RunListenerAdapter rla = new RunListenerAdapter();
+        ReferenceChecker checker = new ReferenceChecker();
         
         JUnitCore runner = new JUnitCore();
         runner.addListener(rla);
+        runner.addListener(checker);
         Result result = runner.run(AutomaticRetryPassOnRetry.class);
         assertTrue(result.wasSuccessful());
         
@@ -69,14 +74,17 @@ public class AutomaticRetryTest {
                 Notification.STARTED, Notification.RETRIED, Notification.FINISHED,
                 Notification.STARTED, Notification.FINISHED),
                 "Incorrect event notifications");
+        ReferenceReleaseTest.checkLeakReports(checker);
     }
     
     @Test
     public void testFailOnRetry() {
         RunListenerAdapter rla = new RunListenerAdapter();
+        ReferenceChecker checker = new ReferenceChecker();
         
         JUnitCore runner = new JUnitCore();
         runner.addListener(rla);
+        runner.addListener(checker);
         Result result = runner.run(AutomaticRetryFailing.class);
         assertFalse(result.wasSuccessful());
         
@@ -95,14 +103,17 @@ public class AutomaticRetryTest {
                 Notification.STARTED, Notification.RETRIED, Notification.FINISHED,
                 Notification.STARTED, Notification.FAILED, Notification.FINISHED),
                 "Incorrect event notifications");
+        ReferenceReleaseTest.checkLeakReports(checker);
     }
     
     @Test
     public void testNoRetry() {
         RunListenerAdapter rla = new RunListenerAdapter();
+        ReferenceChecker checker = new ReferenceChecker();
         
         JUnitCore runner = new JUnitCore();
         runner.addListener(rla);
+        runner.addListener(checker);
         Result result = runner.run(AutomaticRetryNoRetry.class);
         assertFalse(result.wasSuccessful());
         
@@ -118,14 +129,17 @@ public class AutomaticRetryTest {
         assertEquals(notifications, Arrays.asList(
                 Notification.STARTED, Notification.FAILED, Notification.FINISHED),
                 "Incorrect event notifications");
+        ReferenceReleaseTest.checkLeakReports(checker);
     }
     
     @Test
     public void testIgnore() {
         RunListenerAdapter rla = new RunListenerAdapter();
+        ReferenceChecker checker = new ReferenceChecker();
         
         JUnitCore runner = new JUnitCore();
         runner.addListener(rla);
+        runner.addListener(checker);
         Result result = runner.run(AutomaticRetryIgnore.class);
         assertTrue(result.wasSuccessful());
         
@@ -139,6 +153,7 @@ public class AutomaticRetryTest {
         UnitTestWatcher testWatcher = (UnitTestWatcher) optWatcher.get();
         List<Notification> notifications = testWatcher.getNotificationsFor(rla.getIgnoredTests().get(0));
         assertEquals(notifications, Arrays.asList(Notification.IGNORED), "Incorrect event notifications");
+        ReferenceReleaseTest.checkLeakReports(checker);
     }
     
     @AfterClass
