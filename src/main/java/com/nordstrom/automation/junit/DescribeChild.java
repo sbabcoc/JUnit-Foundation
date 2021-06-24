@@ -49,9 +49,12 @@ public class DescribeChild {
         Description description = null;
         
         try {
+            // invoke original implementation
             description = LifecycleHooks.callProxy(proxy);
         } catch (NullPointerException eaten) { // from JUnitParams
+            // JUnitParams choked on a configuration method
             FrameworkMethod method = (FrameworkMethod) child;
+            // call JUnit API to create a standard method description
             description = Description.createTestDescription(method.getDeclaringClass(),
                     method.getName(), method.getAnnotations());
         }
