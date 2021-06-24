@@ -174,6 +174,7 @@ public class LifecycleHooks {
         final TypeDescription getTestRules = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.GetTestRules").resolve();
         final TypeDescription runWithCompleteAssignment = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.RunWithCompleteAssignment").resolve();
         final TypeDescription nextCount = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.NextCount").resolve();
+        final TypeDescription parameterizedDescription = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.ParameterizedDescription").resolve();
         
         final TypeDescription runNotifier = TypePool.Default.ofSystemLoader().describe("org.junit.runner.notification.RunNotifier").resolve();
         final TypeDescription description = TypePool.Default.ofSystemLoader().describe("org.junit.runner.Description").resolve();
@@ -254,6 +255,15 @@ public class LifecycleHooks {
                     public Builder<?> transform(Builder<?> builder, TypeDescription type,
                                     ClassLoader classloader, JavaModule module) {
                         return builder.method(named("nextCount")).intercept(MethodDelegation.to(nextCount))
+                                      .implement(Hooked.class);
+                    }
+                })
+                .type(hasSuperType(named("junitparams.internal.ParametrizedDescription")))
+                .transform(new Transformer() {
+                    @Override
+                    public Builder<?> transform(Builder<?> builder, TypeDescription type,
+                                    ClassLoader classloader, JavaModule module) {
+                        return builder.method(named("parametrizedDescription")).intercept(MethodDelegation.to(parameterizedDescription))
                                       .implement(Hooked.class);
                     }
                 })
@@ -560,10 +570,56 @@ public class LifecycleHooks {
      * @param listenerType listener type
      * @return optional listener instance
      */
-    @SuppressWarnings("unchecked")
     public static <T extends RunListener> Optional<T> getAttachedListener(Class<T> listenerType) {
-        for (RunListener listener : runListeners) {
-            if (listener.getClass() == listenerType) {
+        // search for specified type among loader-attached listeners
+        Optional<T> optListener = findListener(listenerType, runListeners);
+        // if specified type not found
+        if ( ! optListener.isPresent()) {
+            // search for specified type among API-attached listeners
+            optListener = findListener(listenerType, getAttachedListeners());
+        }
+        
+        return optListener;
+    }
+    
+    /**
+     * Retrieve run listener collection from active notifier.
+     * 
+     * @return run listener collection
+     */
+    private static List<RunListener> getAttachedListeners() {
+        // get active thread runner
+        Object runner = getThreadRunner();
+        // if runner acquired
+        if (runner != null) {
+            // get active run notifier
+            Object notifier = getNotifierOf(runner);
+            // if notifier acquired
+            if (notifier != null) {
+                try {
+                    // get attached run listener collection
+                    return getFieldValue(notifier, "listeners");
+                } catch (IllegalAccessException | NoSuchFieldException | SecurityException e) {
+                    // nothing to do here
+                }
+            }
+        }
+        // default to empty list
+        return new ArrayList<>();
+    }
+    
+    /**
+     * Get reference to an instance of the specified listener type from the supplied list.
+     * 
+     * @param <T> listener type
+     * @param type listener type
+     * @param list listener list
+     * @return optional listener instance
+     */
+    @SuppressWarnings("unchecked")
+    private static <T extends RunListener> Optional<T> findListener(Class<T> type, List<RunListener> list) {
+        for (RunListener listener : list) {
+            if (listener.getClass() == type) {
                 return Optional.of((T) listener);
             }
         }

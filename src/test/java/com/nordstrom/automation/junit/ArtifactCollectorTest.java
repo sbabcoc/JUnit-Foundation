@@ -31,9 +31,11 @@ public class ArtifactCollectorTest {
     @Test
     public void verifyHappyPath() {
         RunListenerAdapter rla = new RunListenerAdapter();
+        ReferenceChecker checker = new ReferenceChecker();
         
         JUnitCore runner = new JUnitCore();
         runner.addListener(rla);
+        runner.addListener(checker);
         Result result = runner.run(ArtifactCollectorPassing.class);
         assertTrue(result.wasSuccessful());
         
@@ -55,14 +57,17 @@ public class ArtifactCollectorTest {
         assertEquals(notifications, Arrays.asList(
                 Notification.STARTED, Notification.FINISHED),
                 "Incorrect event notifications");
+        ReferenceReleaseTest.checkLeakReports(checker);
     }
     
     @Test
     public void verifyCaptureOnFailure() {
         RunListenerAdapter rla = new RunListenerAdapter();
+        ReferenceChecker checker = new ReferenceChecker();
         
         JUnitCore runner = new JUnitCore();
         runner.addListener(rla);
+        runner.addListener(checker);
         Result result = runner.run(ArtifactCollectorFailing.class);
         assertFalse(result.wasSuccessful());
         
@@ -85,15 +90,17 @@ public class ArtifactCollectorTest {
                 Notification.STARTED, Notification.RETRIED, Notification.FINISHED,
                 Notification.STARTED, Notification.FAILED, Notification.FINISHED),
                 "Incorrect event notifications");
-
+        ReferenceReleaseTest.checkLeakReports(checker);
     }
     
     @Test
     public void verifyCanNotCapture() {
         RunListenerAdapter rla = new RunListenerAdapter();
+        ReferenceChecker checker = new ReferenceChecker();
         
         JUnitCore runner = new JUnitCore();
         runner.addListener(rla);
+        runner.addListener(checker);
         Result result = runner.run(ArtifactCollectorDisabled.class);
         assertFalse(result.wasSuccessful());
         
@@ -116,14 +123,17 @@ public class ArtifactCollectorTest {
                 Notification.STARTED, Notification.RETRIED, Notification.FINISHED,
                 Notification.STARTED, Notification.FAILED, Notification.FINISHED),
                 "Incorrect event notifications");
+        ReferenceReleaseTest.checkLeakReports(checker);
     }
     
     @Test
     public void verifyWillNotCapture() {
         RunListenerAdapter rla = new RunListenerAdapter();
+        ReferenceChecker checker = new ReferenceChecker();
         
         JUnitCore runner = new JUnitCore();
         runner.addListener(rla);
+        runner.addListener(checker);
         Result result = runner.run(ArtifactCollectorCrippled.class);
         assertFalse(result.wasSuccessful());
         
@@ -146,14 +156,17 @@ public class ArtifactCollectorTest {
                 Notification.STARTED, Notification.RETRIED, Notification.FINISHED,
                 Notification.STARTED, Notification.FAILED, Notification.FINISHED),
                 "Incorrect event notifications");
+        ReferenceReleaseTest.checkLeakReports(checker);
     }
     
     @Test
     public void verifyOnDemandCapture() {
         RunListenerAdapter rla = new RunListenerAdapter();
+        ReferenceChecker checker = new ReferenceChecker();
         
         JUnitCore runner = new JUnitCore();
         runner.addListener(rla);
+        runner.addListener(checker);
         Result result = runner.run(ArtifactCollectorOnDemand.class);
         assertTrue(result.wasSuccessful());
         
@@ -175,14 +188,17 @@ public class ArtifactCollectorTest {
         assertEquals(notifications, Arrays.asList(
                 Notification.STARTED, Notification.FINISHED),
                 "Incorrect event notifications");
+        ReferenceReleaseTest.checkLeakReports(checker);
     }
     
     @Test
     public void verifyParameterizedCapture() {
         RunListenerAdapter rla = new RunListenerAdapter();
+        ReferenceChecker checker = new ReferenceChecker();
         
         JUnitCore runner = new JUnitCore();
         runner.addListener(rla);
+        runner.addListener(checker);
         Result result = runner.run(ArtifactCollectorParameterized.class);
         assertFalse(result.wasSuccessful());
         
@@ -209,14 +225,17 @@ public class ArtifactCollectorTest {
                 Notification.STARTED, Notification.RETRIED, Notification.FINISHED,
                 Notification.STARTED, Notification.FAILED, Notification.FINISHED),
                 "Incorrect event notifications");
+        ReferenceReleaseTest.checkLeakReports(checker);
     }
 
     @Test
     public void verifyJUnitParamsCapture() {
         RunListenerAdapter rla = new RunListenerAdapter();
+        ReferenceChecker checker = new ReferenceChecker();
 
         JUnitCore runner = new JUnitCore();
         runner.addListener(rla);
+        runner.addListener(checker);
         Result result = runner.run(ArtifactCollectorJUnitParams.class);
         assertFalse(result.wasSuccessful());
 
@@ -243,14 +262,17 @@ public class ArtifactCollectorTest {
                 Notification.STARTED, Notification.RETRIED, Notification.FINISHED,
                 Notification.STARTED, Notification.FAILED, Notification.FINISHED),
                 "Incorrect event notifications");
+        ReferenceReleaseTest.checkLeakReports(checker);
     }
 
     @Test
     public void verifyTheoriesCapture() {
         RunListenerAdapter rla = new RunListenerAdapter();
+        ReferenceChecker checker = new ReferenceChecker();
 
         JUnitCore runner = new JUnitCore();
         runner.addListener(rla);
+        runner.addListener(checker);
         Result result = runner.run(ArtifactCollectorTheories.class);
         assertFalse(result.wasSuccessful());
 
@@ -284,6 +306,7 @@ public class ArtifactCollectorTest {
                 Notification.STARTED, Notification.RETRIED, Notification.FINISHED,
                 Notification.STARTED, Notification.FAILED, Notification.FINISHED),
                 "Incorrect event notifications");
+        ReferenceReleaseTest.checkLeakReports(checker);
     }
     
     @AfterClass

@@ -19,7 +19,10 @@ public class BeforeClassFailureTest {
 
     @Test
     public void verifyBeforeClassExceptionHandling() {
+        ReferenceChecker checker = new ReferenceChecker();
+
         JUnitCore runner = new JUnitCore();
+        runner.addListener(checker);
         Result result = runner.run(BeforeClassThrowsException.class);
         assertFalse(result.wasSuccessful());
         assertEquals(1, result.getFailureCount(), "Incorrect failed test count");
@@ -33,6 +36,7 @@ public class BeforeClassFailureTest {
         UnitTestWatcher watcher = (UnitTestWatcher) optWatcher.get();
         List<Notification> notifications = watcher.getNotificationsFor(failure.getDescription());
         assertEquals(notifications, Arrays.asList(Notification.FAILED), "Incorrect event notifications");
+        ReferenceReleaseTest.checkLeakReports(checker);
     }
     
 }

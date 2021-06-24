@@ -12,9 +12,11 @@ public class PowerMockTest {
     @Test
     public void verifyMethodInterception() {
         RunListenerAdapter rla = new RunListenerAdapter();
+        ReferenceChecker checker = new ReferenceChecker();
 
         JUnitCore runner = new JUnitCore();
         runner.addListener(rla);
+        runner.addListener(checker);
         Result result = runner.run(PowerMockCases.class);
         assertFalse(result.wasSuccessful());
         
@@ -23,6 +25,7 @@ public class PowerMockTest {
                 "testHappyPath(com.nordstrom.automation.junit.PowerMockCases)", "Incorrect passed test name");
         assertEquals(rla.getFailedTests().size(), 1, "Incorrect failed test count");
         assertEquals(rla.getIgnoredTests().size(), 0, "Incorrect ignored test count");
+        ReferenceReleaseTest.checkLeakReports(checker);
     }
 
 }

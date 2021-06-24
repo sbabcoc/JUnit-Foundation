@@ -12,8 +12,8 @@ import java.util.Map;
 
 /**
  * This class is a mutable implementation of the {@link Test &#64;Test} annotation interface. It includes a static
- * {@link #proxyFor(Method)} method that replaces the immutable annotation attached to a JUnit test method with an
- * instance of this class to apply the global test timeout.
+ * {@link #proxyFor(Method, long)} method that replaces the immutable annotation attached to a JUnit test method with
+ * an instance of this class to apply the global test timeout.
  */
 @Ignore
 @SuppressWarnings("all")
@@ -21,8 +21,8 @@ public class MutableTest implements Test {
     
     private static final String DECLARED_ANNOTATIONS = "declaredAnnotations";
 
-    private Class<? extends Throwable> expected;
-    private long timeout;
+    private final Class<? extends Throwable> expected;
+    private final long timeout;
     
     /**
      * Constructor: Populate the fields of this object from the parameters of the specified {@link Test &#64;Test}
@@ -33,6 +33,18 @@ public class MutableTest implements Test {
     protected MutableTest(Test annotation) {
         this.expected = annotation.expected();
         this.timeout = annotation.timeout();
+    }
+    
+    /**
+     * Constructor: Populate the fields of this object from the parameters of the specified {@link Test &#64;Test}
+     * annotation.
+     * 
+     * @param annotation {@link Test &#64;Test} annotation specifying desired parameters
+     * @param timeout timeout interval in milliseconds
+     */
+    private MutableTest(Test annotation, long timeout) {
+        this.expected = annotation.expected();
+        this.timeout = timeout;
     }
     
     /**
@@ -48,48 +60,19 @@ public class MutableTest implements Test {
         return expected;
     }
     
-    /**
-     * Specify the class of exception that the annotated test method is expected to throw. If you need to verify the
-     * message or properties of the exception, use the {@link ExpectedException} rule instead.
-     * 
-     * @param expected expected exception class
-     * @return this mutable annotation object
-     */
-    public MutableTest setExpected(Class<? extends Throwable> expected) {
-        this.expected = expected;
-        return this;
-    }
-    
     @Override
     public long timeout() {
         return timeout;
     }
     
     /**
-     * Specify maximum test execution interval in milliseconds. If execution time exceeds this interval, the test will
-     * fail with {@link TestTimedOutException}.
-     * <p>
-     * <b>THREAD SAFETY WARNING</b>: Test methods with a timeout parameter are run in a thread other than the thread
-     * which runs the fixture's {@code @Before} and {@code @After} methods. This may yield different behavior
-     * for code that is not thread safe when compared to the same test method without a timeout parameter. <b>Consider
-     * using the {@link org.junit.rules.Timeout} rule instead</b>, which ensures a test method is run on the same
-     * thread as the fixture's {@code @Before} and {@code @After} methods.
-     *
-     * @param timeout timeout interval in milliseconds
-     * @return this mutable annotation object
-     */
-    public MutableTest setTimeout(long timeout) {
-        this.timeout = timeout;
-        return this;
-    }
-    
-    /**
      * Create a {@link Test &#64;Test} annotation proxy for the specified test method.
      * 
      * @param testMethod test method to which {@code @Test} annotation proxy will be attached
+     * @param timeout timeout interval in milliseconds
      * @return mutable proxy for {@code @Test} annotation
      */
-    public static MutableTest proxyFor(Method testMethod) {
+    public static MutableTest proxyFor(Method testMethod, long timeout) {
         Test declared = testMethod.getAnnotation(Test.class);
         if (declared instanceof MutableTest) {
             return (MutableTest) declared;
@@ -102,7 +85,7 @@ public class MutableTest implements Test {
                     @SuppressWarnings("unchecked")
                     Map<Class<? extends Annotation>, Annotation> map = 
                                     (Map<Class<? extends Annotation>, Annotation>) field.get(testMethod);
-                    MutableTest mutable = new MutableTest(declared);
+                    MutableTest mutable = new MutableTest(declared, timeout);
                     map.put(Test.class, mutable);
                     return mutable;
                 } catch (IllegalArgumentException | IllegalAccessException e) {
@@ -114,5 +97,33 @@ public class MutableTest implements Test {
             }
         }
         throw new IllegalArgumentException("Specified method is not a JUnit @Test: " + testMethod);
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((expected == null) ? 0 : expected.hashCode());
+        result = prime * result + (int) (timeout ^ (timeout >>> 32));
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if ( ! (obj instanceof MutableTest))
+            return false;
+        MutableTest other = (MutableTest) obj;
+        if (expected == null) {
+            if (other.expected != null)
+                return false;
+        } else if (!expected.equals(other.expected))
+            return false;
+        if (timeout != other.timeout)
+            return false;
+        return true;
     }
 }

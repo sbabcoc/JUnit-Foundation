@@ -48,8 +48,8 @@ public class JUnitConfig extends SettingsCore<JUnitConfig.JUnitSettings> {
          */
         MAX_RETRY("junit.max.retry", "0");
 
-        private String propertyName;
-        private String defaultValue;
+        private final String propertyName;
+        private final String defaultValue;
         
         JUnitSettings(String propertyName, String defaultValue) {
             this.propertyName = propertyName;

@@ -37,37 +37,45 @@ public class TimeoutRuleTest {
     @Test
     public void verifyHappyPath() {
         RunListenerAdapter rla = new RunListenerAdapter();
+        ReferenceChecker checker = new ReferenceChecker();
         
         JUnitCore runner = new JUnitCore();
         runner.addListener(rla);
+        runner.addListener(checker);
         Result result = runner.run(TimeoutRulePassing.class);
         assertTrue(result.wasSuccessful());
         
         assertEquals(rla.getPassedTests().size(), 2, "Incorrect passed test count");
         assertEquals(rla.getFailedTests().size(), 0, "Incorrect failed test count");
         assertEquals(rla.getIgnoredTests().size(), 0, "Incorrect ignored test count");
+        ReferenceReleaseTest.checkLeakReports(checker);
     }
 
     @Test
     public void verifyOverrideHappyPath() {
         RunListenerAdapter rla = new RunListenerAdapter();
+        ReferenceChecker checker = new ReferenceChecker();
         
         JUnitCore runner = new JUnitCore();
         runner.addListener(rla);
+        runner.addListener(checker);
         Result result = runner.run(TimeoutRuleOverridePassing.class);
         assertTrue(result.wasSuccessful());
         
         assertEquals(rla.getPassedTests().size(), 2, "Incorrect passed test count");
         assertEquals(rla.getFailedTests().size(), 0, "Incorrect failed test count");
         assertEquals(rla.getIgnoredTests().size(), 0, "Incorrect ignored test count");
+        ReferenceReleaseTest.checkLeakReports(checker);
     }
 
     @Test
     public void verifyExpectedTimeout() {
         RunListenerAdapter rla = new RunListenerAdapter();
+        ReferenceChecker checker = new ReferenceChecker();
         
         JUnitCore runner = new JUnitCore();
         runner.addListener(rla);
+        runner.addListener(checker);
         Result result = runner.run(RuleExpectedTimeout.class);
         
         assertEquals(rla.getPassedTests().size(), 0, "Incorrect passed test count");
@@ -75,14 +83,17 @@ public class TimeoutRuleTest {
         assertEquals(rla.getIgnoredTests().size(), 0, "Incorrect ignored test count");
         
         verifyFailureMessages(result);
+        ReferenceReleaseTest.checkLeakReports(checker);
     }
     
     @Test
     public void verifyOverrideExpectedTimeout() {
         RunListenerAdapter rla = new RunListenerAdapter();
+        ReferenceChecker checker = new ReferenceChecker();
         
         JUnitCore runner = new JUnitCore();
         runner.addListener(rla);
+        runner.addListener(checker);
         Result result = runner.run(RuleOverrideExpectedTimeout.class);
         
         assertEquals(rla.getPassedTests().size(), 0, "Incorrect passed test count");
@@ -90,6 +101,7 @@ public class TimeoutRuleTest {
         assertEquals(rla.getIgnoredTests().size(), 0, "Incorrect ignored test count");
         
         verifyFailureMessages(result);
+        ReferenceReleaseTest.checkLeakReports(checker);
     }
     
     @AfterClass

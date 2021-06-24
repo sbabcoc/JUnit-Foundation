@@ -34,7 +34,7 @@ public class RunListenerAdapter extends RunListener {
     private List<Description> m_retriedTheories = Collections.synchronizedList(new ArrayList<Description>());
     private List<Description> m_passedTheories = Collections.synchronizedList(new ArrayList<Description>());
     private ConcurrentHashMap<Integer, UnitTestCapture> watcherMap = new ConcurrentHashMap<>();
-                
+    
     /**
      * Called when an atomic test is about to be started.
      * 
@@ -293,7 +293,7 @@ public class RunListenerAdapter extends RunListener {
      */
     private boolean isTheory(Description description) {
         AtomicTest atomicTest = LifecycleHooks.getAtomicTestOf(description);
-        return ((atomicTest != null) && (atomicTest.isTheory()));
+        return ((atomicTest != null) && atomicTest.isTheory());
     }
 
 }
