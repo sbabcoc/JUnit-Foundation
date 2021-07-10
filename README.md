@@ -81,7 +81,7 @@ Get the atomic test associated with the specified instance.
 Get the test class instance for the specified method description.
 * `LifecycleHooks.getCallableOf(Description description)`  
 Get the **ReflectiveCallable** object for the specified description.
-> **NOTE**: This method is useful for retrieving [JUnitParams invocation parameters](#publishing-invocation-parameters---junitparams-runner). If you need to synthesize a "callable" closure from a JUnit method reference, check out the `getCallableOf` method under [Walking the Object Hierarchy](#walking-the-object-hierarchy).
+> **NOTE**: This method is useful for retrieving [JUnitParams invocation parameters](#publishing-invocation-parameters---junitparams-runner). If you need to synthesize a "callable" closure from a JUnit method reference, check out the `encloseCallable` method under [Useful Utility Methods](#useful-utility-methods).
 
 ###### Exploring the Test Run Hierarchy
 ```java
