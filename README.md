@@ -75,6 +75,10 @@ Get the run notifier associated with the specified parent runner.
 Get the test class object associated with the specified parent runner.
 * `LifecycleHooks.getAtomicTestOf(Description description)`  
 Get the atomic test object for the specified method description.
+* `LifecycleHooks.getAtomicTestOf(Object target)`  
+Get the atomic test associated with the specified instance.
+* `LifecycleHooks.getTargetOf(Description description)`  
+Get the test class instance for the specified method description.
 * `LifecycleHooks.getCallableOf(Description description)`  
 Get the **ReflectiveCallable** object for the specified description.
 > **NOTE**: This method is useful for retrieving [JUnitParams invocation parameters](#publishing-invocation-parameters---junitparams-runner). If you need to synthesize a "callable" closure from a JUnit method reference, check out the `getCallableOf` method under [Walking the Object Hierarchy](#walking-the-object-hierarchy).
@@ -551,14 +555,12 @@ public class ArtifactCollectorJUnitParams implements ArtifactParams {
     
     @Override
     public Optional<Map<String, Object>> getParameters() {
-        // get runner for this target
-        Object runner = LifecycleHooks.getRunnerForTarget(this);
-        // get atomic test of target runner
-        AtomicTest<FrameworkMethod> test = LifecycleHooks.getAtomicTestOf(runner);
-        // get "callable" closure of test method
-        ReflectiveCallable callable = LifecycleHooks.getCallableOf(runner, test.getIdentity());
+        // get atomic test associated with this instance
+        AtomicTest atomicTest = LifecycleHooks.getAtomicTestOf(this);
+        // get "callable" closure of framework method
+        ReflectiveCallable callable = LifecycleHooks.getCallableOf(atomicTest.getDescription());
         // get test method parameters
-        Class<?>[] paramTypes = test.getIdentity().getMethod().getParameterTypes();
+        Class<?>[] paramTypes = atomicTest.getIdentity().getMethod().getParameterTypes();
 
         try {
             // extract execution parameters from "callable" closure
