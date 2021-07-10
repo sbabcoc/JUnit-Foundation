@@ -75,8 +75,6 @@ Get the run notifier associated with the specified parent runner.
 Get the test class object associated with the specified parent runner.
 * `LifecycleHooks.getAtomicTestOf(Description description)`  
 Get the atomic test object for the specified method description.
-* `LifecycleHooks.getAtomicTestOf(Object target)`  
-Get the atomic test associated with the specified instance.
 * `LifecycleHooks.getTargetOf(Description description)`  
 Get the test class instance for the specified method description.
 * `LifecycleHooks.getCallableOf(Description description)`  
