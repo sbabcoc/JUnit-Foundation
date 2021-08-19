@@ -27,8 +27,7 @@
   
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <compile-jdk.version>1.7</compile-jdk.version>
-    <test-jdk.version>1.8</test-jdk.version>
+    <maven.compiler.release>7</maven.compiler.release>
     <java-utils.version>2.0.0</java-utils.version>
     <settings.version>2.3.5</settings.version>
     <junit.version>4.13.2</junit.version>
@@ -39,7 +38,7 @@
     <junitparams.version>1.1.1</junitparams.version>
     <powermock.version>2.0.9</powermock.version>
     <compiler-plugin.version>3.8.1</compiler-plugin.version>
-    <surefire-plugin.version>2.22.0</surefire-plugin.version>
+    <surefire-plugin.version>2.22.2</surefire-plugin.version>
     <source-plugin.version>3.2.0</source-plugin.version>
     <javadoc-plugin.version>3.1.1</javadoc-plugin.version>
     <gpg-plugin.version>1.6</gpg-plugin.version>
@@ -139,6 +138,8 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
+      <!-- NOTE: 'compile' scope is required -->
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.testng</groupId>
@@ -228,23 +229,11 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <source>${compile-jdk.version}</source>
-          <target>${compile-jdk.version}</target>
-          <jdkToolchain>
-            <version>${compile-jdk.version}</version>
-            <vendor>oracle</vendor>
-          </jdkToolchain>
-        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
-          <jdkToolchain>
-            <version>${test-jdk.version}</version>
-            <vendor>oracle</vendor>
-          </jdkToolchain>
           <argLine>-javaagent:src/test/resources/test-agent.jar</argLine>
         </configuration>
       </plugin>
