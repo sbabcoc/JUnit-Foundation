@@ -599,7 +599,7 @@ For scenarios that require artifact capture of parameterized tests, the [Artifac
 
 ## Test Method Timeout Management
 
-**JUnit** provides two mechanisms for limiting the duration tests:
+**JUnit** provides two mechanisms for limiting the duration of tests:
 
 * The [timeout](https://junit.org/junit4/javadoc/4.12/org/junit/Test.html#timeout()) parameter of the **`@Test`** annotation  
 With the `timeout` parameter, you can set an explicit timeout interval in milliseconds on an individual test method. If a test fails to complete within the specified interval, **JUnit** terminates the test and throws **TestTimedOutException**.
