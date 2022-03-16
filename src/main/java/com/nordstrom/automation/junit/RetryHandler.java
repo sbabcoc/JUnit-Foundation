@@ -1,5 +1,6 @@
 package com.nordstrom.automation.junit;
 
+import static com.nordstrom.automation.junit.LifecycleHooks.getConfig;
 import static com.nordstrom.automation.junit.LifecycleHooks.invoke;
 import static com.nordstrom.automation.junit.LifecycleHooks.toMapKey;
 
@@ -119,8 +120,8 @@ public class RetryHandler {
     static boolean doRetry(FrameworkMethod method, Throwable thrown, AtomicInteger retryCounter) {
         boolean doRetry = false;
         if ((retryCounter.decrementAndGet() > -1) && isRetriable(method, thrown)) {
-            LOGGER.warn("### RETRY ### {}", method);
             doRetry = true;
+            LOGGER.warn("### RETRY ### {}", method, getThrowableToLog(thrown));
         }
         return doRetry;
     }
@@ -146,28 +147,10 @@ public class RetryHandler {
         // if method isn't ignored or excluded from retry attempts
         if (Boolean.FALSE.equals(invoke(runner, "isIgnored", method)) && (noRetryOnMethod == null) && (noRetryOnClass == null)) {
             // get configured maximum retry count
-            maxRetry = JUnitConfig.getConfig().getInteger(JUnitSettings.MAX_RETRY.key(), Integer.valueOf(0));
+            maxRetry = getConfig().getInteger(JUnitSettings.MAX_RETRY.key(), Integer.valueOf(0));
         }
         
         return maxRetry;
-    }
-    
-    /**
-     * Determine if the specified failed test should be retried.
-     * 
-     * @param method failed test method
-     * @param thrown exception for this failed test
-     * @return {@code true} if test should be retried; otherwise {@code false}
-     */
-    static boolean isRetriable(final FrameworkMethod method, final Throwable thrown) {
-        synchronized(retryAnalyzerLoader) {
-            for (JUnitRetryAnalyzer analyzer : retryAnalyzerLoader) {
-                if (analyzer.retry(method, thrown)) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
     
     /**
@@ -179,6 +162,37 @@ public class RetryHandler {
     static boolean doRetryFor(final FrameworkMethod method) {
         Boolean doRetry = METHOD_TO_RETRY.get(toMapKey(method));
         return (doRetry != null) ? doRetry.booleanValue() : false;
+    }
+    
+    /**
+     * Determine if the specified failed test should be retried.
+     * 
+     * @param method failed test method
+     * @param thrown exception for this failed test
+     * @return {@code true} if test should be retried; otherwise {@code false}
+     */
+    private static boolean isRetriable(final FrameworkMethod method, final Throwable thrown) {
+        synchronized(retryAnalyzerLoader) {
+            for (JUnitRetryAnalyzer analyzer : retryAnalyzerLoader) {
+                if (analyzer.retry(method, thrown)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    
+    /**
+     * Get the {@link Throwable} to log with the retry notification.
+     * 
+     * @param thrown exception that caused the test to fail
+     * @return if exception logging is indicated, the specified exception; otherwise {@code null}
+     */
+    private static Throwable getThrowableToLog(Throwable thrown) {
+        if (LOGGER.isDebugEnabled() || getConfig().getBoolean(JUnitSettings.RETRY_MORE_INFO.key())) {
+            return thrown;
+        }
+        return null;
     }
     
 }

@@ -79,21 +79,12 @@ public class MutableTest implements Test {
         }
         if (declared != null) {
             try {
-                Field field = LifecycleHooks.getDeclaredField(testMethod, DECLARED_ANNOTATIONS);
-                field.setAccessible(true);
-                try {
-                    @SuppressWarnings("unchecked")
-                    Map<Class<? extends Annotation>, Annotation> map = 
-                                    (Map<Class<? extends Annotation>, Annotation>) field.get(testMethod);
-                    MutableTest mutable = new MutableTest(declared, timeout);
-                    map.put(Test.class, mutable);
-                    return mutable;
-                } catch (IllegalArgumentException | IllegalAccessException e) {
-                    throw new UnsupportedOperationException("Failed acquiring annotations map for method: " + testMethod, e);
-                }
-            } catch (NoSuchFieldException | SecurityException e) {
-                throw new UnsupportedOperationException("Failed acquiring [" + DECLARED_ANNOTATIONS
-                                + "] field of Executable class", e);
+                Map<Class<? extends Annotation>, Annotation> map = LifecycleHooks.getFieldValue(testMethod, DECLARED_ANNOTATIONS);
+                MutableTest mutable = new MutableTest(declared, timeout);
+                map.put(Test.class, mutable);
+                return mutable;
+            } catch (IllegalAccessException | NoSuchFieldException | SecurityException e) {
+                throw new UnsupportedOperationException("Failed acquiring annotations map for method: " + testMethod, e);
             }
         }
         throw new IllegalArgumentException("Specified method is not a JUnit @Test: " + testMethod);
