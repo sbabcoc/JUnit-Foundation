@@ -25,7 +25,7 @@ public class JUnitConfig extends SettingsCore<JUnitConfig.JUnitSettings> {
      */
     public enum JUnitSettings implements SettingsCore.SettingsAPI {
         /**
-         * Global per-test timeout interval in milliseconds.
+         * This setting specifies the global per-test timeout interval in milliseconds.
          * <p>
          * name: <b>junit.timeout.test</b><br>
          * default: {@code null}
@@ -33,7 +33,7 @@ public class JUnitConfig extends SettingsCore<JUnitConfig.JUnitSettings> {
         TEST_TIMEOUT("junit.timeout.test", null),
         
         /**
-         * Global per-class timeout interval in milliseconds.
+         * This setting specifies the global per-class timeout interval in milliseconds.
          * <p>
          * name: <b>junit.timeout.rule</b><br>
          * default: {@code null}
@@ -41,13 +41,22 @@ public class JUnitConfig extends SettingsCore<JUnitConfig.JUnitSettings> {
         TIMEOUT_RULE("junit.timeout.rule", null),
         
         /**
-         * Maximum retry attempts for failed test methods.
+         * This setting specifies the maximum retry attempts for failed test methods.
          * <p>
          * name: <b>junit.max.retry</b><br>
          * default: <b>0</b>
          */
-        MAX_RETRY("junit.max.retry", "0");
+        MAX_RETRY("junit.max.retry", "0"),
 
+        /**
+         * This setting specifies whether the exception that caused a test to fail will be logged in the notification
+         * that the test is being retried.
+         * <p>
+         * name: <b>junit.retry.more.info</b><br>
+         * default: {@code false}
+         */
+        RETRY_MORE_INFO("junit.retry.more.info", "false");
+        
         private final String propertyName;
         private final String defaultValue;
         

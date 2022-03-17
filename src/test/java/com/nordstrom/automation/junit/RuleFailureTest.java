@@ -18,10 +18,10 @@ public class RuleFailureTest {
         runner.addListener(checker);
         Result result = runner.run(RuleThrowsException.class);
         assertFalse(result.wasSuccessful());
-        assertEquals(1, result.getFailureCount());
+        assertEquals(result.getFailureCount(), 1, "Incorrect failed test count");
         Failure failure = result.getFailures().get(0);
-        assertEquals(RuntimeException.class, failure.getException().getClass());
-        assertEquals("Must be failed", failure.getMessage());
+        assertEquals(failure.getException().getClass(), RuntimeException.class, "Incorrect failure exception");
+        assertEquals(failure.getMessage(), "Must be failed", "Incorrect failure message");
         ReferenceReleaseTest.checkLeakReports(checker);
     }
     

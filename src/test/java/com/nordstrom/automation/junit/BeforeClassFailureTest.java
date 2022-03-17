@@ -25,10 +25,10 @@ public class BeforeClassFailureTest {
         runner.addListener(checker);
         Result result = runner.run(BeforeClassThrowsException.class);
         assertFalse(result.wasSuccessful());
-        assertEquals(1, result.getFailureCount(), "Incorrect failed test count");
+        assertEquals(result.getFailureCount(), 1, "Incorrect failed test count");
         Failure failure = result.getFailures().get(0);
-        assertEquals(RuntimeException.class, failure.getException().getClass(), "Incorrect exception class");
-        assertEquals("Must be failed", failure.getMessage(), "Incorrect exception message");
+        assertEquals(failure.getException().getClass(), RuntimeException.class, "Incorrect exception class");
+        assertEquals(failure.getMessage(), "Must be failed", "Incorrect exception message");
         assertTrue(failure.getDescription().isSuite(), "Failure should describe a suite");
         
         Optional<UnitTestWatcher> optWatcher = LifecycleHooks.getAttachedWatcher(UnitTestWatcher.class);
