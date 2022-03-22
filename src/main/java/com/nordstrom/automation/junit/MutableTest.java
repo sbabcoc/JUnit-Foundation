@@ -3,24 +3,31 @@ package com.nordstrom.automation.junit;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.TestTimedOutException;
+
+import net.bytebuddy.implementation.bind.annotation.Argument;
+import net.bytebuddy.implementation.bind.annotation.RuntimeType;
+import net.bytebuddy.implementation.bind.annotation.SuperCall;
+import net.bytebuddy.implementation.bind.annotation.This;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This class is a mutable implementation of the {@link Test &#64;Test} annotation interface. It includes a static
- * {@link #proxyFor(Method, long)} method that replaces the immutable annotation attached to a JUnit test method with
- * an instance of this class to apply the global test timeout.
+ * {@link #proxyFor(FrameworkMethod, long)} method that replaces the immutable annotation attached to a JUnit test
+ * method with an instance of this class to apply the global test timeout.
  */
 @Ignore
 @SuppressWarnings("all")
 public class MutableTest implements Test {
     
-    private static final String DECLARED_ANNOTATIONS = "declaredAnnotations";
-
     private final Class<? extends Throwable> expected;
     private final long timeout;
     
@@ -46,50 +53,36 @@ public class MutableTest implements Test {
         this.expected = annotation.expected();
         this.timeout = timeout;
     }
-    
+
     /**
      * {@inheritDoc}
      */
     @Override
     public Class<? extends Annotation> annotationType() {
-        return MutableTest.class;
+        return Test.class;
     }
     
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Class<? extends Throwable> expected() {
         return expected;
     }
     
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public long timeout() {
         return timeout;
     }
     
-    /**
-     * Create a {@link Test &#64;Test} annotation proxy for the specified test method.
-     * 
-     * @param testMethod test method to which {@code @Test} annotation proxy will be attached
-     * @param timeout timeout interval in milliseconds
-     * @return mutable proxy for {@code @Test} annotation
-     */
-    public static MutableTest proxyFor(Method testMethod, long timeout) {
-        Test declared = testMethod.getAnnotation(Test.class);
-        if (declared instanceof MutableTest) {
-            return (MutableTest) declared;
-        }
-        if (declared != null) {
-            try {
-                Map<Class<? extends Annotation>, Annotation> map = LifecycleHooks.getFieldValue(testMethod, DECLARED_ANNOTATIONS);
-                MutableTest mutable = new MutableTest(declared, timeout);
-                map.put(Test.class, mutable);
-                return mutable;
-            } catch (IllegalAccessException | NoSuchFieldException | SecurityException e) {
-                throw new UnsupportedOperationException("Failed acquiring annotations map for method: " + testMethod, e);
-            }
-        }
-        throw new IllegalArgumentException("Specified method is not a JUnit @Test: " + testMethod);
+    @Override
+    public String toString() {
+        return "@" + getClass().getName() + "(timeout=" + timeout + ", expected=" + expected.getName() + ")";
     }
-
+    
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -116,5 +109,20 @@ public class MutableTest implements Test {
         if (timeout != other.timeout)
             return false;
         return true;
+    }
+    
+    /**
+     * Create a {@link Test &#64;Test} annotation proxy for the specified test method.
+     * 
+     * @param method test method to which {@code @Test} annotation proxy will be attached
+     * @param timeout timeout interval in milliseconds
+     */
+    static void proxyFor(final FrameworkMethod method, final long timeout) {
+        Test declared = method.getAnnotation(Test.class);
+        if (declared != null) {
+            GetAnnotation.injectProxy(method, new MutableTest(declared, timeout));
+            return;
+        }
+        throw new IllegalArgumentException("Specified method is not a JUnit @Test: " + method);
     }
 }

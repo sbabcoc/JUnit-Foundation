@@ -1,7 +1,9 @@
 package com.nordstrom.automation.junit;
 
+import java.io.Serializable;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
+import java.util.Objects;
+
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.theories.Theory;
@@ -16,8 +18,6 @@ import org.junit.runner.Description;
 @SuppressWarnings("all")
 public class RetriedTest extends MutableTest {
 
-    private static final String ANNOTATIONS = "fAnnotations";
-    
     private final Throwable thrown;
     
     /**
@@ -29,7 +29,7 @@ public class RetriedTest extends MutableTest {
      */
     protected RetriedTest(Test annotation, Throwable thrown) {
         super(annotation);
-        this.thrown = thrown;
+        this.thrown = Objects.requireNonNull(thrown, "[thrown] must be non-null");
     }
     
     /**
@@ -37,7 +37,7 @@ public class RetriedTest extends MutableTest {
      */
     @Override
     public Class<? extends Annotation> annotationType() {
-        return RetriedTest.class;
+        return Test.class;
     }
     
     /**
@@ -49,54 +49,11 @@ public class RetriedTest extends MutableTest {
         return thrown;
     }
     
-    /**
-     * Create a {@link Test &#64;Test} or {@link Theory &#64;Theory} annotation proxy for the specified test
-     * description.
-     * 
-     * @param description test description to which {@code @Test} or {@code @Theory} annotation proxy will be attached
-     * @param thrown exception for this failed test
-     * @return new {@link Description} object for retry attempt
-     */
-    public static Description proxyFor(Description description, Throwable thrown) {
-        try {
-            Field field = Description.class.getDeclaredField(ANNOTATIONS);
-            field.setAccessible(true);
-            try {
-                Annotation[] annotations = (Annotation[]) field.get(description);
-                for (int i = 0; i < annotations.length; i++) {
-                    Annotation proxy = null;
-                    Annotation annotation = annotations[i];
-                    if (annotation instanceof Test) {
-                        proxy = new RetriedTest((Test) annotation, thrown);
-                    } else if (annotation instanceof Theory) {
-                        proxy = new RetriedTheory((Theory) annotation, thrown);
-                    }
-                    if (proxy != null) {
-                        annotations[i] = proxy;
-                        return DescribeChild.makeChildlessCopyOf(description);
-                    }
-                }
-            } catch (IllegalArgumentException | IllegalAccessException e) {
-                throw new UnsupportedOperationException("Failed acquiring annotations map for method: " + description, e);
-            }
-        } catch (NoSuchFieldException | SecurityException e) {
-            throw new UnsupportedOperationException("Failed acquiring [" + ANNOTATIONS
-                            + "] field of test method class", e);
-        }
-        throw new IllegalArgumentException("Specified method is not a JUnit @Test or @Theory: " + description);
+    @Override
+    public String toString() {
+        return super.toString().replaceAll(".$", "") + ", thrown=" + thrown.getClass().getName() + ")";
     }
     
-    /**
-     * Determine if the specified description is for a retried test or theory.
-     * 
-     * @param description JUnit description
-     * @return {@code true} if the specified description indicates a retried test; otherwise {@code false}
-     */
-    public static boolean isRetriedTest(Description description) {
-        return ((null != description.getAnnotation(RetriedTest.class)) ||
-                (null != description.getAnnotation(RetriedTheory.class)));
-    }
-
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -120,5 +77,67 @@ public class RetriedTest extends MutableTest {
         } else if (!thrown.equals(other.thrown))
             return false;
         return true;
+    }
+    
+    /**
+     * Determine if the specified description is for a retried test or theory.
+     * 
+     * @param description JUnit {@link Description} object
+     * @return {@code true} if the specified description indicates a retried test; otherwise {@code false}
+     */
+    public static boolean isRetriedTest(Description description) {
+        Annotation annotation = AtomicTest.getTestAnnotation(description);
+        return ((annotation instanceof RetriedTest) || (annotation instanceof RetriedTheory));
+    }
+
+    /**
+     * Create a {@link Test &#64;Test} or {@link Theory &#64;Theory} annotation proxy for the specified test
+     * description.
+     * 
+     * @param description test description to which {@code @Test} or {@code @Theory} annotation proxy will be attached
+     * @param thrown exception for this failed test
+     * @return new {@link Description} object for retry attempt
+     */
+    static Description proxyFor(Description description, Throwable thrown) {
+        Annotation proxy = null;
+        Annotation annotation = AtomicTest.getTestAnnotation(description);
+        if (annotation == null) {
+            throw new IllegalArgumentException("Specified method is not a JUnit @Test or @Theory: " + description);
+        }
+        if (annotation.annotationType().equals(Test.class)) {
+            proxy = new RetriedTest((Test) annotation, thrown);
+        } else {
+            proxy = new RetriedTheory((Theory) annotation, thrown);
+        }
+        injectProxy(description, proxy);
+        return duplicate(description);
+    }
+    
+    /**
+     * Inject the specified proxy annotation into the indicated failed test description.
+     * 
+     * @param description test description to which {@code @Test} or {@code @Theory} annotation proxy will be attached
+     * @param proxyAnnotation automatic retry proxy annotation ({@link RetriedTest} or {@link RetriedTheory})
+     */
+    private static void injectProxy(Description description, Annotation proxyAnnotation) {
+        Annotation[] annotations = ((AnnotationsAccessor) description).annotations();
+        for (int i = 0; i < annotations.length; i++) {
+            if (annotations[i].annotationType().equals(proxyAnnotation.annotationType())) {
+                annotations[i] = proxyAnnotation;
+                break;
+            }
+        }
+    }
+    /**
+     * Create a duplicate of the specified description.
+     * 
+     * @param description {@link Description} object
+     * @return new {@link Description} object that matches the original
+     */
+    private static Description duplicate(Description description) {
+        String displayName = description.getDisplayName();
+        Serializable uniqueId = ((UniqueIdAccessor) description).getUniqueId();
+        Annotation[] annotations = ((AnnotationsAccessor) description).annotations();
+        return Description.createSuiteDescription(displayName, uniqueId, annotations);
     }
 }

@@ -66,6 +66,7 @@ public class EachTestNotifierInit {
                         if (description.equals(entry.getValue())) {
                             // subject method resolved
                             method = entry.getKey();
+                            break;
                         }
                     }
                 } catch (IllegalAccessException | NoSuchFieldException | SecurityException e) {
@@ -189,6 +190,7 @@ public class EachTestNotifierInit {
         RunReflectiveCall.releaseCallableOf(description);
         ArtifactCollector.releaseWatchersOf(description);
         CreateTest.releaseMappingsFor(atomicTest.getRunner(), atomicTest.getIdentity(), target);
+        GetAnnotations.releaseAnnotationsFor(atomicTest.getIdentity());
     }
 
     /**

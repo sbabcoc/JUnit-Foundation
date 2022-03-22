@@ -1,11 +1,11 @@
 package com.nordstrom.automation.junit;
 
-import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.concurrent.Callable;
 
 import org.junit.experimental.theories.PotentialAssignment.CouldNotGenerateValueException;
 import org.junit.experimental.theories.Theories.TheoryAnchor;
+import org.junit.experimental.theories.Theory;
 import org.junit.experimental.theories.internal.Assignments;
 import org.junit.runner.Description;
 import org.junit.runners.model.FrameworkMethod;
@@ -20,18 +20,7 @@ import net.bytebuddy.implementation.bind.annotation.This;
  */
 public class DescribeChild {
     
-    private static final Field uniqueId;
-    
-    static {
-        Field field = null;
-        try {
-            field = Description.class.getDeclaredField("fUniqueId");
-            field.setAccessible(true);
-        } catch (NoSuchFieldException | SecurityException e) {
-            field = null;
-        }
-        uniqueId = field;
-    }
+    private static final String PERM_TAG = "theory-id: ";
 
     /**
      * Interceptor for the {@link org.junit.runners.ParentRunner#describeChild describeChild} method.
@@ -59,8 +48,8 @@ public class DescribeChild {
                     method.getName(), method.getAnnotations());
         }
         
-        // if able to override [uniqueId] of test
-        if ((uniqueId != null) && AtomicTest.isTest(description)) {
+        // if describing a theory method, but not tagged as a permutation
+        if ((description.getAnnotation(Theory.class) != null) && !isPermutation(description)) {
             try {
                 // get parent of test runner
                 Object parent = LifecycleHooks.getFieldValue(runner, "this$0");
@@ -68,8 +57,13 @@ public class DescribeChild {
                 if (parent instanceof TheoryAnchor) {
                     // get assignments for this theory permutation
                     Assignments assignments = LifecycleHooks.getFieldValue(runner, "val$complete");
-                    // inject permutation ID into description
-                    injectPermutationId(description, assignments);
+                    // compute permutation ID
+                    String permutationId = computePermutationId(description, assignments);
+                    // if permutation ID was computed
+                    if (permutationId != null) {
+                        // inject computed permutation ID
+                        ((UniqueIdMutator) description).setUniqueId(permutationId);
+                    }
                 }
             } catch (IllegalAccessException | NoSuchFieldException | SecurityException | IllegalArgumentException e) {
                 // nothing to do here
@@ -79,42 +73,33 @@ public class DescribeChild {
     }
     
     /**
-     * Inject permutation ID into the specified description, overriding its default ID.
-     *  
+     * Determine if the specified description represents a "theory" permutation.
+     * 
+     * @param description JUnit {@link Description} object
+     * @return {@code true} if permutation is described; otherwise {@code false}
+     */
+    static boolean isPermutation(final Description description) {
+        return ((UniqueIdAccessor) description).getUniqueId().toString().startsWith(PERM_TAG);
+    }
+    
+    /**
+     * Compute permutation ID for the specified description and assignments.
+     * 
      * @param description description of "theory" method
      * @param assignments arguments for this permutation
+     * @return theory method permutation ID (may be {@code null})
      */
-    private static void injectPermutationId(final Description description, final Assignments assignments) {
+    private static String computePermutationId(final Description description, final Assignments assignments) {
         try {
             Object[] args = assignments.getMethodArguments();
             Object[] perm = new Object[args.length + 1];
             perm[0] = description.getDisplayName();
             System.arraycopy(args, 0, perm, 1, args.length);
             int permutationId = Arrays.hashCode(perm);
-            String theoryId = String.format("theory-id: %08X", permutationId);
-            uniqueId.set(description, theoryId);
-        } catch (CouldNotGenerateValueException | SecurityException |
-                IllegalArgumentException | IllegalAccessException eaten) {
-            // nothing to do here
+            return String.format(PERM_TAG + "%08X", permutationId);
+        } catch (CouldNotGenerateValueException e) {
+            return null;
         }
-    }
-    
-    /**
-     * Make a childless copy of the specified description.
-     * 
-     * @param description JUnit description
-     * @return copy of the specified description, including unique ID
-     */
-    static Description makeChildlessCopyOf(final Description description) {
-        Description descripCopy = description.childlessCopy();
-        if (uniqueId != null) {
-            try {
-                uniqueId.set(descripCopy, uniqueId.get(description));
-            } catch (IllegalArgumentException | IllegalAccessException eaten) {
-                // nothing to do here
-            }
-        }
-        return descripCopy;
     }
     
 }
