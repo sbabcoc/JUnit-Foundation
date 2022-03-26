@@ -2,6 +2,7 @@ package com.nordstrom.automation.junit;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.util.Objects;
 
 import org.junit.experimental.theories.Theory;
 import org.junit.runner.Description;
@@ -21,12 +22,12 @@ public class RetriedTheory implements Theory {
      */
     protected RetriedTheory(Theory annotation, Throwable thrown) {
         this.nullsAccepted = annotation.nullsAccepted();
-        this.thrown = thrown;
+        this.thrown = Objects.requireNonNull(thrown, "[thrown] must be non-null");
     }
     
     @Override
     public Class<? extends Annotation> annotationType() {
-        return RetriedTheory.class;
+        return Theory.class;
     }
 
     @Override
@@ -43,6 +44,12 @@ public class RetriedTheory implements Theory {
         return thrown;
     }
 
+    @Override
+    public String toString() {
+        return "@" + getClass().getName() + "(nullsAccepted=" + nullsAccepted +
+                ", thrown=" + thrown.getClass().getName() + ")";
+    }
+    
     @Override
     public int hashCode() {
         final int prime = 31;

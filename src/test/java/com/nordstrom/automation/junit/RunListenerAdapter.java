@@ -286,10 +286,10 @@ public class RunListenerAdapter extends RunListener {
     }
 
     /**
-     * Determine if the specified description represents a theory.
+     * Determine if the specified description represents a "theory" method permutation.
      * 
      * @param description description of test "identity" method
-     * @return {@code true} if description represents a theory; otherwise {@code false}
+     * @return {@code true} if description represents a permutation; otherwise {@code false}
      */
     private boolean isTheory(Description description) {
         AtomicTest atomicTest = LifecycleHooks.getAtomicTestOf(description);

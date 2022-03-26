@@ -1,15 +1,10 @@
 package com.nordstrom.automation.junit;
 
-import static net.bytebuddy.matcher.ElementMatchers.*;
-
-import java.lang.instrument.ClassFileTransformer;
-import java.lang.instrument.Instrumentation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.AbstractList;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.Callable;
@@ -25,16 +20,6 @@ import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.nordstrom.common.base.UncheckedThrow;
 import com.nordstrom.common.file.PathUtils.ReportsDirectory;
-
-import net.bytebuddy.agent.builder.AgentBuilder;
-import net.bytebuddy.agent.builder.AgentBuilder.Transformer;
-import net.bytebuddy.description.method.MethodDescription.SignatureToken;
-import net.bytebuddy.description.type.TypeDescription;
-import net.bytebuddy.dynamic.DynamicType.Builder;
-import net.bytebuddy.implementation.MethodDelegation;
-import net.bytebuddy.implementation.SuperMethodCall;
-import net.bytebuddy.pool.TypePool;
-import net.bytebuddy.utility.JavaModule;
 
 /**
  * This class implements the hooks and utility methods that activate the core functionality of <b>JUnit Foundation</b>.
@@ -141,133 +126,6 @@ public class LifecycleHooks {
             }
             return false;
         }
-    }
-    
-    /**
-     * This is the main entry point for the Java agent used to transform {@code ParentRunner} and
-     * {@code BlockJUnit4ClassRunner}.
-     *  
-     * @param agentArgs agent options
-     * @param instrumentation {@link Instrumentation} object used to transform JUnit core classes
-     */
-    public static void premain(String agentArgs, Instrumentation instrumentation) {
-        installTransformer(instrumentation);
-    }
-    
-    /**
-     * Install the {@code Byte Buddy} byte code transformations that provide test fine-grained test lifecycle hooks.
-     * 
-     * @param instrumentation {@link Instrumentation} object used to transform JUnit core classes
-     * @return The installed class file transformer
-     */
-    public static ClassFileTransformer installTransformer(Instrumentation instrumentation) {
-        final TypeDescription eachTestNotifierInit = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.EachTestNotifierInit").resolve();
-        final TypeDescription addFailure = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.AddFailure").resolve();
-        final TypeDescription fireTestFinished = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.FireTestFinished").resolve();
-        final TypeDescription runReflectiveCall = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.RunReflectiveCall").resolve();
-        final TypeDescription finished = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.Finished").resolve();
-        final TypeDescription runChild = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.RunChild").resolve();
-        final TypeDescription run = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.Run").resolve();
-        final TypeDescription describeChild = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.DescribeChild").resolve();
-        final TypeDescription methodBlock = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.MethodBlock").resolve();
-        final TypeDescription createTest = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.CreateTest").resolve();
-        final TypeDescription getTestRules = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.GetTestRules").resolve();
-        final TypeDescription runWithCompleteAssignment = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.RunWithCompleteAssignment").resolve();
-        final TypeDescription nextCount = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.NextCount").resolve();
-        final TypeDescription parameterizedDescription = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.ParameterizedDescription").resolve();
-        
-        final TypeDescription runNotifier = TypePool.Default.ofSystemLoader().describe("org.junit.runner.notification.RunNotifier").resolve();
-        final TypeDescription description = TypePool.Default.ofSystemLoader().describe("org.junit.runner.Description").resolve();
-        final SignatureToken runToken = new SignatureToken("run", TypeDescription.VOID, Arrays.asList(runNotifier));
-        
-        final TypeDescription frameworkMethod = TypePool.Default.ofSystemLoader().describe("org.junit.runners.model.FrameworkMethod").resolve();
-        final SignatureToken createTestToken = new SignatureToken("createTest", TypeDescription.OBJECT, Arrays.asList(frameworkMethod));
-        
-        return new AgentBuilder.Default()
-                .type(hasSuperType(named("org.junit.internal.runners.model.EachTestNotifier")))
-                .transform(new Transformer() {
-                    @Override
-                    public Builder<?> transform(Builder<?> builder, TypeDescription type,
-                                    ClassLoader classloader, JavaModule module) {
-                        return builder.constructor(takesArgument(0, runNotifier).and(takesArgument(1, description))).intercept(MethodDelegation.to(eachTestNotifierInit).andThen(SuperMethodCall.INSTANCE))
-                                      .method(named("addFailure")).intercept(MethodDelegation.to(addFailure))
-                                      .method(named("fireTestFinished")).intercept(MethodDelegation.to(fireTestFinished))
-                                      .implement(Hooked.class);
-                    }
-                })
-                .type(hasSuperType(named("org.junit.internal.runners.model.ReflectiveCallable")))
-                .transform(new Transformer() {
-                    @Override
-                    public Builder<?> transform(Builder<?> builder, TypeDescription type,
-                                    ClassLoader classloader, JavaModule module) {
-                        return builder.method(named("runReflectiveCall")).intercept(MethodDelegation.to(runReflectiveCall))
-                                      .implement(Hooked.class);
-                    }
-                })
-                .type(hasSuperType(named("org.junit.runners.model.RunnerScheduler")))
-                .transform(new Transformer() {
-                    @Override
-                    public Builder<?> transform(Builder<?> builder, TypeDescription type,
-                                    ClassLoader classloader, JavaModule module) {
-                        return builder.method(named("finished")).intercept(MethodDelegation.to(finished))
-                                      .implement(Hooked.class);
-                    }
-                })
-                .type(hasSuperType(named("org.junit.runners.ParentRunner")))
-                .transform(new Transformer() {
-                    @Override
-                    public Builder<?> transform(Builder<?> builder, TypeDescription type,
-                                    ClassLoader classloader, JavaModule module) {
-                        return builder.method(named("runChild")).intercept(MethodDelegation.to(runChild))
-                                      .method(hasSignature(runToken)).intercept(MethodDelegation.to(run))
-                                      .method(named("describeChild")).intercept(MethodDelegation.to(describeChild))
-                                      // NOTE: The 'methodBlock', 'createTest', and 'getTestRules' methods
-                                      //       are defined in BlockJUnit4ClassRunner, but I've been unable
-                                      //       to transform this ParentRunner subclass.
-                                      .method(named("methodBlock")).intercept(MethodDelegation.to(methodBlock))
-                                      .method(hasSignature(createTestToken)).intercept(MethodDelegation.to(createTest))
-                                      .method(named("getTestRules")).intercept(MethodDelegation.to(getTestRules))
-                                      .implement(Hooked.class);
-                    }
-                })
-                .type(hasSuperType(named("org.junit.experimental.theories.Theories$TheoryAnchor")))
-                .transform(new Transformer() {
-                    @Override
-                    public Builder<?> transform(Builder<?> builder, TypeDescription type,
-                                    ClassLoader classloader, JavaModule module) {
-                        return builder.method(named("runWithCompleteAssignment")).intercept(MethodDelegation.to(runWithCompleteAssignment))
-                                      .implement(Hooked.class);
-                    }
-                })
-                .type(hasSuperType(named("org.junit.runner.notification.RunNotifier")))
-                .transform(new Transformer() {
-                    @Override
-                    public Builder<?> transform(Builder<?> builder, TypeDescription type,
-                                    ClassLoader classloader, JavaModule module) {
-                        return builder.method(named("fireTestFailure")).intercept(MethodDelegation.to(addFailure))
-                                      .method(named("fireTestAssumptionFailed")).intercept(MethodDelegation.to(addFailure))
-                                      .implement(Hooked.class);
-                    }
-                })
-                .type(hasSuperType(named("junitparams.internal.ParameterisedTestMethodRunner")))
-                .transform(new Transformer() {
-                    @Override
-                    public Builder<?> transform(Builder<?> builder, TypeDescription type,
-                                    ClassLoader classloader, JavaModule module) {
-                        return builder.method(named("nextCount")).intercept(MethodDelegation.to(nextCount))
-                                      .implement(Hooked.class);
-                    }
-                })
-                .type(hasSuperType(named("junitparams.internal.ParametrizedDescription")))
-                .transform(new Transformer() {
-                    @Override
-                    public Builder<?> transform(Builder<?> builder, TypeDescription type,
-                                    ClassLoader classloader, JavaModule module) {
-                        return builder.method(named("parametrizedDescription")).intercept(MethodDelegation.to(parameterizedDescription))
-                                      .implement(Hooked.class);
-                    }
-                })
-                .installOn(instrumentation);
     }
     
     /**

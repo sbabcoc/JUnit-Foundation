@@ -100,7 +100,7 @@ class TimeoutUtils {
         // if timeout disabled by local or global rule
         if ((uberTimeout == 0) || (ruleTimeout == 0)) {
             // disable timeout of @Test annotation
-            MutableTest.proxyFor(identity.getMethod(), 0);
+            MutableTest.proxyFor(identity, 0);
         } else {
             long testTimeout = -1;
             // if default test timeout is defined
@@ -115,7 +115,7 @@ class TimeoutUtils {
             // if default timeout is longer
             if (testTimeout > metaTimeout) {
                 // override value of timeout parameter
-                MutableTest.proxyFor(identity.getMethod(), testTimeout);
+                MutableTest.proxyFor(identity, testTimeout);
             }
         }
     }

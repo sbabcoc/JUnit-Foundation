@@ -4,6 +4,7 @@ import static com.nordstrom.automation.junit.LifecycleHooks.invoke;
 
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -36,7 +37,8 @@ public class AtomicTest {
     private Throwable thrown;
     
     private static final Pattern PARAM = Pattern.compile("[(\\[]");
-
+    private static final List<Class<? extends Annotation>> TEST_TYPES = Arrays.asList(Test.class, Theory.class);
+    
     public AtomicTest(Description description) {
         this.runner = Run.getThreadRunner();
         this.description = description;
@@ -118,27 +120,22 @@ public class AtomicTest {
     }
     
     /**
-     * Determine if this atomic test represents a "theory" method.
+     * Determine if this atomic test represents a "theory" method permutation.
      * 
-     * @return {@code true} if this atomic test represents a "theory" method; otherwise {@code false}
+     * @return {@code true} if this atomic test represents a permutation; otherwise {@code false}
      */
     public boolean isTheory() {
         return isTheory(description);
     }
     
     /**
-     * Determine if the specified description represents a "theory" method.
+     * Determine if the specified description represents a "theory" method permutation.
      * 
      * @param description JUnit method description
-     * @return {@code true} if the specified description represents a "theory" method; otherwise {@code false}
+     * @return {@code true} if the specified description represents a permutation; otherwise {@code false}
      */
     public static boolean isTheory(Description description) {
-        try {
-            String uniqueId = LifecycleHooks.getFieldValue(description, "fUniqueId");
-            return ((uniqueId != null) && (uniqueId.startsWith("theory-id: ")));
-        } catch (IllegalAccessException | NoSuchFieldException | SecurityException e) {
-            return false;
-        }
+        return DescribeChild.isPermutation(description);
     }
     
     /**
@@ -157,11 +154,21 @@ public class AtomicTest {
      * @return {@code true} if description represents a test method; otherwise {@code false} 
      */
     public static boolean isTest(Description description) {
+        return (getTestAnnotation(description) != null);
+    }
+    
+    /**
+     * Get the annotation that marks the specified description as a test method.
+     * 
+     * @param description JUnit description object
+     * @return if description represents a test method, the {@link Test} or {@link Theory} annotation;
+     * otherwise {@code null}
+     */
+    public static Annotation getTestAnnotation(Description description) {
         for (Annotation annotation : description.getAnnotations()) {
-            if (annotation instanceof Test) return true;
-            if (annotation instanceof Theory) return true;
+            if (TEST_TYPES.contains(annotation.annotationType())) return annotation;
         }
-        return false;
+        return null;
     }
     
     /**
