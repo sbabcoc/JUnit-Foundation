@@ -191,6 +191,7 @@ public class EachTestNotifierInit {
         ArtifactCollector.releaseWatchersOf(description);
         CreateTest.releaseMappingsFor(atomicTest.getRunner(), atomicTest.getIdentity(), target);
         GetAnnotations.releaseAnnotationsFor(atomicTest.getIdentity());
+        TestMethodDescription.releaseDescriptionFor(atomicTest.getIdentity());
     }
 
     /**
