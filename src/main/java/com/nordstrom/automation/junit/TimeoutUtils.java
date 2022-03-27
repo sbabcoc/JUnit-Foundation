@@ -1,7 +1,6 @@
 package com.nordstrom.automation.junit;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -23,17 +22,6 @@ import com.nordstrom.common.base.UncheckedThrow;
 
 class TimeoutUtils {
     
-    private static final Field fieldsForAnnotations;
-
-    static {
-        try {
-            fieldsForAnnotations = TestClass.class.getDeclaredField("fieldsForAnnotations");
-            fieldsForAnnotations.setAccessible(true);
-        } catch (NoSuchFieldException | SecurityException e) {
-            throw UncheckedThrow.throwUnchecked(e);
-        }
-    }
-    
     /**
      * If configured for default test timeout, apply the timeout value to the framework method associated
      * with the underlying test runner, if it doesn't already specify a longer timeout interval.
@@ -42,7 +30,6 @@ class TimeoutUtils {
      * @param method target test method
      * @param target test class instance
      */
-    @SuppressWarnings("unchecked")
     static void applyTestTimeout(final Object runner, final FrameworkMethod method, final Object target) {
         FrameworkMethod identity = getIdentity(runner, method);
         
@@ -62,23 +49,16 @@ class TimeoutUtils {
         long ruleTimeout = -1;
         // get the test class of the specified runner
         TestClass testClass = LifecycleHooks.getTestClassOf(runner);
-        Map<Class<? extends Annotation>, List<FrameworkField>> fieldsMap;
+        Map<Class<? extends Annotation>, List<FrameworkField>> fieldsMap =
+                ((FieldsForAnnotationsAccessor) testClass).getFieldsForAnnotations();
         
-        try {
-            // get the map that associates class fields with declared annotations
-            fieldsMap = (Map<Class<? extends Annotation>, List<FrameworkField>>) fieldsForAnnotations.get(testClass);
-        } catch (IllegalArgumentException | IllegalAccessException e) {
-            throw UncheckedThrow.throwUnchecked(e);
-        }
-        
-        ListIterator<FrameworkField> iterator = null;
         // get the list of @Rule fields declared in this test class
-        List<FrameworkField> ruleFields = (List<FrameworkField>) fieldsMap.get(Rule.class);
+        List<FrameworkField> ruleFields = fieldsMap.get(Rule.class);
         
         // if @Rule fields exist
         if (ruleFields != null) {
             // get rule field iterator
-            iterator = ruleFields.listIterator();
+            ListIterator<FrameworkField> iterator = ruleFields.listIterator();
             // iterate over rule fields
             while (iterator.hasNext()) {
                 // get current rule field

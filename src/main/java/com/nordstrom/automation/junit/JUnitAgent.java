@@ -44,6 +44,7 @@ public class JUnitAgent {
      * <ul>
      *     <li>{@code org.junit.runner.Description}</li>
      *     <li>{@code org.junit.runners.model.FrameworkMethod}</li>
+     *     <li>{@code org.junit.runners.model.TestClass}</li>
      *     <li>{@code org.junit.internal.runners.model.EachTestNotifier}</li>
      *     <li>{@code org.junit.internal.runners.model.ReflectiveCallable}</li>
      *     <li>{@code org.junit.runners.model.RunnerScheduler}</li>
@@ -52,7 +53,7 @@ public class JUnitAgent {
      *     <li>{@code org.junit.experimental.theories.Theories$TheoryAnchor}</li>
      *     <li>{@code org.junit.runner.notification.RunNotifier}</li>
      *     <li>{@code junitparams.internal.ParameterisedTestMethodRunner}</li>
-     *     <li>{@code junitparams.internal.ParametrizedDescription}</li>
+     *     <li>{@code junitparams.internal.TestMethod}</li>
      * </ul>
      *  
      * @param agentArgs agent options
@@ -110,8 +111,8 @@ public class JUnitAgent {
         final TypeDescription runWithCompleteAssignment = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.RunWithCompleteAssignment").resolve();
         // junitparams.internal.ParameterisedTestMethodRunner
         final TypeDescription nextCount = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.NextCount").resolve();
-        // junitparams.internal.ParametrizedDescription
-        final TypeDescription parameterizedDescription = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.ParameterizedDescription").resolve();
+        // junitparams.internal.TestMethod
+        final TypeDescription testMethodDescription = TypePool.Default.ofSystemLoader().describe("com.nordstrom.automation.junit.TestMethodDescription").resolve();
         
         return new AgentBuilder.Default()
                 .type(hasSuperType(named("org.junit.runner.Description")))
@@ -133,6 +134,15 @@ public class JUnitAgent {
                             ClassLoader classLoader, JavaModule module) {
                         return builder.method(named("getAnnotations")).intercept(MethodDelegation.to(getAnnotations))
                                       .method(named("getAnnotation")).intercept(MethodDelegation.to(getAnnotation))
+                                      .implement(Hooked.class);
+                    }
+                })
+                .type(hasSuperType(named("org.junit.runners.model.TestClass")))
+                .transform(new Transformer() {
+                    @Override
+                    public DynamicType.Builder<?> transform(DynamicType.Builder<?> builder, TypeDescription typeDescription,
+                            ClassLoader classLoader, JavaModule module) {
+                        return builder.implement(FieldsForAnnotationsAccessor.class).intercept(FieldAccessor.ofField("fieldsForAnnotations"))
                                       .implement(Hooked.class);
                     }
                 })
@@ -208,15 +218,16 @@ public class JUnitAgent {
                     public DynamicType.Builder<?> transform(DynamicType.Builder<?> builder, TypeDescription type,
                                     ClassLoader classloader, JavaModule module) {
                         return builder.method(named("nextCount")).intercept(MethodDelegation.to(nextCount))
+                                      .implement(MethodAccessor.class).intercept(FieldAccessor.ofField("method"))
                                       .implement(Hooked.class);
                     }
                 })
-                .type(hasSuperType(named("junitparams.internal.ParametrizedDescription")))
+                .type(hasSuperType(named("junitparams.internal.TestMethod")))
                 .transform(new Transformer() {
                     @Override
                     public DynamicType.Builder<?> transform(DynamicType.Builder<?> builder, TypeDescription type,
                                     ClassLoader classloader, JavaModule module) {
-                        return builder.method(named("parametrizedDescription")).intercept(MethodDelegation.to(parameterizedDescription))
+                        return builder.method(named("description")).intercept(MethodDelegation.to(testMethodDescription))
                                       .implement(Hooked.class);
                     }
                 })

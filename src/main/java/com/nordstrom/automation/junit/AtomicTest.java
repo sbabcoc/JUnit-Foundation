@@ -1,7 +1,5 @@
 package com.nordstrom.automation.junit;
 
-import static com.nordstrom.automation.junit.LifecycleHooks.invoke;
-
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Arrays;

@@ -1,8 +1,5 @@
 package com.nordstrom.automation.junit;
 
-import static com.nordstrom.automation.junit.LifecycleHooks.getFieldValue;
-import static com.nordstrom.automation.junit.LifecycleHooks.invoke;
-
 import java.util.concurrent.Callable;
 
 import junitparams.internal.ParameterisedTestMethodRunner;
@@ -31,11 +28,11 @@ public class NextCount {
             @This final ParameterisedTestMethodRunner runner, @SuperCall final Callable<?> proxy) throws Exception {
         
         // get reference to JUnitParams target test method
-        TestMethod method = getFieldValue(runner, "method");
+        TestMethod method = ((MethodAccessor) runner).getMethod();
         // if this method is being retried
         if (RetryHandler.doRetryFor(method.frameworkMethod())) {
             // get current parameter set index
-            int nextCount = invoke(runner, "count");
+            int nextCount = LifecycleHooks.invoke(runner, "count");
             // return prior index
             return nextCount - 1;
         // otherwise
