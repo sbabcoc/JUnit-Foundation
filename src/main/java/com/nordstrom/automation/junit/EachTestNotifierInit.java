@@ -84,7 +84,7 @@ public class EachTestNotifierInit {
                 // otherwise (target not yet created)
                 } else {
                     // store [runner + method] => description mapping for 'setTestTarget' method
-                    HASHCODE_TO_DESCRIPTION.put(Objects.hash(runner, method), description.hashCode());
+                    HASHCODE_TO_DESCRIPTION.put(Objects.hash(runner, method.toString()), description.hashCode());
                 }
             } else {
                 throw new IllegalStateException("unable to determine method");
@@ -181,7 +181,7 @@ public class EachTestNotifierInit {
     static void releaseMappingsFor(EachTestNotifier notifier) {
         Description description = getDescriptionOf(notifier);
         AtomicTest atomicTest = releaseAtomicTestOf(description);
-        HASHCODE_TO_DESCRIPTION.remove(Objects.hash(atomicTest.getRunner(), atomicTest.getIdentity()));
+        HASHCODE_TO_DESCRIPTION.remove(Objects.hash(atomicTest.getRunner(), atomicTest.getIdentity().toString()));
         Object target = DESCRIPTION_TO_TARGET.remove(description.hashCode());
         if (target != null) {
             TARGET_TO_DESCRIPTION.remove(toMapKey(target));
@@ -242,6 +242,6 @@ public class EachTestNotifierInit {
      * @return {@link Description} hash code
      */
     private static Integer getDescriptionHashFor(Object runner, FrameworkMethod method) {
-        return HASHCODE_TO_DESCRIPTION.get(Objects.hash(runner, method));
+        return HASHCODE_TO_DESCRIPTION.get(Objects.hash(runner, method.toString()));
     }
 }

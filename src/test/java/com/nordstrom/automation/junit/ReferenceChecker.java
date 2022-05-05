@@ -220,7 +220,7 @@ public class ReferenceChecker extends RunListener {
         Object runner = atomicTest.getRunner();
         FrameworkMethod method = atomicTest.getIdentity();
         String name = method.getName() + "(" + LifecycleHooks.toMapKey(runner) + ")";
-        hashCodeMap.put(Objects.hash(runner, method), name);
+        hashCodeMap.put(Objects.hash(runner, method.toString()), name);
         
         Object target = LifecycleHooks.getTargetOf(description);
         if (target != null) {

@@ -13,7 +13,7 @@ import net.bytebuddy.implementation.bind.annotation.This;
  */
 public class GetAnnotations {
     
-    private static final Map<Integer, Annotation[]> ANNOTATIONS = new ConcurrentHashMap<>();
+    private static final Map<String, Annotation[]> ANNOTATIONS = new ConcurrentHashMap<>();
 
     /**
      * Interceptor for the {@link org.junit.runners.model.FrameworkMethod#getAnnotations} method.
@@ -36,10 +36,10 @@ public class GetAnnotations {
      * @return array of annotations for the specified method
      */
     static Annotation[] getAnnotationsFor(FrameworkMethod method) {
-        Annotation[] annotations = ANNOTATIONS.get(method.hashCode());
+        Annotation[] annotations = ANNOTATIONS.get(method.toString());
         if (annotations == null) {
             annotations = method.getMethod().getAnnotations();
-            ANNOTATIONS.put(method.hashCode(), annotations);
+            ANNOTATIONS.put(method.toString(), annotations);
         }
         return annotations;
     }
@@ -50,7 +50,7 @@ public class GetAnnotations {
      * @param method target {@link FrameworkMethod} object
      */
     static void releaseAnnotationsFor(FrameworkMethod method) {
-        ANNOTATIONS.remove(method.hashCode());
+        ANNOTATIONS.remove(method.toString());
     }
 
 }
