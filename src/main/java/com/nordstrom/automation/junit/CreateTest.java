@@ -60,7 +60,7 @@ public class CreateTest {
     public static Object intercept(@This final Object runner, @Argument(0) final FrameworkMethod method,
                     @SuperCall final Callable<?> proxy) throws Exception {
         
-        Integer hashCode = Objects.hash(runner, method);
+        Integer hashCode = Objects.hash(runner, method.toString());
         DepthGauge depthGauge = LifecycleHooks.computeIfAbsent(METHOD_DEPTH.get(), hashCode, NEW_INSTANCE);
         depthGauge.increaseDepth();
         
@@ -99,7 +99,7 @@ public class CreateTest {
      * @return target test class instance
      */
     static Object getTargetFor(Object runner, FrameworkMethod method) {
-        return HASHCODE_TO_TARGET.remove(Objects.hash(runner, method));
+        return HASHCODE_TO_TARGET.remove(Objects.hash(runner, method.toString()));
     }
     
     /**
@@ -130,7 +130,7 @@ public class CreateTest {
      * @param target test class instance
      */
     static void releaseMappingsFor(Object runner, FrameworkMethod method, Object target) {
-        HASHCODE_TO_TARGET.remove(Objects.hash(runner, method));
+        HASHCODE_TO_TARGET.remove(Objects.hash(runner, method.toString()));
         if (target != null) {
             TARGET_TO_METHOD.remove(toMapKey(target));
             TARGET_TO_RUNNER.remove(toMapKey(target));
