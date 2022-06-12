@@ -27,23 +27,23 @@
   
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.release>7</maven.compiler.release>
-    <java-utils.version>2.2.0</java-utils.version>
-    <settings.version>2.3.11</settings.version>
+    <maven.compiler.release>8</maven.compiler.release>
+    <java-utils.version>3.0.0</java-utils.version>
+    <settings.version>3.0.0</settings.version>
     <junit.version>4.13.2</junit.version>
-    <testng.version>6.10</testng.version>
-    <bytebuddy.version>1.12.8</bytebuddy.version>
-    <logback.version>1.2.9</logback.version>
+    <testng.version>7.5</testng.version>
+    <bytebuddy.version>1.12.10</bytebuddy.version>
+    <logback.version>1.2.11</logback.version>
     <junitparams.version>1.1.1</junitparams.version>
     <powermock.version>2.0.9</powermock.version>
-    <compiler-plugin.version>3.8.1</compiler-plugin.version>
-    <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
+    <compiler-plugin.version>3.10.1</compiler-plugin.version>
+    <surefire-plugin.version>3.0.0-M7</surefire-plugin.version>
     <source-plugin.version>3.2.1</source-plugin.version>
-    <javadoc-plugin.version>3.3.0</javadoc-plugin.version>
+    <javadoc-plugin.version>3.4.0</javadoc-plugin.version>
     <gpg-plugin.version>3.0.1</gpg-plugin.version>
-    <staging-plugin.version>1.6.8</staging-plugin.version>
-    <release-plugin.version>3.0.0-M4</release-plugin.version>
-    <jar-plugin.version>3.2.0</jar-plugin.version>
+    <staging-plugin.version>1.6.13</staging-plugin.version>
+    <release-plugin.version>3.0.0-M6</release-plugin.version>
+    <jar-plugin.version>3.2.2</jar-plugin.version>
     <skipSigning>true</skipSigning>
   </properties>
   
