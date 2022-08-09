@@ -28,8 +28,8 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.release>8</maven.compiler.release>
-    <java-utils.version>3.0.0</java-utils.version>
-    <settings.version>3.0.1</settings.version>
+    <java-utils.version>3.1.1</java-utils.version>
+    <settings.version>3.0.2</settings.version>
     <junit.version>4.13.2</junit.version>
     <testng.version>7.5</testng.version>
     <bytebuddy.version>1.12.10</bytebuddy.version>
