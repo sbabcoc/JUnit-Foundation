@@ -1,5 +1,5 @@
 
-[![Maven Central](https://img.shields.io/maven-central/v/com.nordstrom.tools/junit-foundation.svg)](https://mvnrepository.com/artifact/com.nordstrom.tools/junit-foundation)
+[![Maven Central](https://img.shields.io/maven-central/v/com.nordstrom.tools/junit-foundation.svg)](https://central.sonatype.com/search?q=com.nordstrom.tools+junit-foundation&core=gav)
 
 # INTRODUCTION
 
