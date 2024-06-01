@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -14,8 +15,6 @@ import org.junit.internal.AssumptionViolatedException;
 import org.junit.internal.runners.model.ReflectiveCallable;
 import org.junit.runner.Description;
 import org.junit.runners.model.FrameworkMethod;
-
-import com.google.common.base.Function;
 
 public class UnitTestWatcher implements MethodWatcher<FrameworkMethod>, RunWatcher {
 

@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 
 import org.junit.internal.runners.model.ReflectiveCallable;
 import org.junit.runner.Description;
@@ -11,7 +12,6 @@ import org.junit.runners.model.FrameworkMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Function;
 import com.nordstrom.common.base.UncheckedThrow;
 
 import net.bytebuddy.implementation.bind.annotation.RuntimeType;

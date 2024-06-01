@@ -6,10 +6,11 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
+
 import org.junit.experimental.theories.Theories.TheoryAnchor;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
-import com.google.common.base.Function;
 
 import net.bytebuddy.implementation.bind.annotation.SuperCall;
 import net.bytebuddy.implementation.bind.annotation.This;

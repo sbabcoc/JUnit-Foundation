@@ -2,11 +2,11 @@ package com.nordstrom.automation.junit;
 
 import java.lang.reflect.Field;
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.rules.RuleChain;
 import org.junit.rules.TestRule;
 
-import com.google.common.base.Optional;
 import com.nordstrom.common.base.UncheckedThrow;
 
 /**
@@ -38,7 +38,7 @@ public class RuleChainWalker {
                 return Optional.of((T) rule);
             }
         }
-        return Optional.absent();
+        return Optional.empty();
     }
     
     /**

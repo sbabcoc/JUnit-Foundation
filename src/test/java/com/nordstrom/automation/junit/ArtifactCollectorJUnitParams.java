@@ -3,14 +3,13 @@ package com.nordstrom.automation.junit;
 import static org.junit.Assert.assertEquals;
 
 import java.util.Map;
+import java.util.Optional;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.internal.runners.model.ReflectiveCallable;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
-
-import com.google.common.base.Optional;
 
 @RunWith(JUnitParamsRunner.class)
 public class ArtifactCollectorJUnitParams extends TestBase {
@@ -44,7 +43,7 @@ public class ArtifactCollectorJUnitParams extends TestBase {
             // return params map as Optional
             return Param.mapOf(namedParams);
         } catch (IllegalAccessException | NoSuchFieldException e) {
-            return Optional.absent();
+            return Optional.empty();
         }
     }
     

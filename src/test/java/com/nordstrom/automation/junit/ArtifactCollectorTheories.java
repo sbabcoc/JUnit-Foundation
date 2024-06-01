@@ -3,6 +3,7 @@ package com.nordstrom.automation.junit;
 import static org.junit.Assert.assertEquals;
 
 import java.util.Map;
+import java.util.Optional;
 
 import org.junit.experimental.theories.DataPoints;
 import org.junit.experimental.theories.PotentialAssignment.CouldNotGenerateValueException;
@@ -10,7 +11,6 @@ import org.junit.experimental.theories.internal.Assignments;
 import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
-import com.google.common.base.Optional;
 
 @RunWith(Theories.class)
 public class ArtifactCollectorTheories extends TestBase {
@@ -39,7 +39,7 @@ public class ArtifactCollectorTheories extends TestBase {
             // return params map as Optional
             return Param.mapOf(namedParams);
         } catch (IllegalAccessException | NoSuchFieldException | CouldNotGenerateValueException e) {
-            return Optional.absent();
+            return Optional.empty();
         }
     }
 

@@ -2,11 +2,11 @@ package com.nordstrom.automation.junit;
 
 import static org.testng.Assert.assertTrue;
 
+import java.util.Optional;
+
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Result;
 import org.testng.annotations.Test;
-
-import com.google.common.base.Optional;
 
 public class HookInstallationTest {
     

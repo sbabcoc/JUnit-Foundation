@@ -5,12 +5,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 import org.junit.runner.Description;
 
-import com.google.common.base.Function;
-import com.google.common.base.Optional;
 import com.nordstrom.common.file.PathUtils;
 
 /**
@@ -68,12 +68,12 @@ public class ArtifactCollector<T extends ArtifactType> extends AtomIdentity {
      */
     public Optional<Path> captureArtifact(Throwable reason) {
         if (! provider.canGetArtifact(getInstance())) {
-            return Optional.absent();
+            return Optional.empty();
         }
         
         byte[] artifact = provider.getArtifact(getInstance(), reason);
         if ((artifact == null) || (artifact.length == 0)) {
-            return Optional.absent();
+            return Optional.empty();
         }
         
         Path collectionPath = getCollectionPath();
@@ -85,7 +85,7 @@ public class ArtifactCollector<T extends ArtifactType> extends AtomIdentity {
                     String messageTemplate = "Unable to create collection directory ({}); no artifact was captured";
                     provider.getLogger().warn(messageTemplate, collectionPath, e);
                 }
-                return Optional.absent();
+                return Optional.empty();
             }
         }
         
@@ -99,7 +99,7 @@ public class ArtifactCollector<T extends ArtifactType> extends AtomIdentity {
             if (provider.getLogger() != null) {
                 provider.getLogger().warn("Unable to get output path; no artifact was captured", e);
             }
-            return Optional.absent();
+            return Optional.empty();
         }
         
         try {
@@ -111,7 +111,7 @@ public class ArtifactCollector<T extends ArtifactType> extends AtomIdentity {
             if (provider.getLogger() != null) {
                 provider.getLogger().warn("I/O error saving to ({}); no artifact was captured", artifactPath, e);
             }
-            return Optional.absent();
+            return Optional.empty();
         }
         
         recordArtifactPath(artifactPath);
@@ -163,7 +163,7 @@ public class ArtifactCollector<T extends ArtifactType> extends AtomIdentity {
      */
     public Optional<List<Path>> retrieveArtifactPaths() {
         if (artifactPaths.isEmpty()) {
-            return Optional.absent();
+            return Optional.empty();
         } else {
             return Optional.of(artifactPaths);
         }
@@ -197,7 +197,7 @@ public class ArtifactCollector<T extends ArtifactType> extends AtomIdentity {
                 }
             }
         }
-        return Optional.absent();
+        return Optional.empty();
     }
 
     /**
