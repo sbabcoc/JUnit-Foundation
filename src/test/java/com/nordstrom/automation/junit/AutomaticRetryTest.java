@@ -6,6 +6,7 @@ import static org.testng.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Result;
@@ -13,7 +14,6 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import com.google.common.base.Optional;
 import com.nordstrom.automation.junit.JUnitConfig.JUnitSettings;
 import com.nordstrom.automation.junit.UnitTestWatcher.Notification;
 

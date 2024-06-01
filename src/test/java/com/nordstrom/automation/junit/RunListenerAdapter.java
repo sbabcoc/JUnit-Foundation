@@ -3,13 +3,12 @@ package com.nordstrom.automation.junit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.junit.runner.Description;
 import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
-
-import com.google.common.base.Optional;
 
 /**
  * This run listener tracks the results of executed tests.

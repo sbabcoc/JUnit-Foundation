@@ -6,9 +6,11 @@ import java.lang.reflect.Method;
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 
 import org.apache.commons.lang3.reflect.MethodUtils;
 import org.junit.internal.runners.model.ReflectiveCallable;
@@ -16,8 +18,6 @@ import org.junit.runner.Description;
 import org.junit.runner.notification.RunListener;
 import org.junit.runners.model.TestClass;
 
-import com.google.common.base.Function;
-import com.google.common.base.Optional;
 import com.nordstrom.common.base.UncheckedThrow;
 import com.nordstrom.common.file.PathUtils.ReportsDirectory;
 
@@ -418,7 +418,7 @@ public class LifecycleHooks {
                 return Optional.of((T) watcher);
             }
         }
-        return Optional.absent();
+        return Optional.empty();
     }
     
     /**
@@ -481,7 +481,7 @@ public class LifecycleHooks {
                 return Optional.of((T) listener);
             }
         }
-        return Optional.absent();
+        return Optional.empty();
     }
     
     /**

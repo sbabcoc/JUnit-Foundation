@@ -1,6 +1,6 @@
 package com.nordstrom.automation.junit;
 
-import com.google.common.base.Optional;
+import java.util.Optional;
 
 public class ReferenceTracker implements RunnerWatcher {
     
