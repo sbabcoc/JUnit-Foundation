@@ -143,13 +143,18 @@ public class RetryHandler {
         NoRetry noRetryOnMethod = method.getAnnotation(NoRetry.class);
         // determine if retry is disabled for the class that declares this method
         NoRetry noRetryOnClass = method.getDeclaringClass().getAnnotation(NoRetry.class);
-        
-        // if method isn't ignored or excluded from retry attempts
-        if (Boolean.FALSE.equals(invoke(runner, "isIgnored", method)) && (noRetryOnMethod == null) && (noRetryOnClass == null)) {
-            // get configured maximum retry count
-            maxRetry = getConfig().getInteger(JUnitSettings.MAX_RETRY.key(), Integer.valueOf(0));
+
+        try {
+            // if method isn't ignored or excluded from retry attempts
+            if (Boolean.FALSE.equals(invoke(runner, "isIgnored", method)) && (noRetryOnMethod == null) && (noRetryOnClass == null)) {
+                // get configured maximum retry count
+                maxRetry = getConfig().getInteger(JUnitSettings.MAX_RETRY.key(), Integer.valueOf(0));
+            }
+        } catch(Exception e) {
+            // Some runners can cause a sitatuion where isIgnored is implemented multiple times,
+            // causing the above to fail with "Found multiple candidates for method isIgnored".
         }
-        
+
         return maxRetry;
     }
     
