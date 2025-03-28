@@ -12,7 +12,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 
-import org.apache.commons.lang3.reflect.MethodUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.junit.internal.runners.model.ReflectiveCallable;
 import org.junit.runner.Description;
 import org.junit.runner.notification.RunListener;
@@ -337,10 +337,64 @@ public class LifecycleHooks {
     @SuppressWarnings("unchecked")
     static <T> T invoke(Object target, String methodName, Object... parameters) {
         try {
-            return (T) MethodUtils.invokeMethod(target, true, methodName, parameters);
+            Method method = findMethod(target, methodName, parameters);
+            return (T) method.invoke(target, parameters);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
             throw UncheckedThrow.throwUnchecked(e);
         }
+    }
+    
+    /**
+     * Find the named method compatible with the supplied argument in the target object.
+     * 
+     * @param target target object
+     * @param methodName name of the desired method
+     * @param parameters parameters for the method invocation
+     * @return {@link Method} object for invocation
+     * @throws NoSuchMethodException
+     */
+    private static Method findMethod(Object target, String methodName, Object... parameters)
+            throws NoSuchMethodException {
+        Class<?> clazz = target.getClass();
+        Class<?>[] paramTypes = new Class<?>[parameters.length];
+
+        for (int i = 0; i < parameters.length; i++) {
+            paramTypes[i] = parameters[i].getClass();
+        }
+
+        while (clazz != null) {
+            for (Method method : clazz.getDeclaredMethods()) {
+                if (method.getName().equals(methodName) &&
+                        isCompatible(method.getParameterTypes(), paramTypes)) {
+                    method.setAccessible(true);
+                    return method;
+                }
+            }
+            clazz = clazz.getSuperclass(); // Move up the class hierarchy
+        }
+
+        throw new NoSuchMethodException("Failed finding method " + 
+                methodName + " " + ArrayUtils.toString(paramTypes) +
+                " in target " + target.getClass().getName());
+    }
+
+    /**
+     * Determine if declared method parameter types are compatible with provided parameters.
+     *  
+     * @param declaredParams types of parameters declared by discovered method
+     * @param providedParams types of provided parameters
+     * @return {@code true} if declared parameters are compatible; otherwise {@code false}
+     */
+    private static boolean isCompatible(Class<?>[] declaredParams, Class<?>[] providedParams) {
+        if (declaredParams.length != providedParams.length) {
+            return false;
+        }
+        for (int i = 0; i < declaredParams.length; i++) {
+            if (!declaredParams[i].isAssignableFrom(providedParams[i])) {
+                return false;
+            }
+        }
+        return true;
     }
     
     /**

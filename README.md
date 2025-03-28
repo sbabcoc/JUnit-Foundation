@@ -12,6 +12,7 @@
 * [Parameterized](https://github.com/junit-team/junit4/blob/main/src/main/java/org/junit/runners/Parameterized.java)
 * [Theories](https://github.com/junit-team/junit4/blob/main/src/main/java/org/junit/experimental/theories/Theories.java)
 * [JUnitParamsRunner](https://github.com/Pragmatists/JUnitParams/blob/master/src/main/java/junitparams/JUnitParamsRunner.java)
+* [TestParameterInjector](https://github.com/google/TestParameterInjector/blob/main/junit4/src/main/java/com/google/testing/junit/testparameterinjector/TestParameterInjector.java)
 * [PowerMockRunner](https://github.com/powermock/powermock/blob/release/2.x/powermock-modules/powermock-module-junit4/src/main/java/org/powermock/modules/junit4/PowerMockRunner.java) (requires delegation)
 
 The native implementation of **PowerMockRunner** uses a deprecated JUnit runner model that **JUnit Foundation** doesn't support. You need to delegate test execution to the standard **BlockJUnit4ClassRunner** (or subclasses thereof) to enable reporting of test lifecycle events. This is specified via the [@PowerMockRunnerDelegate](https://github.com/powermock/powermock/blob/release/2.x/powermock-modules/powermock-module-junit4/src/main/java/org/powermock/modules/junit4/PowerMockRunnerDelegate.java) annotation, as shown below:

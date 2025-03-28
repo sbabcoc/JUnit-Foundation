@@ -30,7 +30,7 @@ import org.junit.runners.model.TestClass;
 public class AtomicTest {
     private final Object runner;
     private final Description description;
-    private final FrameworkMethod identity;
+    private FrameworkMethod identity;
     private final List<FrameworkMethod> particles;
     private Throwable thrown;
     
@@ -60,6 +60,14 @@ public class AtomicTest {
      */
     public Description getDescription() {
         return description;
+    }
+    
+    /**
+     * Set the "identity" method for this atomic test - the core {@link Test &#64;Test} method.
+     */
+    void setIdentity(FrameworkMethod method) {
+        identity = method;
+        particles.set(0, method);
     }
 
     /**

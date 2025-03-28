@@ -67,6 +67,22 @@ public class CreateTest {
         
         if (0 == depthGauge.decreaseDepth()) {
             METHOD_DEPTH.get().remove(hashCode);
+            createMappingsFor(runner, method, target);
+        }
+        
+        return target;
+    }
+
+    /**
+     * Create mappings for the specified test runner/test method/test class instance.
+     * 
+     * @param runner underlying test runner
+     * @param method target test method
+     * @param target test class instance
+     */
+    static void createMappingsFor(final Object runner, final FrameworkMethod method, final Object target) {
+        // if mappings haven't been created
+        if (getMethodFor(target) == null) {
             LOGGER.debug("testObjectCreated: {}", target);
             TARGET_TO_METHOD.put(toMapKey(target), method);
             TARGET_TO_RUNNER.put(toMapKey(target), runner);
@@ -77,15 +93,13 @@ public class CreateTest {
             // if notifier hasn't been initialized yet
             if ( ! EachTestNotifierInit.setTestTarget(runner, method, target)) {
                 // store target for subsequent retrieval
-                HASHCODE_TO_TARGET.put(hashCode, target);
+                HASHCODE_TO_TARGET.put(Objects.hash(runner, method.toString()), target);
             }
             
             for (TestObjectWatcher watcher : LifecycleHooks.getObjectWatchers()) {
                 watcher.testObjectCreated(runner, method, target);
             }
         }
-        
-        return target;
     }
     
     /**
