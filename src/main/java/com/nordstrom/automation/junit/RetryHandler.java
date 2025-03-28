@@ -60,6 +60,9 @@ public class RetryHandler {
             EachTestNotifier eachNotifier = new EachTestNotifier(notifier, description);
             AtomicTest atomicTest = EachTestNotifierInit.getAtomicTestOf(description);
             
+            // preserve original method
+            atomicTest.setIdentity(method);
+            
             // if atomic test is theory
             if (atomicTest.isTheory()) {
                 // retrieve cached method block statement
@@ -145,7 +148,8 @@ public class RetryHandler {
         NoRetry noRetryOnClass = method.getDeclaringClass().getAnnotation(NoRetry.class);
         
         // if method isn't ignored or excluded from retry attempts
-        if (Boolean.FALSE.equals(invoke(runner, "isIgnored", method)) && (noRetryOnMethod == null) && (noRetryOnClass == null)) {
+        if (Boolean.FALSE.equals(invoke(runner, "isIgnored", method)) &&
+                (noRetryOnMethod == null) && (noRetryOnClass == null)) {
             // get configured maximum retry count
             maxRetry = getConfig().getInteger(JUnitSettings.MAX_RETRY.key(), Integer.valueOf(0));
         }

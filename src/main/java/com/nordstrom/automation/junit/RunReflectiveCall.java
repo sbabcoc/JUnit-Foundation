@@ -171,16 +171,29 @@ public class RunReflectiveCall {
             DepthGauge depthGauge = LifecycleHooks.computeIfAbsent(METHOD_DEPTH.get(), callable.hashCode(), NEW_INSTANCE);
             if (0 == depthGauge.increaseDepth()) {
                 if (child instanceof FrameworkMethod) {
-                    Description description = LifecycleHooks.describeChild(runner, child);
+                    FrameworkMethod method = (FrameworkMethod) child;
+                    Description description = LifecycleHooks.describeChild(runner, method);
                     if (LOGGER.isDebugEnabled()) {
                         try {
-                            LOGGER.debug("beforeInvocation: {}", (description != null) ? description : child);
+                            LOGGER.debug("beforeInvocation: {}", (description != null) ? description : method);
                         } catch (Throwable t) {
                             // nothing to do here
                         }
                     }
                     if ((description != null) && AtomicTest.isTest(description)) {
                         DESCRIPTION_TO_CALLABLE.put(description.hashCode(), callable);
+                        
+                        // get target for description
+                        Object target = getTargetFor(description);
+                        // if target acquired
+                        if (target != null) {
+                            // ensure that test object creation is tracked
+                            CreateTest.createMappingsFor(runner, method, target);
+                            // ensure that description has matching atomic test
+                            EachTestNotifierInit.newAtomicTestFor(description);
+                            // ensure that description <=> target mappings are set
+                            EachTestNotifierInit.setTestTarget(runner, method, target);
+                        }
                     }
                 }
                 for (MethodWatcher watcher : LifecycleHooks.getMethodWatchers()) {

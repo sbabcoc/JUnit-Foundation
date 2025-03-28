@@ -141,10 +141,19 @@ public class ArtifactCollector<T extends ArtifactType> extends AtomIdentity {
         int hashcode = getParameters().hashCode();
         if (hashcode != 0) {
             String hashStr = String.format("%08X", hashcode);
-            return getDescription().getMethodName() + "-" + hashStr;
+            return getSanitizedName() + "-" + hashStr;
         } else {
-            return getDescription().getMethodName();
+            return getSanitizedName();
         }
+    }
+    
+    /**
+     * Get the target method name, replacing Windows file name reserved characters with '_'.
+     * 
+     * @return sanitized target method name
+     */
+    private String getSanitizedName() {
+        return getDescription().getMethodName().replaceAll("[\\/:*?\"<>|]", "_");
     }
     
     /**

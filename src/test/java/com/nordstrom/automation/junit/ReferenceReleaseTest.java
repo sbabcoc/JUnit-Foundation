@@ -75,6 +75,19 @@ public class ReferenceReleaseTest {
         checkLeakReports(checker);
     }
     
+    @Test
+    public void verifyParamInjectorReferenceRelease() {
+        ReferenceChecker checker = new ReferenceChecker();
+        
+        JUnitCore runner = new JUnitCore();
+        runner.addListener(checker);
+        Result result = runner.run(ReferenceReleaseParamInjector.class);
+        assertFalse(result.wasSuccessful());
+        assertEquals(result.getRunCount(), 2, "Incorrect test run count");
+        assertEquals(result.getFailureCount(), 1, "Incorrect failed test count");
+        checkLeakReports(checker);
+    }
+    
     static void checkLeakReports(ReferenceChecker checker) {
         assertEquals(checker.reportNoAtomicTests(), 0, "Missing atomic tests detected");
         assertEquals(checker.reportStatementLeaks(), 0, "Leaked statements detected");

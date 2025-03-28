@@ -308,6 +308,43 @@ public class ArtifactCollectorTest {
                 "Incorrect event notifications");
         ReferenceReleaseTest.checkLeakReports(checker);
     }
+
+    @Test
+    public void verifyParamInjectorCapture() {
+        RunListenerAdapter rla = new RunListenerAdapter();
+        ReferenceChecker checker = new ReferenceChecker();
+
+        JUnitCore runner = new JUnitCore();
+        runner.addListener(rla);
+        runner.addListener(checker);
+        Result result = runner.run(ArtifactCollectorParamInjector.class);
+        assertFalse(result.wasSuccessful());
+
+        assertEquals(rla.getPassedTests().size(), 1, "Incorrect passed test count");
+        assertEquals(rla.getFailedTests().size(), 1, "Incorrect failed test count");
+        assertEquals(rla.getIgnoredTests().size(), 0, "Incorrect ignored test count");
+        assertEquals(rla.getRetriedTests().size(), 1, "Incorrect retried test count");
+
+        Description description = rla.getFailedTests().get(0);
+        UnitTestCapture watcher = rla.getWatcher(description);
+        assertNotNull(watcher, "Unit test artifact collector not registered");
+        assertEquals(watcher.getArtifactProvider().getCaptureState(), CaptureState.CAPTURE_SUCCESS, "Incorrect artifact provider capture state");
+        assertTrue(watcher.getArtifactPath().isPresent(), "Artifact capture output path is not present");
+        
+        Optional<UnitTestWatcher> optWatcher = LifecycleHooks.getAttachedWatcher(UnitTestWatcher.class);
+        assertTrue(optWatcher.isPresent(), "Unit test watcher not attached");
+        UnitTestWatcher testWatcher = (UnitTestWatcher) optWatcher.get();
+        List<Notification> notifications = testWatcher.getNotificationsFor(rla.getPassedTests().get(0));
+        assertEquals(notifications, Arrays.asList(
+                Notification.STARTED, Notification.FINISHED),
+                "Incorrect event notifications");
+        notifications = testWatcher.getNotificationsFor(description);
+        assertEquals(notifications, Arrays.asList(
+                Notification.STARTED, Notification.RETRIED, Notification.FINISHED,
+                Notification.STARTED, Notification.FAILED, Notification.FINISHED),
+                "Incorrect event notifications");
+        ReferenceReleaseTest.checkLeakReports(checker);
+    }
     
     @AfterClass
     public static void afterClass() {
