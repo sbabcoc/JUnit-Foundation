@@ -594,6 +594,84 @@ public class ArtifactCollectorJUnitParams implements ArtifactParams {
 }
 ```
 
+The following example demonstrates how to publish invocation parameters with the [TestParameterInjector](https://github.com/google/TestParameterInjector) runner. The implementation is more complex than the `Parameterized` example above, due to the strategy used by the runner to inject parameters into the test methods.
+
+The `TestParameterInjector` runner supports a variety of methods to inject parameters. Test parameters can be provided by test class fields, test method arguments, or both. When test method arguments are used, these are populated from a `parameters` list in a `testInfo` object that's been added to the **JUnit** framework method. Unlike the `Parameterized` runner, where all test methods in the class run with the same set of values, the `TestParameterInjector` runner allows each test method in the class to run with its own unique set of values. This variability must be accounted for in the implementation of the `getParameters()` method.
+
+The example below queries the method for its parameter types, then uses these to cast each injected value to its corresponding type.
+
+###### Publishing Invocation Parameters - `TestParameterInjector` Runner
+```java
+package com.nordstrom.example;
+
+import static org.junit.Assert.assertEquals;
+
+import java.util.Map;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.internal.runners.model.ReflectiveCallable;
+import org.junit.runners.model.FrameworkMethod;
+import com.google.testing.junit.testparameterinjector.TestParameterInjector;
+import com.google.testing.junit.testparameterinjector.TestParameters;
+import com.nordstrom.automation.junit.ArtifactParams;
+import com.nordstrom.automation.junit.AtomIdentity;
+import com.google.common.base.Optional;
+
+@RunWith(TestParameterInjector.class)
+public class ArtifactCollectorParamInjector implements ArtifactParams {
+    
+    @Rule
+    public final AtomIdentity identity = new AtomIdentity(this);
+    
+    @Override
+    public AtomIdentity getAtomIdentity() {
+        return identity;
+    }
+    
+    @Override
+    public Description getDescription() {
+        return identity.getDescription();
+    }
+    
+    @Override
+    public Optional<Map<String, Object>> getParameters() {
+        AtomicTest atomicTest = LifecycleHooks.getAtomicTestOf(this);
+        FrameworkMethod method = atomicTest.getIdentity();
+        
+        // get test method parameters
+        Class<?>[] paramTypes = method.getMethod().getParameterTypes();
+        
+        try {
+            Object testInfo = LifecycleHooks.getFieldValue(method, "testInfo");
+            List<Object> params = LifecycleHooks.getFieldValue(testInfo, "parameters");
+            
+            // allocate named parameters array
+            Param[] namedParams = new Param[params.size()];
+            // populate named parameters array
+            for (int i = 0; i < params.size(); i++) {
+                Object param = params.get(i);
+                Map<String, Object> paramValue = LifecycleHooks.getFieldValue(param, "value");
+                Entry<String, Object> paramEntry = paramValue.entrySet().iterator().next();
+                namedParams[i] = Param.param(paramEntry.getKey(), paramTypes[i].cast(paramEntry.getValue()));
+            }
+
+            // return params map as Optional
+            return Param.mapOf(namedParams);
+        } catch (IllegalAccessException | NoSuchFieldException | SecurityException e) {
+            return Optional.empty();
+        }
+    }
+    
+    @Test
+    @TestParameters("{input: 'first test'}")
+    @TestParameters("{input: 'second test'}")
+    public void parameterized(String input) {
+        System.out.println("parameterized: input = [" + input + "]");
+        assertEquals("first test", input);
+    }
+}
+```
+
 #### Artifact capture for parameterized tests
 
 For scenarios that require artifact capture of parameterized tests, the [ArtifactCollector](https://github.com/sbabcoc/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/ArtifactCollector.java) class extends the [AtomIdentity](https://github.com/sbabcoc/JUnit-Foundation/blob/master/src/main/java/com/nordstrom/automation/junit/AtomIdentity.java) test rule. This enables artifact type implementations to access invocation parameters and **Description** object for the current `atomic test`. For more details, see the [Artifact Capture](#artifact-capture) section below.
