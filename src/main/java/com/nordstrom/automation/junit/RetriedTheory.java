@@ -4,9 +4,13 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.util.Objects;
 
+import org.junit.Test;
 import org.junit.experimental.theories.Theory;
 import org.junit.runner.Description;
 
+/**
+ * This class is a mutable implementation of the {@link Theory &#64;Theory} annotation interface.
+ */
 @SuppressWarnings("all")
 public class RetriedTheory implements Theory {
     

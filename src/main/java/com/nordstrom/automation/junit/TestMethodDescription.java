@@ -25,6 +25,11 @@ public class TestMethodDescription {
     private static final Map<Integer, Description> TESTMETHOD_TO_DESCRIPTION = new ConcurrentHashMap<>();
 
     /**
+     * Default constructor
+     */
+    public TestMethodDescription() { }
+    
+    /**
      * Interceptor for the {@link TestMethod#description description} method.
      * 
      * @param testMethod target JUnitParams {@link TestMethod} object

@@ -43,6 +43,11 @@ import net.bytebuddy.utility.JavaModule;
 public class JUnitAgent {
 
     /**
+     * Default constructor
+     */
+    public JUnitAgent() { }
+    
+    /**
      * This is the main entry point for the Java agent used to transform the following classes:
      * <ul>
      *     <li>{@code org.junit.runner.Description}</li>

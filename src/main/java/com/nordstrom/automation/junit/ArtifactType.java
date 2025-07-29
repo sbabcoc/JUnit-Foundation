@@ -71,6 +71,11 @@ import com.nordstrom.common.file.PathUtils;
 public abstract class ArtifactType {
 
     /**
+     * Default constructor
+     */
+    public ArtifactType() { }
+    
+    /**
      * Get the SLF4J {@link Logger} for this artifact type.
      * 
      * @return logger for this artifact (may be {@code null})

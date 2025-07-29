@@ -37,6 +37,11 @@ public class AtomicTest {
     private static final Pattern PARAM = Pattern.compile("[(\\[]");
     private static final List<Class<? extends Annotation>> TEST_TYPES = Arrays.asList(Test.class, Theory.class);
     
+    /**
+     * Constructor for <b>AtomicTest</b> instances.
+     * 
+     * @param description JUnit method description
+     */
     public AtomicTest(Description description) {
         this.runner = Run.getThreadRunner();
         this.description = description;

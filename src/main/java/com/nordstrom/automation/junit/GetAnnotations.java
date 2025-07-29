@@ -16,6 +16,11 @@ public class GetAnnotations {
     private static final Map<String, Annotation[]> ANNOTATIONS = new ConcurrentHashMap<>();
 
     /**
+     * Default constructor
+     */
+    public GetAnnotations() { }
+    
+    /**
      * Interceptor for the {@link org.junit.runners.model.FrameworkMethod#getAnnotations} method.
      * 
      * @param method target {@link FrameworkMethod} object

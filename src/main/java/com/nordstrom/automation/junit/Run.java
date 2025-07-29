@@ -59,6 +59,11 @@ public class Run {
     }
     
     /**
+     * Default constructor
+     */
+    public Run() { }
+    
+    /**
      * Interceptor for the {@link org.junit.runners.ParentRunner#run run} method.
      * 
      * @param runner underlying test runner

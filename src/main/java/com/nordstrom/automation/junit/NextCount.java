@@ -7,8 +7,17 @@ import junitparams.internal.TestMethod;
 import net.bytebuddy.implementation.bind.annotation.SuperCall;
 import net.bytebuddy.implementation.bind.annotation.This;
 
+/**
+ * This class declares the interceptor for the {@link junitparams.internal.ParameterisedTestMethodRunner#nextCount
+ * nextCount} method.
+ */
 public class NextCount {
 
+    /**
+     * Default constructor
+     */
+    public NextCount() { }
+    
     /**
      * Interceptor for the {@link junitparams.internal.ParameterisedTestMethodRunner#nextCount nextCount} method.
      * <p>

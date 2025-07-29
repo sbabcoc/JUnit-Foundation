@@ -47,6 +47,11 @@ public class CreateTest {
     }
     
     /**
+     * Default constructor
+     */
+    public CreateTest() { }
+    
+    /**
      * Interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#createTest createTest} method.
      * 
      * @param runner target {@link org.junit.runners.BlockJUnit4ClassRunner BlockJUnit4ClassRunner} object

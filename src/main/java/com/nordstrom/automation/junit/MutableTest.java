@@ -54,25 +54,16 @@ public class MutableTest implements Test {
         this.timeout = timeout;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Class<? extends Annotation> annotationType() {
         return Test.class;
     }
     
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Class<? extends Throwable> expected() {
         return expected;
     }
     
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public long timeout() {
         return timeout;

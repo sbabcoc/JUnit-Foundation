@@ -23,6 +23,11 @@ public class DescribeChild {
     private static final String PERM_TAG = "theory-id: ";
 
     /**
+     * Default constructor
+     */
+    public DescribeChild() { }
+    
+    /**
      * Interceptor for the {@link org.junit.runners.ParentRunner#describeChild describeChild} method.
      * 
      * @param runner underlying test runner

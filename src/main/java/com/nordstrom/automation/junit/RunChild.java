@@ -25,6 +25,11 @@ public class RunChild {
     private static final Map<String, Boolean> DID_NOTIFY = new ConcurrentHashMap<>();
     
     /**
+     * Default constructor
+     */
+    public RunChild() { }
+    
+    /**
      * Interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#runChild runChild} method.
      * 
      * @param runner underlying test runner

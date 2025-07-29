@@ -15,6 +15,12 @@ import net.bytebuddy.implementation.bind.annotation.This;
  * getTestRules} method.
  */
 public class GetTestRules {
+    
+    /**
+     * Default constructor
+     */
+    public GetTestRules() { }
+    
     /**
      * Interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#getTestRules getTestRules} method.
      *

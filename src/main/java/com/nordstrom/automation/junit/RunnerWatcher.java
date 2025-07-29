@@ -1,5 +1,8 @@
 package com.nordstrom.automation.junit;
 
+/**
+ * This interface defines the methods implemented by JUnit runner watchers.
+ */
 public interface RunnerWatcher extends JUnitWatcher {
 
     /**
