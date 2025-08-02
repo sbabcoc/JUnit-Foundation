@@ -46,6 +46,11 @@ public class RunReflectiveCall {
     }
     
     /**
+     * Default constructor
+     */
+    public RunReflectiveCall() { }
+    
+    /**
      * Interceptor for the {@link org.junit.internal.runners.model.ReflectiveCallable#runReflectiveCall
      * runReflectiveCall} method.
      * 

@@ -22,6 +22,11 @@ public class RunAnnouncer extends RunListener implements JUnitWatcher {
     private static final Logger LOGGER = LoggerFactory.getLogger(RunAnnouncer.class);
     
     /**
+     * Default constructor
+     */
+    public RunAnnouncer() { }
+    
+    /**
      * {@inheritDoc}
      */
     @Override

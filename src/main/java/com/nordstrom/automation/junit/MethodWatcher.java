@@ -4,6 +4,8 @@ import org.junit.internal.runners.model.ReflectiveCallable;
 
 /**
  * This interface defines the methods implemented by JUnit method watchers.
+ * 
+ * @param <T> type of JUnit method objects monitored by this watcher
  */
 public interface MethodWatcher<T> extends TypeDiscloser<T>, JUnitWatcher {
 

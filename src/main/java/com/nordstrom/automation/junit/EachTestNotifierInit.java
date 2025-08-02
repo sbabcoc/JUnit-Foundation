@@ -27,6 +27,11 @@ public class EachTestNotifierInit {
     private static final Map<Integer, Integer> HASHCODE_TO_DESCRIPTION = new ConcurrentHashMap<>();
     
     /**
+     * Default constructor
+     */
+    public EachTestNotifierInit() { }
+    
+    /**
      * Interceptor for the constructor of the {@link EachTestNotifier} class.
      * 
      * @param notifier {@link RunNotifier} argument

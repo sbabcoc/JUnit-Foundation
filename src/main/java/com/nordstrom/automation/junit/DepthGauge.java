@@ -1,8 +1,16 @@
 package com.nordstrom.automation.junit;
 
+/**
+ * This class provides a thread-safe depth counter for method interceptors.
+ */
 public class DepthGauge {
     
     private int counter = 0;
+    
+    /**
+     * Default constructor
+     */
+    public DepthGauge() { }
     
     /**
      * Determine if the depth is at ground level (i.e. - zero).

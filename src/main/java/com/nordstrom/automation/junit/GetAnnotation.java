@@ -14,6 +14,11 @@ import net.bytebuddy.implementation.bind.annotation.This;
 public class GetAnnotation {
     
     /**
+     * Default constructor
+     */
+    public GetAnnotation() { }
+    
+    /**
      * Interceptor for the {@link org.junit.runners.model.FrameworkMethod#getAnnotation} method.
      * <p>
      * <b>NOTE</b>: This interceptor does <b>not</b> invoke the original implementation in {@link FrameworkMethod}. It

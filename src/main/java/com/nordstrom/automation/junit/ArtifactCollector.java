@@ -36,6 +36,12 @@ public class ArtifactCollector<T extends ArtifactType> extends AtomIdentity {
     private final T provider;
     private final List<Path> artifactPaths = new ArrayList<>();
     
+    /**
+     * Constructor for <b>ArtifactCollector</b> instances.
+     * 
+     * @param instance {@code JUnit} test class instance
+     * @param provider artifact provider
+     */
     public ArtifactCollector(Object instance, T provider) {
         super(instance);
         this.provider = provider;

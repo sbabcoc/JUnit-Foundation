@@ -41,6 +41,11 @@ public class MethodBlock {
     }
 
     /**
+     * Default constructor
+     */
+    public MethodBlock() { }
+    
+    /**
      * Interceptor for the {@link org.junit.runners.BlockJUnit4ClassRunner#methodBlock methodBlock} method.
      * <p>
      * <b>NOTE</b>: For "theory" methods, the actual class runner statement is stored and a

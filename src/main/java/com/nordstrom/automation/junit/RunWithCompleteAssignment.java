@@ -20,6 +20,11 @@ import net.bytebuddy.implementation.bind.annotation.This;
 public class RunWithCompleteAssignment {
 
     /**
+     * Default constructor
+     */
+    public RunWithCompleteAssignment() { }
+    
+    /**
      * Interceptor for the {@link TheoryAnchor#runWithCompleteAssignment
      * runWithCompleteAssignment} method.
      * <p>

@@ -14,6 +14,11 @@ import net.bytebuddy.implementation.bind.annotation.This;
 public class FireTestFinished {
 
     /**
+     * Default constructor
+     */
+    public FireTestFinished() { }
+    
+    /**
      * Interceptor for the {@link org.junit.internal.runners.model.EachTestNotifier#fireTestFinished fireTestFinished}
      * method.
      * 

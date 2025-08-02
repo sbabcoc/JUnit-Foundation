@@ -16,6 +16,11 @@ import net.bytebuddy.implementation.bind.annotation.This;
 public class AddFailure {
 
     /**
+     * Default constructor
+     */
+    public AddFailure() { }
+    
+    /**
      * Interceptor for the {@link org.junit.internal.runners.model.EachTestNotifier#addFailure addFailure} method.
      * 
      * @param notifier underlying run notifier

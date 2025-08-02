@@ -17,6 +17,11 @@ public class AtomIdentity extends TestWatcher implements ArtifactParams {
     private final Object instance;
     private Description description;
 
+    /**
+     * Constructor for <b>AtomIdentity</b> instances.
+     * 
+     * @param instance {@code JUnit} test class instance
+     */
     public AtomIdentity(Object instance) {
         this.instance = instance;
     }

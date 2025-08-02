@@ -12,6 +12,11 @@ import net.bytebuddy.implementation.bind.annotation.This;
 public class Finished {
     
     /**
+     * Default constructor
+     */
+    public Finished() { }
+    
+    /**
      * Interceptor for the {@link org.junit.runners.model.RunnerScheduler#finished finished} method.
      * 
      * @param scheduler current {@link org.junit.runners.model.RunnerScheduler RunnerScheduler}
