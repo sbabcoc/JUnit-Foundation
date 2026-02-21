@@ -28,22 +28,26 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.release>8</maven.compiler.release>
-    <java-utils.version>3.4.1</java-utils.version>
-    <settings.version>3.0.9</settings.version>
+    <java-utils.version>4.0.0</java-utils.version>
+    <settings.version>4.0.0</settings.version>
     <junit.version>4.13.2</junit.version>
+    <!-- TestNG 7.6+ requires Java 11; 7.5.1 is the last Java 8 compatible release -->
     <testng.version>7.5.1</testng.version>
-    <bytebuddy.version>1.17.5</bytebuddy.version>
-    <logback.version>1.3.15</logback.version>
+    <bytebuddy.version>1.17.8</bytebuddy.version>
+    <!-- logback 1.3.x is the last Java 8-compatible series; 1.5.x requires JDK 11+ -->
+    <logback.version>1.3.16</logback.version>
+    <!-- JUnitParams is effectively unmaintained; 1.1.1 is the final release -->
     <junitparams.version>1.1.1</junitparams.version>
+    <!-- PowerMock is effectively unmaintained; 2.0.9 is the final release -->
     <powermock.version>2.0.9</powermock.version>
-    <paraminjector.version>1.18</paraminjector.version>
+    <paraminjector.version>1.20</paraminjector.version>
     <compiler-plugin.version>3.14.0</compiler-plugin.version>
-    <surefire-plugin.version>3.5.3</surefire-plugin.version>
+    <surefire-plugin.version>3.5.4</surefire-plugin.version>
     <source-plugin.version>3.3.1</source-plugin.version>
-    <javadoc-plugin.version>3.11.2</javadoc-plugin.version>
+    <javadoc-plugin.version>3.12.0</javadoc-plugin.version>
     <gpg-plugin.version>3.2.8</gpg-plugin.version>
     <staging-plugin.version>1.7.0</staging-plugin.version>
-    <release-plugin.version>3.1.1</release-plugin.version>
+    <release-plugin.version>3.3.1</release-plugin.version>
     <jar-plugin.version>3.4.2</jar-plugin.version>
     <skipSigning>true</skipSigning>
   </properties>
