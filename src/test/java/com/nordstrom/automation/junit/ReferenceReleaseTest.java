@@ -16,7 +16,7 @@ public class ReferenceReleaseTest {
         
         JUnitCore runner = new JUnitCore();
         runner.addListener(checker);
-        Result result = runner.run(AutomaticRetryPassing.class);
+        Result result = runner.run(ReferenceReleaseAutomaticRetryPassing.class);
         assertTrue(result.wasSuccessful());
         assertEquals(result.getRunCount(), 1, "Incorrect test run count");
         assertEquals(result.getFailureCount(), 0, "Incorrect failed test count");
@@ -29,7 +29,7 @@ public class ReferenceReleaseTest {
         
         JUnitCore runner = new JUnitCore();
         runner.addListener(checker);
-        Result result = runner.run(AutomaticRetryFailing.class);
+        Result result = runner.run(ReferenceReleaseAutomaticRetryFailing.class);
         assertFalse(result.wasSuccessful());
         assertEquals(result.getRunCount(), 1, "Incorrect test run count");
         assertEquals(result.getFailureCount(), 1, "Incorrect failed test count");
