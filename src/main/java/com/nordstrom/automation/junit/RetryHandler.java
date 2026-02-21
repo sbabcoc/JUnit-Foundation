@@ -26,12 +26,7 @@ import com.nordstrom.automation.junit.JUnitConfig.JUnitSettings;
 public class RetryHandler {
 
     private static final Map<String, Boolean> METHOD_TO_RETRY = new ConcurrentHashMap<>();
-    private static final ServiceLoader<JUnitRetryAnalyzer> retryAnalyzerLoader;
     private static final Logger LOGGER = LoggerFactory.getLogger(RetryHandler.class);
-    
-    static {
-        retryAnalyzerLoader = ServiceLoader.load(JUnitRetryAnalyzer.class);
-    }
     
     private RetryHandler() {
         throw new AssertionError("RetryHandler is a static utility class that cannot be instantiated");
@@ -176,11 +171,9 @@ public class RetryHandler {
      * @return {@code true} if test should be retried; otherwise {@code false}
      */
     private static boolean isRetriable(final FrameworkMethod method, final Throwable thrown) {
-        synchronized(retryAnalyzerLoader) {
-            for (JUnitRetryAnalyzer analyzer : retryAnalyzerLoader) {
-                if (analyzer.retry(method, thrown)) {
-                    return true;
-                }
+        for (JUnitRetryAnalyzer analyzer : ServiceLoader.load(JUnitRetryAnalyzer.class)) {
+             if (analyzer.retry(method, thrown)) {
+                return true;
             }
         }
         return false;

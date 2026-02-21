@@ -46,7 +46,7 @@ public class AutomaticRetryTest {
         List<Notification> notifications = testWatcher.getNotificationsFor(rla.getPassedTests().get(0));
         assertEquals(notifications, Arrays.asList(
                 Notification.STARTED, Notification.FINISHED),
-                "Incorrect event notifications");
+                "Incorrect event notifications: " + String.valueOf(notifications));
         ReferenceReleaseTest.checkLeakReports(checker);
     }
     
@@ -73,7 +73,7 @@ public class AutomaticRetryTest {
         assertEquals(notifications, Arrays.asList(
                 Notification.STARTED, Notification.RETRIED, Notification.FINISHED,
                 Notification.STARTED, Notification.FINISHED),
-                "Incorrect event notifications");
+                "Incorrect event notifications: " + String.valueOf(notifications));
         ReferenceReleaseTest.checkLeakReports(checker);
     }
     
@@ -102,7 +102,7 @@ public class AutomaticRetryTest {
                 Notification.STARTED, Notification.RETRIED, Notification.FINISHED,
                 Notification.STARTED, Notification.RETRIED, Notification.FINISHED,
                 Notification.STARTED, Notification.FAILED, Notification.FINISHED),
-                "Incorrect event notifications");
+                "Incorrect event notifications: " + String.valueOf(notifications));
         ReferenceReleaseTest.checkLeakReports(checker);
     }
     
@@ -128,7 +128,7 @@ public class AutomaticRetryTest {
         List<Notification> notifications = testWatcher.getNotificationsFor(rla.getFailedTests().get(0));
         assertEquals(notifications, Arrays.asList(
                 Notification.STARTED, Notification.FAILED, Notification.FINISHED),
-                "Incorrect event notifications");
+                "Incorrect event notifications: " + String.valueOf(notifications));
         ReferenceReleaseTest.checkLeakReports(checker);
     }
     
@@ -152,7 +152,8 @@ public class AutomaticRetryTest {
         assertTrue(optWatcher.isPresent(), "Unit test watcher not attached");
         UnitTestWatcher testWatcher = (UnitTestWatcher) optWatcher.get();
         List<Notification> notifications = testWatcher.getNotificationsFor(rla.getIgnoredTests().get(0));
-        assertEquals(notifications, Arrays.asList(Notification.IGNORED), "Incorrect event notifications");
+        assertEquals(notifications, Arrays.asList(Notification.IGNORED),
+                "Incorrect event notifications: " + String.valueOf(notifications));
         ReferenceReleaseTest.checkLeakReports(checker);
     }
     
