@@ -65,11 +65,23 @@ public class MethodBlock {
         DepthGauge depthGauge = LifecycleHooks.computeIfAbsent(METHOD_DEPTH.get(), toMapKey(runner), NEW_INSTANCE);
         depthGauge.increaseDepth();
         
-        Statement statement = LifecycleHooks.callProxy(proxy);
+        Statement statement;
+        boolean atGroundLevel;
+        try {
+            statement = LifecycleHooks.callProxy(proxy);
+        } finally {
+            // guaranteed regardless of whether callProxy throws - previously skipped entirely on
+            // failure, leaving the DepthGauge stuck non-zero and its map entry never removed.
+            // Result captured here (can't call decreaseDepth() again below without double-decrementing)
+            // so the ground-level check below can still gate the theory-anchor logic exactly as before.
+            atGroundLevel = (0 == depthGauge.decreaseDepth());
+            if (atGroundLevel) {
+                METHOD_DEPTH.get().remove(toMapKey(runner));
+            }
+        }
         
-        // if at ground level
-        if (0 == depthGauge.decreaseDepth()) {
-            METHOD_DEPTH.get().remove(toMapKey(runner));
+        // only reached if callProxy succeeded - same as the original behavior
+        if (atGroundLevel) {
             try {
                 // get parent of test runner
                 Object parent = LifecycleHooks.getFieldValue(runner, "this$0");

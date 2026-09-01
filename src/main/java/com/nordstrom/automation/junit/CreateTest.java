@@ -68,12 +68,20 @@ public class CreateTest {
         DepthGauge depthGauge = LifecycleHooks.computeIfAbsent(METHOD_DEPTH.get(), hashCode, NEW_INSTANCE);
         depthGauge.increaseDepth();
         
-        Object target = LifecycleHooks.callProxy(proxy);
-        
-        if (0 == depthGauge.decreaseDepth()) {
-            METHOD_DEPTH.get().remove(hashCode);
-            createMappingsFor(runner, method, target);
+        Object target;
+        try {
+            target = LifecycleHooks.callProxy(proxy);
+        } finally {
+            // guaranteed regardless of whether callProxy throws - previously skipped entirely on
+            // failure, leaving the DepthGauge stuck non-zero and its map entry never removed
+            if (0 == depthGauge.decreaseDepth()) {
+                METHOD_DEPTH.get().remove(hashCode);
+            }
         }
+        
+        // only reached if callProxy succeeded - same as the original behavior; createMappingsFor
+        // was already success-only before this fix, and stays that way
+        createMappingsFor(runner, method, target);
         
         return target;
     }
